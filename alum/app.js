@@ -1,8 +1,10 @@
 const express = require('express')
 const helmet = require('helmet')
 const { PrismaClient } = require('@prisma/client')
+const userRoutes = require('./routes/user.routes')
 const app = express()
 app.use(helmet())
+app.use(express.json())
 
 const port = 3000
 
@@ -16,6 +18,8 @@ const prisma = new PrismaClient({
 app.get('/', (req, res) => {
   res.send('Hello World! (nodemon reload check)')
 })
+
+app.use('/api/v1/users', userRoutes)
 
 app.get('/db-check', async (req, res) => {
   try {
