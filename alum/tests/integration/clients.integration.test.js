@@ -1,0 +1,202 @@
+const { api, authHeader } = require('../helpers/http')
+const { createAuthenticatedUser, createApiClientWithToken } = require('../helpers/factories')
+const { prisma } = require('../helpers/test-db')
+
+describe('POST /api/v1/clients', () => {
+  it('returns 403 for non-admin user', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'alumni.user@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const requestBody = {
+      clientName: 'Campus Mobile App',
+      description: 'Mobile app for students',
+      contactEmail: 'team@campusapp.io'
+    }
+
+    const response = await api()
+      .post('/api/v1/clients')
+      .set(authHeader(token))
+      .send(requestBody)
+
+    expect(response.status).toBe(403)
+
+    const client = await prisma.apiClient.findUnique({ where: { client_name: requestBody.clientName } })
+    expect(client).toBeNull()
+  })
+
+  it('returns 201 and stores only token hash for admin', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.user@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const requestBody = {
+      clientName: 'Campus Mobile App',
+      description: 'Mobile app for students',
+      contactEmail: 'team@campusapp.io'
+    }
+
+    const response = await api()
+      .post('/api/v1/clients')
+      .set(authHeader(token))
+      .send(requestBody)
+
+    expect(response.status).toBe(201)
+    expect(response.body.data).toHaveProperty('token')
+
+    const client = await prisma.apiClient.findUnique({ where: { client_name: requestBody.clientName } })
+    expect(client.created_by_user_id).toBe(user.user_id)
+
+    const tokenRecord = await prisma.apiClientToken.findFirst({ where: { client_id: client.client_id } })
+    expect(tokenRecord.token_hash).not.toBe(response.body.data.token)
+  })
+})
+
+describe('GET /api/v1/clients/:clientId/usage', () => {
+  it('returns usage aggregation for admin', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.stats@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client, token: clientToken } = await createApiClientWithToken({
+      clientName: 'Stats Client',
+      createdByUserId: user.user_id
+    })
+
+    await prisma.apiClientEndpointUsage.createMany({
+      data: [
+        {
+          token_id: clientToken.token_id,
+          endpoint: '/api/v1/public/featured',
+          http_method: 'GET',
+          usage_date: new Date('2026-03-02T00:00:00.000Z'),
+          request_count: 5,
+          last_accessed_at: new Date('2026-03-02T10:00:00.000Z')
+        },
+        {
+          token_id: clientToken.token_id,
+          endpoint: '/api/v1/public/alumni/123',
+          http_method: 'GET',
+          usage_date: new Date('2026-03-02T00:00:00.000Z'),
+          request_count: 2,
+          last_accessed_at: new Date('2026-03-02T10:30:00.000Z')
+        }
+      ]
+    })
+
+    const requestBody = {}
+
+    const response = await api()
+      .get(`/api/v1/clients/${client.client_id}/usage`)
+      .set(authHeader(token))
+      .send(requestBody)
+
+    expect(response.status).toBe(200)
+    expect(response.body.data.total_request_count).toBe(7)
+    expect(response.body.data.endpoint_usage).toHaveLength(2)
+    expect(response.body.data.latest_token).toBeTruthy()
+
+    const usageRows = await prisma.apiClientEndpointUsage.findMany({ where: { token_id: clientToken.token_id } })
+    expect(usageRows).toHaveLength(2)
+  })
+})
+
+describe('POST /api/v1/clients/:clientId/tokens', () => {
+  it('returns 201 and creates an additional token for admin', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.multi-token@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Multi Token Client',
+      createdByUserId: user.user_id
+    })
+
+    const response = await api()
+      .post(`/api/v1/clients/${client.client_id}/tokens`)
+      .set(authHeader(token))
+      .send({})
+
+    expect(response.status).toBe(201)
+    expect(response.body.data).toHaveProperty('token')
+    expect(response.body.data.client_id).toBe(client.client_id)
+
+    const tokens = await prisma.apiClientToken.findMany({
+      where: { client_id: client.client_id }
+    })
+    expect(tokens.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('GET /api/v1/clients/:clientId/tokens', () => {
+  it('returns all tokens for a client for admin', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.token-list@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Token List Client',
+      createdByUserId: user.user_id
+    })
+
+    await prisma.apiClientToken.create({
+      data: {
+        client_id: client.client_id,
+        token_hash: `hash-${Date.now()}`
+      }
+    })
+
+    const response = await api()
+      .get(`/api/v1/clients/${client.client_id}/tokens`)
+      .set(authHeader(token))
+
+    expect(response.status).toBe(200)
+    expect(Array.isArray(response.body.data)).toBe(true)
+    expect(response.body.data.length).toBeGreaterThanOrEqual(2)
+    expect(response.body.data[0]).toHaveProperty('token_id')
+    expect(response.body.data[0]).toHaveProperty('client_id')
+  })
+})
+
+describe('DELETE /api/v1/clients/:clientId/tokens/:tokenId', () => {
+  it('returns 204 and revokes a specific token for admin', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.token-revoke@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Token Revoke Client',
+      createdByUserId: user.user_id
+    })
+
+    const extraToken = await prisma.apiClientToken.create({
+      data: {
+        client_id: client.client_id,
+        token_hash: `hash-revoke-${Date.now()}`
+      }
+    })
+
+    const response = await api()
+      .delete(`/api/v1/clients/${client.client_id}/tokens/${extraToken.token_id}`)
+      .set(authHeader(token))
+
+    expect(response.status).toBe(204)
+
+    const updatedToken = await prisma.apiClientToken.findUnique({
+      where: { token_id: extraToken.token_id }
+    })
+    expect(updatedToken.revoked_at).toBeTruthy()
+  })
+})

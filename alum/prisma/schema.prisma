@@ -7,17 +7,131 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  Alumni
-  Admin
-  Developer
-  Sponsor
+model Role {
+  role_id     Int      @id @default(autoincrement())
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  users       User[]
+
+  @@map("roles")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  role      UserRole @default(Alumni)
-  firstName String
-  lastName  String
+  user_id                  String                   @id @default(cuid())
+  email                    String                   @unique
+  password_hash            String
+  role_id                  Int
+  first_name               String
+  last_name                String
+  email_verified_at        DateTime?
+  created_at               DateTime                 @default(now())
+  updated_at               DateTime                 @updatedAt
+  role                     Role                     @relation(fields: [role_id], references: [role_id])
+  email_verification_tokens EmailVerificationToken[]
+  password_reset_tokens    PasswordResetToken[]
+  auth_sessions            AuthSession[]
+  revoked_jwt_tokens       RevokedJwtToken[]
+  created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
+
+  @@index([role_id])
+  @@map("users")
+}
+
+model EmailVerificationToken {
+  token_id        String   @id @default(cuid())
+  user_id         String
+  token_hash      String   @unique
+  expires_at      DateTime
+  used_at         DateTime?
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  reset_id     String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  expires_at   DateTime
+  used_at      DateTime?
+  created_at   DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
+}
+
+model AuthSession {
+  session_id   String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  issued_at    DateTime @default(now())
+  expired_at   DateTime
+  revoked_at   DateTime?
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@index([expired_at])
+  @@map("auth_sessions")
+}
+
+model RevokedJwtToken {
+  revoked_id   String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  expires_at   DateTime
+  revoked_at   DateTime @default(now())
+  reason       String?
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("revoked_jwt_tokens")
+}
+
+model ApiClient {
+  client_id           String           @id @default(cuid())
+  client_name         String           @unique
+  description         String
+  contact_email       String
+  is_revoked          Boolean          @default(false)
+  created_by_user_id  String
+  created_at          DateTime         @default(now())
+  created_by_user     User             @relation("ApiClientCreatedBy", fields: [created_by_user_id], references: [user_id])
+  tokens              ApiClientToken[]
+
+  @@index([created_by_user_id])
+  @@map("api_clients")
+}
+
+model ApiClientToken {
+  token_id            String                    @id @default(cuid())
+  client_id           String
+  token_hash          String                    @unique
+  issued_at           DateTime                  @default(now())
+  expires_at          DateTime?
+  revoked_at          DateTime?
+  client              ApiClient                 @relation(fields: [client_id], references: [client_id])
+  endpoint_usage      ApiClientEndpointUsage[]
+
+  @@index([client_id])
+  @@index([revoked_at])
+  @@map("api_client_tokens")
+}
+
+model ApiClientEndpointUsage {
+  usage_id            String         @id @default(cuid())
+  token_id            String
+  endpoint            String
+  http_method         String
+  usage_date          DateTime       @default(now())
+  request_count       Int            @default(0)
+  last_accessed_at    DateTime       @default(now())
+  token               ApiClientToken @relation(fields: [token_id], references: [token_id])
+
+  @@index([token_id])
+  @@index([token_id, usage_date])
+  @@map("api_client_endpoint_usage")
 }

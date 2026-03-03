@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> { config.allowUnfree = true; } }:
 
 (pkgs.buildFHSEnv {
   name = "ass-cw1";
@@ -7,6 +7,9 @@
     prisma-engines
     openssl
     docker-compose
+    git
+    postman
+    ripgrep
   ]);
   profile = ''
     export PRISMA_QUERY_ENGINE_LIBRARY="${pkgs.prisma-engines}/lib/libquery_engine.node"
