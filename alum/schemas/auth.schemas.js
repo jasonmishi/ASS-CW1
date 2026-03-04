@@ -13,7 +13,7 @@ const registerBodySchema = z.object({
   password: strongPasswordSchema,
   confirmPassword: z.string(),
   firstName: z.string().min(1),
-  lastName: z.string().min(1)
+  lastName: z.string().min(1).optional()
 }).superRefine((value, ctx) => {
   if (value.password !== value.confirmPassword) {
     ctx.addIssue({

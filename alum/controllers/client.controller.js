@@ -68,7 +68,8 @@ const getClientUsageStats = async (req, res) => {
 
 const createClientToken = async (req, res) => {
   const { clientId } = req.params
-  const tokenData = await clientModel.createAdditionalTokenForClient(clientId)
+  const { expiresAt } = req.body
+  const tokenData = await clientModel.createAdditionalTokenForClient(clientId, expiresAt || null)
 
   if (!tokenData) {
     return res.status(404).json({

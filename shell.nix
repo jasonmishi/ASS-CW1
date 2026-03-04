@@ -7,7 +7,6 @@
     prisma-engines
     openssl
     docker-compose
-    git
     postman
     ripgrep
   ]);

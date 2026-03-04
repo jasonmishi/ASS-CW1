@@ -1,6 +1,6 @@
 const prisma = require('../lib/prisma')
 
-const DEFAULT_ROLES = ['alumni', 'developer', 'admin']
+const DEFAULT_ROLES = ['alumni', 'developer', 'sponsor', 'admin']
 
 const ensureDefaultRoles = async () => {
   for (const roleName of DEFAULT_ROLES) {

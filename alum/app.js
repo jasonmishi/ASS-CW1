@@ -6,6 +6,7 @@ const roleModel = require('./models/role.model')
 const userRoutes = require('./routes/user.routes')
 const authRoutes = require('./routes/auth.routes')
 const clientRoutes = require('./routes/client.routes')
+const adminRoutes = require('./routes/admin.routes')
 
 const app = express()
 app.use(helmet())
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/users', userRoutes)
 app.use('/api/v1', authRoutes)
 app.use('/api/v1', clientRoutes)
+app.use('/api/v1', adminRoutes)
 
 app.get('/db-check', async (req, res) => {
   const result = await prisma.$queryRaw`SELECT 1 AS ok`

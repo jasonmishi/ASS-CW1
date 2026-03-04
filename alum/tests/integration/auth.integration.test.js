@@ -74,6 +74,28 @@ describe('POST /api/v1/auth/users', () => {
     })
     expect(tokenRecord).toBeTruthy()
   })
+
+  it('returns 201 when lastName is omitted', async () => {
+    const requestBody = {
+      email: 'no.lastname@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      confirmPassword: 'Strong!Pass1',
+      firstName: 'NoLastName'
+    }
+
+    const response = await api()
+      .post('/api/v1/auth/users')
+      .send(requestBody)
+
+    expect(response.status).toBe(201)
+    expect(response.body.success).toBe(true)
+
+    const user = await prisma.user.findUnique({
+      where: { email: requestBody.email }
+    })
+    expect(user).toBeTruthy()
+    expect(user.last_name).toBe('')
+  })
 })
 
 describe('GET /api/v1/auth/verify-email/:token', () => {

@@ -253,7 +253,7 @@ const registerUserWithVerification = async ({
     password_hash,
     role_id: alumniRole.role_id,
     first_name: firstName,
-    last_name: lastName
+    last_name: lastName || ''
   })
 
   const verificationToken = generateSecureToken()

@@ -248,7 +248,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
   }
 }
 
-const createAdditionalTokenForClient = async (clientId) => {
+const createAdditionalTokenForClient = async (clientId, expiresAt = null) => {
   const client = await findClientById(clientId)
 
   if (!client) {
@@ -260,7 +260,8 @@ const createAdditionalTokenForClient = async (clientId) => {
 
   const newToken = await createClientToken({
     client_id: clientId,
-    token_hash: tokenHash
+    token_hash: tokenHash,
+    expires_at: expiresAt
   })
 
   await activateClient(clientId)

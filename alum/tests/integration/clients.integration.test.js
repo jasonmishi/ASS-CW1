@@ -134,6 +134,34 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
     })
     expect(tokens.length).toBeGreaterThanOrEqual(2)
   })
+
+  it('returns 201 and stores provided expiresAt', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.token-expiry@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Expiry Token Client',
+      createdByUserId: user.user_id
+    })
+
+    const expiresAt = new Date(Date.now() + (2 * 60 * 60 * 1000)).toISOString()
+
+    const response = await api()
+      .post(`/api/v1/clients/${client.client_id}/tokens`)
+      .set(authHeader(token))
+      .send({ expiresAt })
+
+    expect(response.status).toBe(201)
+    expect(response.body.data.expires_at).toBeTruthy()
+
+    const createdToken = await prisma.apiClientToken.findUnique({
+      where: { token_id: response.body.data.token_id }
+    })
+    expect(createdToken.expires_at).toBeTruthy()
+  })
 })
 
 describe('GET /api/v1/clients/:clientId/tokens', () => {
