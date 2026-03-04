@@ -33,9 +33,27 @@ model User {
   auth_sessions            AuthSession[]
   revoked_jwt_tokens       RevokedJwtToken[]
   created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
+  credentials              Credential[]
 
   @@index([role_id])
   @@map("users")
+}
+
+model Credential {
+  credential_id   String   @id @default(cuid())
+  user_id         String
+  credential_type String
+  title           String
+  provider_name   String
+  credential_url  String
+  completion_date DateTime
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  user            User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@index([user_id, credential_type])
+  @@map("credentials")
 }
 
 model EmailVerificationToken {
