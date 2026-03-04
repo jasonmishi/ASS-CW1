@@ -7,6 +7,8 @@ const {
   certificationParamsSchema,
   courseBodySchema,
   courseParamsSchema,
+  employmentBodySchema,
+  employmentParamsSchema,
   licenceBodySchema,
   licenceParamsSchema
 } = require('../schemas/profile.schemas')
@@ -27,5 +29,10 @@ router.get('/profile/courses', authenticateJwt, profileController.listCourses)
 router.post('/profile/courses', authenticateJwt, validate(courseBodySchema), profileController.addCourse)
 router.put('/profile/courses/:courseId', authenticateJwt, validate(courseParamsSchema, 'params'), validate(courseBodySchema), profileController.updateCourse)
 router.delete('/profile/courses/:courseId', authenticateJwt, validate(courseParamsSchema, 'params'), profileController.deleteCourse)
+
+router.get('/profile/employment', authenticateJwt, profileController.listEmployment)
+router.post('/profile/employment', authenticateJwt, validate(employmentBodySchema), profileController.addEmployment)
+router.put('/profile/employment/:employmentId', authenticateJwt, validate(employmentParamsSchema, 'params'), validate(employmentBodySchema), profileController.updateEmployment)
+router.delete('/profile/employment/:employmentId', authenticateJwt, validate(employmentParamsSchema, 'params'), profileController.deleteEmployment)
 
 module.exports = router

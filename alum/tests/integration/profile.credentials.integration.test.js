@@ -146,4 +146,53 @@ describe('Profile credentials endpoints', () => {
 
     expect(deleteResponse.status).toBe(204)
   })
+
+  it('supports employment CRUD', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'employment.user@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const createResponse = await api()
+      .post('/api/v1/profile/employment')
+      .set(authHeader(token))
+      .send({
+        jobTitle: 'Software Engineer',
+        company: 'Acme Inc',
+        startDate: '2024-01-01',
+        endDate: null
+      })
+
+    expect(createResponse.status).toBe(201)
+    expect(createResponse.body.data.jobTitle).toBe('Software Engineer')
+
+    const employmentId = createResponse.body.data.employmentId
+
+    const listResponse = await api()
+      .get('/api/v1/profile/employment')
+      .set(authHeader(token))
+
+    expect(listResponse.status).toBe(200)
+    expect(listResponse.body.data).toHaveLength(1)
+
+    const updateResponse = await api()
+      .put(`/api/v1/profile/employment/${employmentId}`)
+      .set(authHeader(token))
+      .send({
+        jobTitle: 'Senior Software Engineer',
+        company: 'Acme Inc',
+        startDate: '2024-01-01',
+        endDate: '2025-12-31'
+      })
+
+    expect(updateResponse.status).toBe(200)
+    expect(updateResponse.body.data.jobTitle).toBe('Senior Software Engineer')
+
+    const deleteResponse = await api()
+      .delete(`/api/v1/profile/employment/${employmentId}`)
+      .set(authHeader(token))
+
+    expect(deleteResponse.status).toBe(204)
+  })
 })

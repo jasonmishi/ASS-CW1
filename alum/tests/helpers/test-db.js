@@ -6,6 +6,7 @@ const TABLES = [
   'api_client_tokens',
   'api_clients',
   'credentials',
+  'employments',
   'auth_sessions',
   'password_reset_tokens',
   'email_verification_tokens',

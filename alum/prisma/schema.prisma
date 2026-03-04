@@ -34,9 +34,25 @@ model User {
   revoked_jwt_tokens       RevokedJwtToken[]
   created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
   credentials              Credential[]
+  employments              Employment[]
 
   @@index([role_id])
   @@map("users")
+}
+
+model Employment {
+  employment_id String    @id @default(cuid())
+  user_id       String
+  job_title     String
+  company       String
+  start_date    DateTime
+  end_date      DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  user          User      @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("employments")
 }
 
 model Credential {

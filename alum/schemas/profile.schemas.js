@@ -33,11 +33,32 @@ const courseParamsSchema = z.object({
   courseId: z.string().min(1)
 })
 
+const employmentBodySchema = z.object({
+  jobTitle: z.string().min(1),
+  company: z.string().min(1),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().nullable().optional()
+}).superRefine((value, ctx) => {
+  if (value.endDate && value.endDate < value.startDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['endDate'],
+      message: 'endDate must be on or after startDate.'
+    })
+  }
+})
+
+const employmentParamsSchema = z.object({
+  employmentId: z.string().min(1)
+})
+
 module.exports = {
   certificationBodySchema,
   certificationParamsSchema,
   courseBodySchema,
   courseParamsSchema,
+  employmentBodySchema,
+  employmentParamsSchema,
   licenceBodySchema,
   licenceParamsSchema
 }

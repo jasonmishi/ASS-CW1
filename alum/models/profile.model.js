@@ -165,10 +165,107 @@ const deleteCredentialVariant = async (userId, variant, credentialId) => {
   return true
 }
 
+const listEmployments = async (userId) => {
+  const employments = await prisma.employment.findMany({
+    where: {
+      user_id: userId
+    },
+    orderBy: {
+      start_date: 'desc'
+    }
+  })
+
+  return employments.map((employment) => ({
+    employmentId: employment.employment_id,
+    jobTitle: employment.job_title,
+    company: employment.company,
+    startDate: employment.start_date,
+    endDate: employment.end_date
+  }))
+}
+
+const createEmployment = async (userId, payload) => {
+  const employment = await prisma.employment.create({
+    data: {
+      user_id: userId,
+      job_title: payload.jobTitle,
+      company: payload.company,
+      start_date: payload.startDate,
+      end_date: payload.endDate || null
+    }
+  })
+
+  return {
+    employmentId: employment.employment_id,
+    jobTitle: employment.job_title,
+    company: employment.company,
+    startDate: employment.start_date,
+    endDate: employment.end_date
+  }
+}
+
+const updateEmployment = async (userId, employmentId, payload) => {
+  const existingEmployment = await prisma.employment.findFirst({
+    where: {
+      employment_id: employmentId,
+      user_id: userId
+    }
+  })
+
+  if (!existingEmployment) {
+    return null
+  }
+
+  const employment = await prisma.employment.update({
+    where: {
+      employment_id: employmentId
+    },
+    data: {
+      job_title: payload.jobTitle,
+      company: payload.company,
+      start_date: payload.startDate,
+      end_date: payload.endDate || null
+    }
+  })
+
+  return {
+    employmentId: employment.employment_id,
+    jobTitle: employment.job_title,
+    company: employment.company,
+    startDate: employment.start_date,
+    endDate: employment.end_date
+  }
+}
+
+const deleteEmployment = async (userId, employmentId) => {
+  const existingEmployment = await prisma.employment.findFirst({
+    where: {
+      employment_id: employmentId,
+      user_id: userId
+    }
+  })
+
+  if (!existingEmployment) {
+    return false
+  }
+
+  await prisma.employment.delete({
+    where: {
+      employment_id: employmentId
+    }
+  })
+
+  return true
+}
+
 module.exports = {
   CREDENTIAL_TYPES,
   createCredentialVariant,
+  createEmployment,
   deleteCredentialVariant,
+  deleteEmployment,
   listCredentialVariant,
+  listEmployments,
+  updateEmployment,
   updateCredentialVariant
 }
