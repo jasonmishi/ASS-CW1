@@ -5,6 +5,7 @@ const TABLES = [
   'api_client_endpoint_usage',
   'api_client_tokens',
   'api_clients',
+  'degrees',
   'credentials',
   'employments',
   'auth_sessions',

@@ -7,6 +7,8 @@ const {
   certificationParamsSchema,
   courseBodySchema,
   courseParamsSchema,
+  degreeBodySchema,
+  degreeParamsSchema,
   employmentBodySchema,
   employmentParamsSchema,
   licenceBodySchema,
@@ -14,6 +16,11 @@ const {
 } = require('../schemas/profile.schemas')
 
 const router = express.Router()
+
+router.get('/profile/degrees', authenticateJwt, profileController.listDegrees)
+router.post('/profile/degrees', authenticateJwt, validate(degreeBodySchema), profileController.addDegree)
+router.put('/profile/degrees/:degreeId', authenticateJwt, validate(degreeParamsSchema, 'params'), validate(degreeBodySchema), profileController.updateDegree)
+router.delete('/profile/degrees/:degreeId', authenticateJwt, validate(degreeParamsSchema, 'params'), profileController.deleteDegree)
 
 router.get('/profile/certifications', authenticateJwt, profileController.listCertifications)
 router.post('/profile/certifications', authenticateJwt, validate(certificationBodySchema), profileController.addCertification)

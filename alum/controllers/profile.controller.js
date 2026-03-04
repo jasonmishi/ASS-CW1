@@ -64,6 +64,53 @@ const deleteVariant = (variant, idParam, entityName) => {
   }
 }
 
+const listDegrees = async (req, res) => {
+  const degrees = await profileModel.listDegrees(req.user.user_id)
+  return res.status(200).json({
+    success: true,
+    data: degrees
+  })
+}
+
+const addDegree = async (req, res) => {
+  const created = await profileModel.createDegree(req.user.user_id, req.body)
+  return res.status(201).json({
+    success: true,
+    message: 'Degree added successfully.',
+    data: created
+  })
+}
+
+const updateDegree = async (req, res) => {
+  const updated = await profileModel.updateDegree(req.user.user_id, req.params.degreeId, req.body)
+
+  if (!updated) {
+    return res.status(404).json({
+      success: false,
+      message: 'Degree not found.'
+    })
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Degree updated successfully.',
+    data: updated
+  })
+}
+
+const deleteDegree = async (req, res) => {
+  const deleted = await profileModel.deleteDegree(req.user.user_id, req.params.degreeId)
+
+  if (!deleted) {
+    return res.status(404).json({
+      success: false,
+      message: 'Degree not found.'
+    })
+  }
+
+  return res.status(204).send()
+}
+
 const listEmployment = async (req, res) => {
   const employments = await profileModel.listEmployments(req.user.user_id)
   return res.status(200).json({
@@ -116,18 +163,22 @@ const deleteEmployment = async (req, res) => {
 }
 
 module.exports = {
+  addDegree,
   addCertification: addVariant(profileModel.CREDENTIAL_TYPES.certification, 'Certification'),
   addCourse: addVariant(profileModel.CREDENTIAL_TYPES.course, 'Course'),
   addEmployment,
   addLicence: addVariant(profileModel.CREDENTIAL_TYPES.licence, 'Licence'),
+  deleteDegree,
   deleteCertification: deleteVariant(profileModel.CREDENTIAL_TYPES.certification, 'certificationId', 'Certification'),
   deleteCourse: deleteVariant(profileModel.CREDENTIAL_TYPES.course, 'courseId', 'Course'),
   deleteEmployment,
   deleteLicence: deleteVariant(profileModel.CREDENTIAL_TYPES.licence, 'licenceId', 'Licence'),
+  listDegrees,
   listCertifications: listVariant(profileModel.CREDENTIAL_TYPES.certification),
   listCourses: listVariant(profileModel.CREDENTIAL_TYPES.course),
   listEmployment,
   listLicences: listVariant(profileModel.CREDENTIAL_TYPES.licence),
+  updateDegree,
   updateCertification: updateVariant(profileModel.CREDENTIAL_TYPES.certification, 'certificationId', 'Certification'),
   updateCourse: updateVariant(profileModel.CREDENTIAL_TYPES.course, 'courseId', 'Course'),
   updateEmployment,

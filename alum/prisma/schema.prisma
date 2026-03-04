@@ -33,6 +33,7 @@ model User {
   auth_sessions            AuthSession[]
   revoked_jwt_tokens       RevokedJwtToken[]
   created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
+  degrees                  Degree[]
   credentials              Credential[]
   employments              Employment[]
 
@@ -53,6 +54,21 @@ model Employment {
 
   @@index([user_id])
   @@map("employments")
+}
+
+model Degree {
+  degree_id        String   @id @default(cuid())
+  user_id          String
+  title            String
+  university       String
+  degree_url       String
+  completion_date  DateTime
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  user             User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("degrees")
 }
 
 model Credential {

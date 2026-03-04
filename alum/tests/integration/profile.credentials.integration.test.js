@@ -2,6 +2,55 @@ const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser } = require('../helpers/factories')
 
 describe('Profile credentials endpoints', () => {
+  it('supports degree CRUD', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'degree.user@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const createResponse = await api()
+      .post('/api/v1/profile/degrees')
+      .set(authHeader(token))
+      .send({
+        title: 'BSc Computer Science',
+        university: 'University of Eastminster',
+        degreeUrl: 'https://www.eastminster.ac.uk/degrees/bsc-cs',
+        completionDate: '2020-07-01'
+      })
+
+    expect(createResponse.status).toBe(201)
+    expect(createResponse.body.data.title).toBe('BSc Computer Science')
+
+    const degreeId = createResponse.body.data.degreeId
+
+    const listResponse = await api()
+      .get('/api/v1/profile/degrees')
+      .set(authHeader(token))
+
+    expect(listResponse.status).toBe(200)
+    expect(listResponse.body.data).toHaveLength(1)
+
+    const updateResponse = await api()
+      .put(`/api/v1/profile/degrees/${degreeId}`)
+      .set(authHeader(token))
+      .send({
+        title: 'BSc (Hons) Computer Science',
+        university: 'University of Eastminster',
+        degreeUrl: 'https://www.eastminster.ac.uk/degrees/bsc-hons-cs',
+        completionDate: '2020-07-01'
+      })
+
+    expect(updateResponse.status).toBe(200)
+    expect(updateResponse.body.data.title).toBe('BSc (Hons) Computer Science')
+
+    const deleteResponse = await api()
+      .delete(`/api/v1/profile/degrees/${degreeId}`)
+      .set(authHeader(token))
+
+    expect(deleteResponse.status).toBe(204)
+  })
+
   it('supports certification CRUD', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'cred.cert@eastminster.ac.uk',

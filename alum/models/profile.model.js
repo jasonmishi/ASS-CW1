@@ -165,6 +165,91 @@ const deleteCredentialVariant = async (userId, variant, credentialId) => {
   return true
 }
 
+const mapDegree = (degree) => {
+  return {
+    degreeId: degree.degree_id,
+    title: degree.title,
+    university: degree.university,
+    degreeUrl: degree.degree_url,
+    completionDate: degree.completion_date
+  }
+}
+
+const listDegrees = async (userId) => {
+  const degrees = await prisma.degree.findMany({
+    where: {
+      user_id: userId
+    },
+    orderBy: {
+      completion_date: 'desc'
+    }
+  })
+
+  return degrees.map(mapDegree)
+}
+
+const createDegree = async (userId, payload) => {
+  const degree = await prisma.degree.create({
+    data: {
+      user_id: userId,
+      title: payload.title,
+      university: payload.university,
+      degree_url: payload.degreeUrl,
+      completion_date: payload.completionDate
+    }
+  })
+
+  return mapDegree(degree)
+}
+
+const updateDegree = async (userId, degreeId, payload) => {
+  const existingDegree = await prisma.degree.findFirst({
+    where: {
+      degree_id: degreeId,
+      user_id: userId
+    }
+  })
+
+  if (!existingDegree) {
+    return null
+  }
+
+  const degree = await prisma.degree.update({
+    where: {
+      degree_id: degreeId
+    },
+    data: {
+      title: payload.title,
+      university: payload.university,
+      degree_url: payload.degreeUrl,
+      completion_date: payload.completionDate
+    }
+  })
+
+  return mapDegree(degree)
+}
+
+const deleteDegree = async (userId, degreeId) => {
+  const existingDegree = await prisma.degree.findFirst({
+    where: {
+      degree_id: degreeId,
+      user_id: userId
+    }
+  })
+
+  if (!existingDegree) {
+    return false
+  }
+
+  await prisma.degree.delete({
+    where: {
+      degree_id: degreeId
+    }
+  })
+
+  return true
+}
+
 const listEmployments = async (userId) => {
   const employments = await prisma.employment.findMany({
     where: {
@@ -260,12 +345,16 @@ const deleteEmployment = async (userId, employmentId) => {
 
 module.exports = {
   CREDENTIAL_TYPES,
+  createDegree,
   createCredentialVariant,
   createEmployment,
+  deleteDegree,
   deleteCredentialVariant,
   deleteEmployment,
+  listDegrees,
   listCredentialVariant,
   listEmployments,
+  updateDegree,
   updateEmployment,
   updateCredentialVariant
 }

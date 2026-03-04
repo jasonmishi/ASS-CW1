@@ -33,6 +33,17 @@ const courseParamsSchema = z.object({
   courseId: z.string().min(1)
 })
 
+const degreeBodySchema = z.object({
+  title: z.string().min(1),
+  university: z.string().min(1),
+  degreeUrl: z.string().url(),
+  completionDate: z.coerce.date()
+})
+
+const degreeParamsSchema = z.object({
+  degreeId: z.string().min(1)
+})
+
 const employmentBodySchema = z.object({
   jobTitle: z.string().min(1),
   company: z.string().min(1),
@@ -57,6 +68,8 @@ module.exports = {
   certificationParamsSchema,
   courseBodySchema,
   courseParamsSchema,
+  degreeBodySchema,
+  degreeParamsSchema,
   employmentBodySchema,
   employmentParamsSchema,
   licenceBodySchema,
