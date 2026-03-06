@@ -66,7 +66,55 @@ const requireAdmin = (req, res, next) => {
   return next()
 }
 
+const requireSponsorOrAdmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'sponsor' && req.user.role !== 'admin')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Sponsor or Admin access is required.'
+    })
+  }
+
+  return next()
+}
+
+const requireSponsor = (req, res, next) => {
+  if (!req.user || req.user.role !== 'sponsor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Sponsor access is required.'
+    })
+  }
+
+  return next()
+}
+
+const requireAlumni = (req, res, next) => {
+  if (!req.user || req.user.role !== 'alumni') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Alumni access is required.'
+    })
+  }
+
+  return next()
+}
+
+const requireAdminOrAlumni = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'alumni')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Admin or Alumni access is required.'
+    })
+  }
+
+  return next()
+}
+
 module.exports = {
   authenticateJwt,
-  requireAdmin
+  requireAdmin,
+  requireAdminOrAlumni,
+  requireAlumni,
+  requireSponsor,
+  requireSponsorOrAdmin
 }

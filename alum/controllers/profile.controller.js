@@ -1,4 +1,106 @@
 const profileModel = require('../models/profile.model')
+const fs = require('node:fs/promises')
+const path = require('node:path')
+
+const uploadsRoot = path.resolve(__dirname, '..', 'uploads')
+
+const deleteUploadedFile = async (profileImageUrl) => {
+  if (!profileImageUrl || typeof profileImageUrl !== 'string') {
+    return
+  }
+
+  const normalizedPrefix = '/uploads/'
+
+  if (!profileImageUrl.startsWith(normalizedPrefix)) {
+    return
+  }
+
+  const relativePath = profileImageUrl.slice(normalizedPrefix.length)
+  const absolutePath = path.resolve(uploadsRoot, relativePath)
+
+  if (!absolutePath.startsWith(uploadsRoot)) {
+    return
+  }
+
+  try {
+    await fs.unlink(absolutePath)
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error
+    }
+  }
+}
+
+const getMyProfile = async (req, res) => {
+  const profile = await profileModel.getUserProfileById(req.user.user_id)
+
+  return res.status(200).json({
+    success: true,
+    data: profile
+  })
+}
+
+const updateProfile = async (req, res) => {
+  const profile = await profileModel.updateProfile(req.user.user_id, req.body)
+
+  return res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully.',
+    data: profile
+  })
+}
+
+const replaceProfileImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error.',
+      errors: [{
+        field: 'image',
+        message: 'Profile image file is required.'
+      }]
+    })
+  }
+
+  const nextImageUrl = `/uploads/profiles/${req.file.filename}`
+  const currentProfile = await profileModel.getUserProfileById(req.user.user_id)
+  const result = await profileModel.replaceProfileImage(req.user.user_id, nextImageUrl)
+
+  if (currentProfile?.profileImageUrl && currentProfile.profileImageUrl !== nextImageUrl) {
+    await deleteUploadedFile(currentProfile.profileImageUrl)
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Profile image uploaded successfully.',
+    data: result
+  })
+}
+
+const deleteProfileImage = async (req, res) => {
+  const deleted = await profileModel.deleteProfileImage(req.user.user_id)
+
+  if (!deleted) {
+    return res.status(404).json({
+      success: false,
+      message: 'Profile image not found.'
+    })
+  }
+
+  await deleteUploadedFile(deleted.deletedImageUrl)
+
+  return res.status(204).send()
+}
+
+const clearProfile = async (req, res) => {
+  const cleared = await profileModel.clearProfileFields(req.user.user_id)
+
+  if (cleared.deletedImageUrl) {
+    await deleteUploadedFile(cleared.deletedImageUrl)
+  }
+
+  return res.status(204).send()
+}
 
 const listVariant = (variant) => {
   return async (req, res) => {
@@ -163,6 +265,7 @@ const deleteEmployment = async (req, res) => {
 }
 
 module.exports = {
+  deleteProfileImage,
   addDegree,
   addCertification: addVariant(profileModel.CREDENTIAL_TYPES.certification, 'Certification'),
   addCourse: addVariant(profileModel.CREDENTIAL_TYPES.course, 'Course'),
@@ -178,6 +281,10 @@ module.exports = {
   listCourses: listVariant(profileModel.CREDENTIAL_TYPES.course),
   listEmployment,
   listLicences: listVariant(profileModel.CREDENTIAL_TYPES.licence),
+  clearProfile,
+  getMyProfile,
+  replaceProfileImage,
+  updateProfile,
   updateDegree,
   updateCertification: updateVariant(profileModel.CREDENTIAL_TYPES.certification, 'certificationId', 'Certification'),
   updateCourse: updateVariant(profileModel.CREDENTIAL_TYPES.course, 'courseId', 'Course'),

@@ -1,0 +1,104 @@
+-- CreateTable
+CREATE TABLE "SPONSOR_ORGANIZATION" (
+    "sponsor_org_id" TEXT NOT NULL,
+    "sponsor_name" TEXT NOT NULL,
+    "sponsor_email" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SPONSOR_ORGANIZATION_pkey" PRIMARY KEY ("sponsor_org_id")
+);
+
+-- CreateTable
+CREATE TABLE "ORG_USER_ASSOCIATION" (
+    "user_id" TEXT NOT NULL,
+    "sponsor_org_id" TEXT NOT NULL,
+
+    CONSTRAINT "ORG_USER_ASSOCIATION_pkey" PRIMARY KEY ("user_id")
+);
+
+-- CreateTable
+CREATE TABLE "SPONSORSHIP_OFFERS" (
+    "offer_id" TEXT NOT NULL,
+    "sponsor_org_id" TEXT NOT NULL,
+    "alumni_user_id" TEXT NOT NULL,
+    "credential_id" TEXT NOT NULL,
+    "amount_offered" DECIMAL(12,2) NOT NULL,
+    "status" TEXT NOT NULL,
+    "message" TEXT,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SPONSORSHIP_OFFERS_pkey" PRIMARY KEY ("offer_id")
+);
+
+-- CreateTable
+CREATE TABLE "SPONSORSHIP_PAYOUT_LINES" (
+    "payout_line_id" TEXT NOT NULL,
+    "payout_id" TEXT NOT NULL,
+    "offer_id" TEXT NOT NULL,
+    "amount_charged" DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT "SPONSORSHIP_PAYOUT_LINES_pkey" PRIMARY KEY ("payout_line_id")
+);
+
+-- CreateTable
+CREATE TABLE "SPONSORSHIP_PAYOUTS" (
+    "payout_id" TEXT NOT NULL,
+    "winner_id" TEXT NOT NULL,
+    "alumni_user_id" TEXT NOT NULL,
+    "winning_bid_amount" DECIMAL(12,2) NOT NULL,
+    "alumni_payout" DECIMAL(12,2) NOT NULL,
+    "status" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SPONSORSHIP_PAYOUTS_pkey" PRIMARY KEY ("payout_id")
+);
+
+-- CreateIndex
+CREATE INDEX "ORG_USER_ASSOCIATION_sponsor_org_id_idx" ON "ORG_USER_ASSOCIATION"("sponsor_org_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_OFFERS_sponsor_org_id_idx" ON "SPONSORSHIP_OFFERS"("sponsor_org_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_OFFERS_alumni_user_id_idx" ON "SPONSORSHIP_OFFERS"("alumni_user_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_OFFERS_credential_id_idx" ON "SPONSORSHIP_OFFERS"("credential_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_PAYOUT_LINES_payout_id_idx" ON "SPONSORSHIP_PAYOUT_LINES"("payout_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_PAYOUT_LINES_offer_id_idx" ON "SPONSORSHIP_PAYOUT_LINES"("offer_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_PAYOUTS_winner_id_idx" ON "SPONSORSHIP_PAYOUTS"("winner_id");
+
+-- CreateIndex
+CREATE INDEX "SPONSORSHIP_PAYOUTS_alumni_user_id_idx" ON "SPONSORSHIP_PAYOUTS"("alumni_user_id");
+
+-- AddForeignKey
+ALTER TABLE "ORG_USER_ASSOCIATION" ADD CONSTRAINT "ORG_USER_ASSOCIATION_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ORG_USER_ASSOCIATION" ADD CONSTRAINT "ORG_USER_ASSOCIATION_sponsor_org_id_fkey" FOREIGN KEY ("sponsor_org_id") REFERENCES "SPONSOR_ORGANIZATION"("sponsor_org_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_OFFERS" ADD CONSTRAINT "SPONSORSHIP_OFFERS_sponsor_org_id_fkey" FOREIGN KEY ("sponsor_org_id") REFERENCES "SPONSOR_ORGANIZATION"("sponsor_org_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_OFFERS" ADD CONSTRAINT "SPONSORSHIP_OFFERS_alumni_user_id_fkey" FOREIGN KEY ("alumni_user_id") REFERENCES "users"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_OFFERS" ADD CONSTRAINT "SPONSORSHIP_OFFERS_credential_id_fkey" FOREIGN KEY ("credential_id") REFERENCES "credentials"("credential_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_PAYOUT_LINES" ADD CONSTRAINT "SPONSORSHIP_PAYOUT_LINES_payout_id_fkey" FOREIGN KEY ("payout_id") REFERENCES "SPONSORSHIP_PAYOUTS"("payout_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_PAYOUT_LINES" ADD CONSTRAINT "SPONSORSHIP_PAYOUT_LINES_offer_id_fkey" FOREIGN KEY ("offer_id") REFERENCES "SPONSORSHIP_OFFERS"("offer_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SPONSORSHIP_PAYOUTS" ADD CONSTRAINT "SPONSORSHIP_PAYOUTS_alumni_user_id_fkey" FOREIGN KEY ("alumni_user_id") REFERENCES "users"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;

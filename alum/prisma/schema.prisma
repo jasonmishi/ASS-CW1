@@ -33,12 +33,30 @@ model User {
   auth_sessions            AuthSession[]
   revoked_jwt_tokens       RevokedJwtToken[]
   created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
+  profile                  Profile?
   degrees                  Degree[]
   credentials              Credential[]
   employments              Employment[]
+  org_user_association     OrgUserAssociation?
+  sponsorship_offers       SponsorshipOffer[]       @relation("SponsorshipOfferAlumni")
+  sponsorship_payouts      SponsorshipPayout[]
 
   @@index([role_id])
   @@map("users")
+}
+
+model Profile {
+  profile_id         String   @id @default(cuid())
+  user_id            String   @unique
+  biography          String?
+  linkedin_url       String?
+  profile_image_url  String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  user               User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("profiles")
 }
 
 model Employment {
@@ -82,10 +100,83 @@ model Credential {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
   user            User     @relation(fields: [user_id], references: [user_id])
+  sponsorship_offers SponsorshipOffer[]
 
   @@index([user_id])
   @@index([user_id, credential_type])
   @@map("credentials")
+}
+
+model SponsorOrganization {
+  sponsor_org_id    String             @id @default(cuid())
+  sponsor_name      String
+  sponsor_email     String
+  created_at        DateTime           @default(now())
+  user_associations OrgUserAssociation[]
+  sponsorship_offers SponsorshipOffer[]
+
+  @@map("SPONSOR_ORGANIZATION")
+}
+
+model OrgUserAssociation {
+  user_id        String               @id
+  sponsor_org_id String
+  user           User                 @relation(fields: [user_id], references: [user_id])
+  sponsor_org    SponsorOrganization  @relation(fields: [sponsor_org_id], references: [sponsor_org_id])
+
+  @@index([sponsor_org_id])
+  @@map("ORG_USER_ASSOCIATION")
+}
+
+model SponsorshipOffer {
+  offer_id        String                 @id @default(cuid())
+  sponsor_org_id  String
+  alumni_user_id  String
+  credential_id   String
+  amount_offered  Decimal                @db.Decimal(12, 2)
+  status          String
+  message         String?
+  expires_at      DateTime
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+  sponsor_org     SponsorOrganization    @relation(fields: [sponsor_org_id], references: [sponsor_org_id])
+  alumni          User                   @relation("SponsorshipOfferAlumni", fields: [alumni_user_id], references: [user_id])
+  credential      Credential             @relation(fields: [credential_id], references: [credential_id])
+  payout_lines    SponsorshipPayoutLine[]
+
+  @@index([sponsor_org_id])
+  @@index([alumni_user_id])
+  @@index([credential_id])
+  @@map("SPONSORSHIP_OFFERS")
+}
+
+model SponsorshipPayoutLine {
+  payout_line_id String            @id @default(cuid())
+  payout_id      String
+  offer_id       String
+  amount_charged Decimal           @db.Decimal(12, 2)
+  payout         SponsorshipPayout @relation(fields: [payout_id], references: [payout_id])
+  offer          SponsorshipOffer  @relation(fields: [offer_id], references: [offer_id])
+
+  @@index([payout_id])
+  @@index([offer_id])
+  @@map("SPONSORSHIP_PAYOUT_LINES")
+}
+
+model SponsorshipPayout {
+  payout_id          String                @id @default(cuid())
+  winner_id          String
+  alumni_user_id     String
+  winning_bid_amount Decimal               @db.Decimal(12, 2)
+  alumni_payout      Decimal               @db.Decimal(12, 2)
+  status             String
+  created_at         DateTime              @default(now())
+  alumni             User                  @relation(fields: [alumni_user_id], references: [user_id])
+  payout_lines       SponsorshipPayoutLine[]
+
+  @@index([winner_id])
+  @@index([alumni_user_id])
+  @@map("SPONSORSHIP_PAYOUTS")
 }
 
 model EmailVerificationToken {

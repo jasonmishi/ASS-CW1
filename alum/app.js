@@ -1,5 +1,6 @@
 const express = require('express')
 const helmet = require('helmet')
+const path = require('node:path')
 const prisma = require('./lib/prisma')
 const { ensureFirstAdmin } = require('./lib/bootstrap-admin')
 const roleModel = require('./models/role.model')
@@ -8,10 +9,12 @@ const authRoutes = require('./routes/auth.routes')
 const clientRoutes = require('./routes/client.routes')
 const adminRoutes = require('./routes/admin.routes')
 const profileRoutes = require('./routes/profile.routes')
+const sponsorshipRoutes = require('./routes/sponsorship.routes')
 
 const app = express()
 app.use(helmet())
 app.use(express.json())
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 const port = 3000
 
@@ -24,6 +27,7 @@ app.use('/api/v1', authRoutes)
 app.use('/api/v1', clientRoutes)
 app.use('/api/v1', adminRoutes)
 app.use('/api/v1', profileRoutes)
+app.use('/api/v1', sponsorshipRoutes)
 
 app.get('/db-check', async (req, res) => {
   const result = await prisma.$queryRaw`SELECT 1 AS ok`
