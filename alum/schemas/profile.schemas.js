@@ -63,6 +63,15 @@ const employmentParamsSchema = z.object({
   employmentId: z.string().min(1)
 })
 
+const profileUpdateBodySchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  biography: z.string().min(1).optional(),
+  linkedinUrl: z.string().url().optional()
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one field must be provided.'
+})
+
 module.exports = {
   certificationBodySchema,
   certificationParamsSchema,
@@ -73,5 +82,6 @@ module.exports = {
   employmentBodySchema,
   employmentParamsSchema,
   licenceBodySchema,
-  licenceParamsSchema
+  licenceParamsSchema,
+  profileUpdateBodySchema
 }

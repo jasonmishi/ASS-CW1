@@ -175,6 +175,16 @@ const mapDegree = (degree) => {
   }
 }
 
+const mapEmployment = (employment) => {
+  return {
+    employmentId: employment.employment_id,
+    jobTitle: employment.job_title,
+    company: employment.company,
+    startDate: employment.start_date,
+    endDate: employment.end_date
+  }
+}
+
 const listDegrees = async (userId) => {
   const degrees = await prisma.degree.findMany({
     where: {
@@ -260,13 +270,7 @@ const listEmployments = async (userId) => {
     }
   })
 
-  return employments.map((employment) => ({
-    employmentId: employment.employment_id,
-    jobTitle: employment.job_title,
-    company: employment.company,
-    startDate: employment.start_date,
-    endDate: employment.end_date
-  }))
+  return employments.map(mapEmployment)
 }
 
 const createEmployment = async (userId, payload) => {
@@ -281,11 +285,7 @@ const createEmployment = async (userId, payload) => {
   })
 
   return {
-    employmentId: employment.employment_id,
-    jobTitle: employment.job_title,
-    company: employment.company,
-    startDate: employment.start_date,
-    endDate: employment.end_date
+    ...mapEmployment(employment)
   }
 }
 
@@ -313,13 +313,7 @@ const updateEmployment = async (userId, employmentId, payload) => {
     }
   })
 
-  return {
-    employmentId: employment.employment_id,
-    jobTitle: employment.job_title,
-    company: employment.company,
-    startDate: employment.start_date,
-    endDate: employment.end_date
-  }
+  return mapEmployment(employment)
 }
 
 const deleteEmployment = async (userId, employmentId) => {
@@ -343,17 +337,208 @@ const deleteEmployment = async (userId, employmentId) => {
   return true
 }
 
+const mapFullProfile = (user) => {
+  const certifications = user.credentials
+    .filter((credential) => credential.credential_type === CREDENTIAL_TYPES.certification)
+    .map((credential) => mapCredential(credential, CREDENTIAL_TYPES.certification))
+
+  const licences = user.credentials
+    .filter((credential) => credential.credential_type === CREDENTIAL_TYPES.licence)
+    .map((credential) => mapCredential(credential, CREDENTIAL_TYPES.licence))
+
+  const courses = user.credentials
+    .filter((credential) => credential.credential_type === CREDENTIAL_TYPES.course)
+    .map((credential) => mapCredential(credential, CREDENTIAL_TYPES.course))
+
+  return {
+    userId: user.user_id,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    biography: user.profile?.biography || null,
+    linkedinUrl: user.profile?.linkedin_url || null,
+    profileImageUrl: user.profile?.profile_image_url || null,
+    degrees: user.degrees.map(mapDegree),
+    certifications,
+    licences,
+    courses,
+    employmentHistory: user.employments.map(mapEmployment),
+    createdAt: user.profile?.created_at || null,
+    updatedAt: user.profile?.updated_at || null
+  }
+}
+
+const getUserProfileById = async (userId, prismaClient = prisma) => {
+  const user = await prismaClient.user.findUnique({
+    where: {
+      user_id: userId
+    },
+    include: {
+      profile: true,
+      degrees: {
+        orderBy: {
+          completion_date: 'desc'
+        }
+      },
+      credentials: {
+        orderBy: {
+          completion_date: 'desc'
+        }
+      },
+      employments: {
+        orderBy: {
+          start_date: 'desc'
+        }
+      }
+    }
+  })
+
+  if (!user) {
+    return null
+  }
+
+  return mapFullProfile(user)
+}
+
+const updateProfile = async (userId, payload) => {
+  return prisma.$transaction(async (tx) => {
+    const userUpdateData = {}
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'firstName')) {
+      userUpdateData.first_name = payload.firstName
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'lastName')) {
+      userUpdateData.last_name = payload.lastName
+    }
+
+    if (Object.keys(userUpdateData).length > 0) {
+      await tx.user.update({
+        where: {
+          user_id: userId
+        },
+        data: userUpdateData
+      })
+    }
+
+    const profileUpdateData = {}
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'biography')) {
+      profileUpdateData.biography = payload.biography
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'linkedinUrl')) {
+      profileUpdateData.linkedin_url = payload.linkedinUrl
+    }
+
+    if (Object.keys(profileUpdateData).length > 0) {
+      await tx.profile.upsert({
+        where: {
+          user_id: userId
+        },
+        create: {
+          user_id: userId,
+          biography: profileUpdateData.biography || null,
+          linkedin_url: profileUpdateData.linkedin_url || null
+        },
+        update: profileUpdateData
+      })
+    }
+
+    return getUserProfileById(userId, tx)
+  })
+}
+
+const replaceProfileImage = async (userId, profileImageUrl) => {
+  const profile = await prisma.profile.upsert({
+    where: {
+      user_id: userId
+    },
+    create: {
+      user_id: userId,
+      profile_image_url: profileImageUrl
+    },
+    update: {
+      profile_image_url: profileImageUrl
+    }
+  })
+
+  return {
+    profileImageUrl: profile.profile_image_url
+  }
+}
+
+const deleteProfileImage = async (userId) => {
+  const profile = await prisma.profile.findUnique({
+    where: {
+      user_id: userId
+    }
+  })
+
+  if (!profile || !profile.profile_image_url) {
+    return null
+  }
+
+  const updatedProfile = await prisma.profile.update({
+    where: {
+      user_id: userId
+    },
+    data: {
+      profile_image_url: null
+    }
+  })
+
+  return {
+    deletedImageUrl: profile.profile_image_url,
+    profileImageUrl: updatedProfile.profile_image_url
+  }
+}
+
+const clearProfileFields = async (userId) => {
+  const profile = await prisma.profile.findUnique({
+    where: {
+      user_id: userId
+    }
+  })
+
+  if (!profile) {
+    return {
+      deletedImageUrl: null
+    }
+  }
+
+  const updatedProfile = await prisma.profile.update({
+    where: {
+      user_id: userId
+    },
+    data: {
+      biography: null,
+      linkedin_url: null,
+      profile_image_url: null
+    }
+  })
+
+  return {
+    deletedImageUrl: profile.profile_image_url,
+    profileImageUrl: updatedProfile.profile_image_url
+  }
+}
+
 module.exports = {
   CREDENTIAL_TYPES,
   createDegree,
   createCredentialVariant,
   createEmployment,
+  clearProfileFields,
+  deleteProfileImage,
   deleteDegree,
   deleteCredentialVariant,
   deleteEmployment,
+  getUserProfileById,
   listDegrees,
   listCredentialVariant,
   listEmployments,
+  replaceProfileImage,
+  updateProfile,
   updateDegree,
   updateEmployment,
   updateCredentialVariant

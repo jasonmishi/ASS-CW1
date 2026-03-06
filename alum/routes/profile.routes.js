@@ -1,4 +1,7 @@
 const express = require('express')
+const fs = require('node:fs')
+const path = require('node:path')
+const multer = require('multer')
 const profileController = require('../controllers/profile.controller')
 const { authenticateJwt } = require('../middleware/auth.middleware')
 const { validate } = require('../middleware/validate.middleware')
@@ -12,10 +15,74 @@ const {
   employmentBodySchema,
   employmentParamsSchema,
   licenceBodySchema,
-  licenceParamsSchema
+  licenceParamsSchema,
+  profileUpdateBodySchema
 } = require('../schemas/profile.schemas')
 
 const router = express.Router()
+const uploadsDir = path.resolve(__dirname, '..', 'uploads', 'profiles')
+const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+fs.mkdirSync(uploadsDir, { recursive: true })
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+      const extension = path.extname(file.originalname || '') || '.jpg'
+      cb(null, `${req.user.user_id}-${Date.now()}${extension.toLowerCase()}`)
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (_req, file, cb) => {
+    if (allowedMimeTypes.has(file.mimetype)) {
+      return cb(null, true)
+    }
+
+    return cb(new Error('INVALID_FILE_TYPE'))
+  }
+})
+
+const uploadProfileImage = (req, res, next) => {
+  upload.single('image')(req, res, (error) => {
+    if (!error) {
+      return next()
+    }
+
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error.',
+        errors: [{
+          field: 'image',
+          message: 'File size must be 5 MB or less.'
+        }]
+      })
+    }
+
+    if (error.message === 'INVALID_FILE_TYPE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error.',
+        errors: [{
+          field: 'image',
+          message: 'Only JPEG, PNG, or WebP images are allowed.'
+        }]
+      })
+    }
+
+    return next(error)
+  })
+}
+
+router.get('/profile', authenticateJwt, profileController.getMyProfile)
+router.put('/profile', authenticateJwt, validate(profileUpdateBodySchema), profileController.updateProfile)
+router.delete('/profile', authenticateJwt, profileController.clearProfile)
+
+router.put('/profile/image', authenticateJwt, uploadProfileImage, profileController.replaceProfileImage)
+router.delete('/profile/image', authenticateJwt, profileController.deleteProfileImage)
 
 router.get('/profile/degrees', authenticateJwt, profileController.listDegrees)
 router.post('/profile/degrees', authenticateJwt, validate(degreeBodySchema), profileController.addDegree)
