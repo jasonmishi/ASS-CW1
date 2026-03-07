@@ -24,6 +24,11 @@ info:
     - **Monthly Limit**: Each alumnus can win "Alumni of the Day" a maximum of **3 times per calendar month**. Attending a university alumni event grants eligibility for a **4th win** that month.
     - **Winner Selection**: Automated daily at **midnight**; the highest bidder's profile is featured for the entire following day.
 
+    ## Rate Limiting
+    - Global API limit for `/api/v1/*`: **100 requests per 15 minutes** per caller key.
+    - Caller key priority: API client token (public endpoints), then authenticated session cookie, then IP.
+    - `/api-docs` and `/api-docs.json` are excluded from rate limiting.
+
   version: 1.0.0
   contact:
     name: Jason Carvalho
@@ -2982,6 +2987,38 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Sponsorship]
+      summary: Remove sponsor user from organization
+      description: Removes a user's association to the specified sponsor organization.
+      operationId: removeUserFromSponsorOrganization
+      security:
+        - SessionCookieAuth: []
+          CsrfHeader: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User removed from sponsor organization.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /sponsorships/organizations/{sponsorOrgId}/users:
     get:
@@ -3027,38 +3064,6 @@ paths:
                           type: string
                         sponsorOrgId:
                           type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    delete:
-      tags: [Sponsorship]
-      summary: Remove sponsor user from organization
-      description: Removes a user's association to the specified sponsor organization.
-      operationId: removeUserFromSponsorOrganization
-      security:
-        - SessionCookieAuth: []
-          CsrfHeader: []
-      parameters:
-        - name: sponsorOrgId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: User removed from sponsor organization.
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

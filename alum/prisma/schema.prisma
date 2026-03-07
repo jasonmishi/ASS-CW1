@@ -334,3 +334,17 @@ model ApiClientEndpointUsage {
   @@index([token_id, usage_date])
   @@map("api_client_endpoint_usage")
 }
+
+model RateLimitCounter {
+  id            String   @id @default(cuid())
+  key           String
+  window_start  DateTime
+  request_count Int      @default(0)
+  expires_at    DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@unique([key, window_start])
+  @@index([expires_at])
+  @@map("rate_limit_counters")
+}

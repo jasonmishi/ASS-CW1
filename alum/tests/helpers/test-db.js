@@ -3,6 +3,7 @@ const roleModel = require('../../models/role.model')
 
 const TABLES = [
   'api_client_endpoint_usage',
+  'rate_limit_counters',
   'api_client_tokens',
   'api_clients',
   'SPONSORSHIP_PAYOUT_LINES',

@@ -7,6 +7,7 @@ const YAML = require('yamljs')
 const prisma = require('./lib/prisma')
 const { buildCorsMiddleware } = require('./middleware/cors.middleware')
 const { csrfProtection } = require('./middleware/csrf.middleware')
+const { applyRateLimitTrustProxy, buildApiRateLimiter } = require('./middleware/rate-limit.middleware')
 const { ensureFirstAdmin } = require('./lib/bootstrap-admin')
 const roleModel = require('./models/role.model')
 const userRoutes = require('./routes/user.routes')
@@ -26,8 +27,10 @@ if (!fs.existsSync(swaggerFilePath)) {
 
 const swaggerDocument = YAML.load(swaggerFilePath)
 const csrfCookieName = process.env.CSRF_COOKIE_NAME || 'csrf_token'
+const apiRateLimiter = buildApiRateLimiter()
 
 const app = express()
+applyRateLimitTrustProxy(app)
 app.use(helmet())
 app.use(buildCorsMiddleware())
 app.use(express.json())
@@ -53,6 +56,7 @@ app.get('/', (req, res) => {
   res.send('Hello World! (nodemon reload check)')
 })
 
+app.use('/api/v1', apiRateLimiter)
 app.use('/api/v1/users', userRoutes)
 app.use('/api/v1', authRoutes)
 app.use('/api/v1', clientRoutes)
