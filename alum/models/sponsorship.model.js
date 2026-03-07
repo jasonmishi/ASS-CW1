@@ -57,8 +57,8 @@ const formatOrganizationUser = (association) => ({
   sponsorOrgId: association.sponsor_org_id
 })
 
-const markExpiredOffers = async () => {
-  await prisma.sponsorshipOffer.updateMany({
+const expirePendingSponsorshipOffers = async () => {
+  const result = await prisma.sponsorshipOffer.updateMany({
     where: {
       status: 'pending',
       expires_at: {
@@ -69,6 +69,8 @@ const markExpiredOffers = async () => {
       status: 'expired'
     }
   })
+
+  return result.count
 }
 
 const getSponsorOrgAssociation = async (userId) => {
@@ -454,7 +456,7 @@ const createSponsorshipOffer = async ({
   message,
   expiresInDays
 }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const sponsorAssociation = await getSponsorOrgAssociation(actorUserId)
 
@@ -571,7 +573,7 @@ const listSponsorshipOffers = async ({
   alumniId,
   sponsorName
 }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   if (actorRole !== 'sponsor') {
     return {
@@ -616,7 +618,7 @@ const listSponsorshipOffers = async ({
 }
 
 const getSponsorshipOfferById = async ({ actorUserId, actorRole, offerId }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const offer = await prisma.sponsorshipOffer.findUnique({
     where: {
@@ -672,7 +674,7 @@ const getSponsorshipOfferById = async ({ actorUserId, actorRole, offerId }) => {
 }
 
 const cancelSponsorshipOffer = async ({ actorUserId, actorRole, offerId }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const offer = await prisma.sponsorshipOffer.findUnique({
     where: {
@@ -720,7 +722,7 @@ const cancelSponsorshipOffer = async ({ actorUserId, actorRole, offerId }) => {
 }
 
 const setSponsorshipOfferResponse = async ({ alumniUserId, offerId, action }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const offer = await prisma.sponsorshipOffer.findUnique({
     where: {
@@ -784,7 +786,7 @@ const setSponsorshipOfferResponse = async ({ alumniUserId, offerId, action }) =>
 }
 
 const listMyReceivedSponsorshipOffers = async ({ alumniUserId, status }) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const where = {
     alumni_user_id: alumniUserId
@@ -809,7 +811,7 @@ const listMyReceivedSponsorshipOffers = async ({ alumniUserId, status }) => {
 }
 
 const getMySponsorshipBalance = async (alumniUserId) => {
-  await markExpiredOffers()
+  await expirePendingSponsorshipOffers()
 
   const acceptedOffers = await prisma.sponsorshipOffer.findMany({
     where: {
@@ -954,6 +956,7 @@ module.exports = {
   listSponsorOrganizations,
   listSponsorshipOffers,
   listSponsorshipPayouts,
+  expirePendingSponsorshipOffers,
   removeUserFromSponsorOrganization,
   setSponsorshipOfferResponse,
   updateSponsorOrganization

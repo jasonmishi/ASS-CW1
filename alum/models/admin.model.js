@@ -1,6 +1,6 @@
 const prisma = require('../lib/prisma')
 const roleModel = require('./role.model')
-const { hashPassword } = require('../utils/security')
+const { generateSecureToken, hashPassword } = require('../utils/security')
 
 const normalizeRole = (role) => role.toLowerCase()
 
@@ -156,8 +156,44 @@ const listAdminUsers = async () => {
   }))
 }
 
+const getOrCreateSystemSchedulerAdminUserId = async () => {
+  const email = (process.env.SCHEDULER_SYSTEM_EMAIL || 'system.scheduler@eastminster.local').toLowerCase()
+
+  const existing = await prisma.user.findUnique({
+    where: {
+      email
+    }
+  })
+
+  if (existing) {
+    return existing.user_id
+  }
+
+  const adminRole = await roleModel.findRoleByName('admin')
+
+  if (!adminRole) {
+    throw new Error('Admin role is not configured.')
+  }
+
+  const password_hash = await hashPassword(`${generateSecureToken(16)}Aa1!`)
+
+  const created = await prisma.user.create({
+    data: {
+      email,
+      password_hash,
+      role_id: adminRole.role_id,
+      first_name: 'System',
+      last_name: 'Scheduler',
+      email_verified_at: new Date()
+    }
+  })
+
+  return created.user_id
+}
+
 module.exports = {
   createPrivilegedUser,
+  getOrCreateSystemSchedulerAdminUserId,
   listAdminUsers,
   updateUserRole
 }
