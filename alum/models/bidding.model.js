@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma')
 
 const toNumber = (value) => Number(value)
+const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -53,18 +54,39 @@ const formatBid = (bid) => ({
   updatedAt: bid.updated_at
 })
 
-const getAvailableBalance = async (alumniUserId, tx = prisma) => {
-  const offers = await tx.sponsorshipOffer.findMany({
-    where: {
-      alumni_user_id: alumniUserId,
-      status: 'accepted'
-    },
-    select: {
-      amount_offered: true
-    }
-  })
+const getAvailableBalance = async (alumniUserId, tx = prisma, options = {}) => {
+  const [offeredResult, usedResult] = await Promise.all([
+    tx.sponsorshipOffer.aggregate({
+      where: {
+        alumni_user_id: alumniUserId,
+        status: 'accepted'
+      },
+      _sum: {
+        amount_offered: true
+      }
+    }),
+    tx.bid.aggregate({
+      where: {
+        alumni_user_id: alumniUserId,
+        status: {
+          in: ACTIVE_BID_STATUSES
+        },
+        ...(options.excludeBidId ? {
+          bid_id: {
+            not: options.excludeBidId
+          }
+        } : {})
+      },
+      _sum: {
+        amount: true
+      }
+    })
+  ])
 
-  return offers.reduce((sum, offer) => sum + toNumber(offer.amount_offered), 0)
+  const totalOffered = toNumber(offeredResult._sum.amount_offered || 0)
+  const totalUsedInBids = toNumber(usedResult._sum.amount || 0)
+
+  return Math.max(0, totalOffered - totalUsedInBids)
 }
 
 const getWinPolicyForMonth = async (alumniUserId, monthStart, monthEnd, tx = prisma) => {
@@ -293,7 +315,9 @@ const updateBid = async ({ alumniUserId, bidId, amount }) => {
       }
     }
 
-    const availableBalance = await getAvailableBalance(alumniUserId, tx)
+    const availableBalance = await getAvailableBalance(alumniUserId, tx, {
+      excludeBidId: bidId
+    })
 
     if (amount > availableBalance) {
       return {

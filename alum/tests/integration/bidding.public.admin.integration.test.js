@@ -88,6 +88,130 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
     expect(currentResponse.body.data.currentBidAmount).toBe(250)
   })
 
+  it('blocks overcommitting funds when unresolved bids already exist', async () => {
+    const { user: alumniUser, token } = await createAuthenticatedUser({
+      email: 'bid.overcommit@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'course',
+        title: 'Data Engineering Foundations',
+        provider_name: 'Udemy',
+        credential_url: 'https://example.com/data-engineering',
+        completion_date: new Date('2025-12-03T00:00:00.000Z')
+      }
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Udemy',
+        sponsor_email: 'sponsors@udemy.com'
+      }
+    })
+
+    await prisma.sponsorshipOffer.create({
+      data: {
+        sponsor_org_id: sponsorOrg.sponsor_org_id,
+        alumni_user_id: alumniUser.user_id,
+        credential_id: credential.credential_id,
+        amount_offered: 500,
+        status: 'accepted',
+        expires_at: addUtcDays(new Date(), 10)
+      }
+    })
+
+    await prisma.bid.create({
+      data: {
+        alumni_user_id: alumniUser.user_id,
+        amount: 300,
+        status: 'pending',
+        bid_date: addUtcDays(new Date(), 2)
+      }
+    })
+
+    const response = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(token))
+      .send({
+        amount: 250
+      })
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toMatch(/insufficient sponsorship funds/i)
+    expect(response.body.message).toMatch(/£200.00/)
+  })
+
+  it('allows bid updates up to total pool by excluding current bid from used amount', async () => {
+    const { user: alumniUser, token } = await createAuthenticatedUser({
+      email: 'bid.update.pool@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'course',
+        title: 'Advanced Node.js',
+        provider_name: 'Pluralsight',
+        credential_url: 'https://example.com/advanced-nodejs',
+        completion_date: new Date('2025-12-05T00:00:00.000Z')
+      }
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Pluralsight',
+        sponsor_email: 'sponsors@pluralsight.com'
+      }
+    })
+
+    await prisma.sponsorshipOffer.create({
+      data: {
+        sponsor_org_id: sponsorOrg.sponsor_org_id,
+        alumni_user_id: alumniUser.user_id,
+        credential_id: credential.credential_id,
+        amount_offered: 500,
+        status: 'accepted',
+        expires_at: addUtcDays(new Date(), 10)
+      }
+    })
+
+    const bid = await prisma.bid.create({
+      data: {
+        alumni_user_id: alumniUser.user_id,
+        amount: 200,
+        status: 'pending',
+        bid_date: addUtcDays(new Date(), 1)
+      }
+    })
+
+    const updateTo450 = await api()
+      .patch(`/api/v1/bids/${bid.bid_id}`)
+      .set(authHeader(token))
+      .send({
+        amount: 450
+      })
+
+    expect(updateTo450.status).toBe(200)
+    expect(updateTo450.body.data.amount).toBe(450)
+
+    const updateTo550 = await api()
+      .patch(`/api/v1/bids/${bid.bid_id}`)
+      .set(authHeader(token))
+      .send({
+        amount: 550
+      })
+
+    expect(updateTo550.status).toBe(403)
+    expect(updateTo550.body.message).toMatch(/insufficient sponsorship funds/i)
+    expect(updateTo550.body.message).toMatch(/£500.00/)
+  })
+
   it('records event attendance and creates winner via admin endpoints', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
       email: 'winner.admin@eastminster.ac.uk',

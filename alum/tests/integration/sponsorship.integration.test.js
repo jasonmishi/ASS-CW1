@@ -2,6 +2,13 @@ const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
 
+const addUtcDays = (dateInput, days) => {
+  const date = new Date(dateInput)
+  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  utcDate.setUTCDate(utcDate.getUTCDate() + days)
+  return utcDate
+}
+
 describe('Sponsorship endpoints', () => {
   it('creates sponsor org, assigns sponsor user, and creates sponsorship offer for alumni credential', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
@@ -155,6 +162,61 @@ describe('Sponsorship endpoints', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.message).toMatch(/organization is not configured/i)
+  })
+
+  it('returns used bid commitments in sponsorship balance', async () => {
+    const { user: alumniUser, token: alumniToken } = await createAuthenticatedUser({
+      email: 'balance.used.bids@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'certification',
+        title: 'Azure Administrator Associate',
+        provider_name: 'Microsoft',
+        credential_url: 'https://example.com/azure-admin',
+        completion_date: new Date('2025-12-01T00:00:00.000Z')
+      }
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Microsoft Learn',
+        sponsor_email: 'partners@microsoft.com'
+      }
+    })
+
+    await prisma.sponsorshipOffer.create({
+      data: {
+        sponsor_org_id: sponsorOrg.sponsor_org_id,
+        alumni_user_id: alumniUser.user_id,
+        credential_id: credential.credential_id,
+        amount_offered: 500,
+        status: 'accepted',
+        expires_at: addUtcDays(new Date(), 10)
+      }
+    })
+
+    await prisma.bid.create({
+      data: {
+        alumni_user_id: alumniUser.user_id,
+        amount: 250,
+        status: 'pending',
+        bid_date: addUtcDays(new Date(), 2)
+      }
+    })
+
+    const balanceResponse = await api()
+      .get('/api/v1/sponsorships/balance')
+      .set(authHeader(alumniToken))
+
+    expect(balanceResponse.status).toBe(200)
+    expect(balanceResponse.body.data.totalOffered).toBe(500)
+    expect(balanceResponse.body.data.totalUsedInBids).toBe(250)
+    expect(balanceResponse.body.data.availableForBidding).toBe(250)
   })
 
   it('supports sponsor organization admin management and user self-service assignment endpoints', async () => {

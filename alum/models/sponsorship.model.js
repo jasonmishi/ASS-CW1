@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma')
 
 const ACTIVE_OFFER_STATUSES = ['pending', 'accepted']
+const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 
 const toNumber = (value) => Number(value)
 
@@ -813,28 +814,41 @@ const listMyReceivedSponsorshipOffers = async ({ alumniUserId, status }) => {
 const getMySponsorshipBalance = async (alumniUserId) => {
   await expirePendingSponsorshipOffers()
 
-  const acceptedOffers = await prisma.sponsorshipOffer.findMany({
-    where: {
-      alumni_user_id: alumniUserId,
-      status: 'accepted'
-    },
-    include: {
-      sponsor_org: true,
-      credential: true
-    },
-    orderBy: {
-      created_at: 'desc'
-    }
-  })
+  const [acceptedOffers, usedResult] = await Promise.all([
+    prisma.sponsorshipOffer.findMany({
+      where: {
+        alumni_user_id: alumniUserId,
+        status: 'accepted'
+      },
+      include: {
+        sponsor_org: true,
+        credential: true
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    }),
+    prisma.bid.aggregate({
+      where: {
+        alumni_user_id: alumniUserId,
+        status: {
+          in: ACTIVE_BID_STATUSES
+        }
+      },
+      _sum: {
+        amount: true
+      }
+    })
+  ])
 
   const totalOffered = acceptedOffers.reduce((sum, offer) => sum + toNumber(offer.amount_offered), 0)
-  const totalUsedInBids = 0
+  const totalUsedInBids = toNumber(usedResult._sum.amount || 0)
 
   return {
     alumniId: alumniUserId,
     totalOffered,
     totalUsedInBids,
-    availableForBidding: totalOffered - totalUsedInBids,
+    availableForBidding: Math.max(0, totalOffered - totalUsedInBids),
     acceptedOffers: acceptedOffers.map(formatOffer)
   }
 }
