@@ -1,0 +1,2360 @@
+{
+  "info": {
+    "_postman_id": "8d969312-79c5-4f98-9232-ce8d9c6e6101",
+    "name": "CW1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38090268"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "/auth/users",
+          "id": "41b94b6c-8715-4d46-9488-9a6057f59aa6",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\",\n  \"confirmPassword\": \"S3cure!Pass\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/verify-email",
+          "id": "752dc7aa-9aa6-4c1a-adba-50256f9bd932",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"jane.doe@eastminster.ac.uk\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/verify-email",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/verify-email/",
+          "id": "6bc47f22-9c47-4b39-9d48-e2ab5aa67231",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/http://localhost:3000/api/v1/auth/verify-email/64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25",
+              "protocol": "{{API_BASE_URL}}/http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email",
+                "64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "a1ff3bc4-3bfa-4db9-9bb6-e96654177c52",
+                "exec": [
+                  "var xsrfCookie = pm.cookies.get(\"csrftoken\");",
+                  "",
+                  "if (xsrfCookie) {",
+                  "    // Set the cookie value as an environment variable named 'csrftoken'",
+                  "    pm.environment.set(\"csrftoken\", xsrfCookie);",
+                  "    console.log(\"CSRF Token stored:\", xsrfCookie);",
+                  "} else {",
+                  "    console.log(\"CSRF Token not found in cookies\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "5c8f5c62-8456-4d06-ba06-b6c93592f997",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/sessions (sponsor)",
+          "id": "4410be67-6f69-44e8-b763-5ec89eadc024",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@sponsor.com\",\n  \"password\": \"Pa$$word123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/sessions (admin account)",
+          "id": "52c8b466-83c3-4737-b4f5-f7fce105eab6",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@eastminster.ac.uk\",\n  \"password\": \"ChangeMe!123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/sessions",
+          "id": "dd98b719-2b83-4721-a872-3786fc3bbe0a",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI1NTk5NjIsImV4cCI6MTc3MjU2MzU2MiwianRpIjoiY2Y0ZjRlZGFiNmQzMDJlZmU2NjcyZDYxIn0.KeabdYFdqzP-Q_bSRlFUOjChq4YfAsqrkf04EZ11psU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/sessions/summary",
+          "id": "0367300a-a921-4434-a392-4374946ae3c4",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI1NTk5NjIsImV4cCI6MTc3MjU2MzU2MiwianRpIjoiY2Y0ZjRlZGFiNmQzMDJlZmU2NjcyZDYxIn0.KeabdYFdqzP-Q_bSRlFUOjChq4YfAsqrkf04EZ11psU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions/summary",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/password-resets",
+          "id": "57e7ba43-7476-412b-a34d-6e3d5f194084",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.doe@eastminster.ac.uk\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/password-resets",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password-resets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/auth/password-resets/",
+          "id": "c97a85fb-cde8-4e28-9194-e3c34d9abdb4",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"3533e1bdb92e31c498733ffd00d70584f69ab21da884d6bb0c5584e2b1d67b72\",\n  \"newPassword\": \"S3cure!Pass\",\n  \"confirmNewPassword\": \"S3cure!Pass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/password-resets/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password-resets",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "7bc19a59-790b-4752-bc6d-ea4b9fe1845a"
+    },
+    {
+      "name": "clients",
+      "item": [
+        {
+          "name": "/clients",
+          "id": "6c8d0ae5-7582-41ee-be1b-8bd5374a79c0",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"AR Campus App\",\n  \"description\": \"Augmented reality mobile application for campus tours.\",\n  \"contactEmail\": \"dev@arcampus.io\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/clients",
+          "id": "11659dac-5d29-473d-afbf-47983e6588e4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/clients/{clientId}/usage",
+          "id": "8de54f2c-45b0-457d-b99a-70cc6a2d6367",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/usage",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmmaxhnny0003nusj470o9p3j",
+                "usage"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/clients/{clientId}/tokens",
+          "id": "223f38b3-c5f1-423a-b564-362fe967c0eb",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmmaxhnny0003nusj470o9p3j",
+                "tokens"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/clients/{clientId}/tokens",
+          "id": "a4a015d8-c43f-41b8-9118-713728f0f232",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmmaxhnny0003nusj470o9p3j",
+                "tokens"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/clients/{clientId}/tokens/{tokenId}",
+          "id": "c358ef59-bcae-4e51-a5e4-b4892495dc36",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmmaxhnny0003nusj470o9p3j",
+                "tokens"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "96af692a-1b79-4072-9522-71d876d5d8e6",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3Mjg2MTExNSwiZXhwIjoxNzcyODY0NzE1LCJqdGkiOiI0OGY2ZWI3NDc3YmEzMDJlYmMwM2VmMTcifQ.mtxUm9IH7OkRwev56Q8I9Hl8b9JNSBC0vNKw_2xMEK4",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "48dda2e4-96e9-4633-9d74-4bbff016a15a",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "2c5ceca3-d738-421e-8420-8159dfcb2f0a",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "/admin/users",
+          "id": "04a475ef-852e-4357-a329-341b02c6e85c",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/admin/users",
+          "id": "9b392d16-6edb-40de-964c-fdff9f3aa2b1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@sponsor.com\",\n  \"password\": \"Pa$$word123\",\n  \"firstName\": \"Sponsor\",\n  \"role\": \"Sponsor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/admin/users/{userID}/role",
+          "id": "3d6ad744-b163-45ce-ba89-8ff8dcf12513",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Sponsor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users/cmmbsfua10001nuhjbas4gcb8/role",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "cmmbsfua10001nuhjbas4gcb8",
+                "role"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/admin/event-attendances",
+          "id": "e46eb9a7-7151-4a04-acf1-c4f384cf61d7",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"eventName\": \"Eastminster Spring Alumni Networking 2026\",\n  \"eventDate\": \"2026-02-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/event-attendances",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "event-attendances"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/admin/winners",
+          "id": "b12f0e32-dd0c-4eae-b674-fdf942517690",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/winners",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "winners"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/admin/winners",
+          "id": "878cddcc-903b-4232-b5cd-a8cd46430e85",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/winners",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "winners"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "a5792b04-ff92-4a2b-bf8c-9db266839e6b",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3Mjg2MTU2MSwiZXhwIjoxNzcyODY1MTYxLCJqdGkiOiI2YWRkMmM4NjEzZmM2YTIzNmM3NzBlZGEifQ.KbcO-KmQBbTRhJexLGPOvOOs-WAkn_dLcHJkMZHpAyU",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "2513bf5d-430b-468c-8da4-9dd8f37c46d0",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "17e7e025-eed2-461f-a739-253fe269fb72",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "item": [
+        {
+          "name": "degrees",
+          "item": [
+            {
+              "name": "/profile/degrees",
+              "id": "42fa84d7-cb6c-494d-bb14-bb02968a73cd",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/degrees",
+              "id": "32ffb474-890b-4e9c-a0d0-e31da04760ee",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"BSc Computer Science\",\n  \"university\": \"University of Eastminster\",\n  \"degreeUrl\": \"https://www.eastminster.ac.uk/degrees/bsc-cs\",\n  \"completionDate\": \"2018-07-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/degrees/{degreeId}",
+              "id": "e0388266-202b-4db7-852c-a2cdedb8af6f",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"BEng Computer Science\",\n  \"university\": \"University of Eastminster\",\n  \"degreeUrl\": \"https://www.eastminster.ac.uk/degrees/bsc-cs\",\n  \"completionDate\": \"2018-07-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees/cmmbzdcq80001nu2vyzojxxmj",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees",
+                    "cmmbzdcq80001nu2vyzojxxmj"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/degrees/{degreeId}",
+              "id": "63b4961c-c07c-4afb-b0bb-cfdf2eb45efe",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees/cmmbzdcq80001nu2vyzojxxmj",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees",
+                    "cmmbzdcq80001nu2vyzojxxmj"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "221a6d22-6f8e-4f45-8c03-e178b955c157"
+        },
+        {
+          "name": "certifications",
+          "item": [
+            {
+              "name": "/profile/certifications",
+              "id": "5b3158d7-6aa8-460b-a10e-2c93a1b9cb35",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/certifications",
+              "id": "8264711b-2393-478b-8ab2-ef21cef74f50",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/certifications/{certificationId}",
+              "id": "5d82ea45-60fe-4020-b94e-f5748e7bb6aa",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect \",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications/cmmbt8t3x0003nu2vrxjoyyfh",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications",
+                    "cmmbt8t3x0003nu2vrxjoyyfh"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/certifications/{certificationId}",
+              "id": "beadc54d-749a-4c4a-838d-5e30d40e05c4",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications/cmmbt8t3x0003nu2vrxjoyyfh",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications",
+                    "cmmbt8t3x0003nu2vrxjoyyfh"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "11a86c28-c9fa-4b47-a5bd-e3faf6e68957"
+        },
+        {
+          "name": "licences",
+          "item": [
+            {
+              "name": "/profile/licences",
+              "id": "90ab2658-3526-42ea-bdde-0b2d23605e32",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/licences",
+              "id": "84303573-5843-4e54-a2e0-41f67b1f21fa",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"awardingBody\": \"Amazon Web Services\",\n  \"licenceUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/licences/{licenceId}",
+              "id": "d7ce0798-102b-454c-945f-85259e4c1bf3",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associated\",\n  \"awardingBody\": \"Amazon Web Services\",\n  \"licenceUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences/cmmbtifsa0005nu2v0fwj6959",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences",
+                    "cmmbtifsa0005nu2v0fwj6959"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/licences/{licenceId}",
+              "id": "a2a6b19b-27ad-4cbb-a0d6-2e1981f21385",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences/cmmbtifsa0005nu2v0fwj6959",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences",
+                    "cmmbtifsa0005nu2v0fwj6959"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "55832c08-a540-4e3d-b775-332edb3c7e5e"
+        },
+        {
+          "name": "courses",
+          "item": [
+            {
+              "name": "/profile/courses",
+              "id": "b6123183-7587-4cde-bb74-cf849a348b5b",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/courses",
+              "id": "0d5ac834-22dd-4ee6-88b5-2673ce137e00",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Machine Learning Specialisation\",\n  \"provider\": \"Coursera / Stanford\",\n  \"courseUrl\": \"https://www.coursera.org/specializations/machine-learning\",\n  \"completionDate\": \"2022-01-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/courses/{courseId}",
+              "id": "0a070b27-0a75-49a3-9ddc-f700ad387375",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Machine Learning Specialisationz\",\n  \"provider\": \"Coursera / Stanford\",\n  \"courseUrl\": \"https://www.coursera.org/specializations/machine-learning\",\n  \"completionDate\": \"2022-01-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses/cmmbtoupu0009nu2v53wjxbtv",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses",
+                    "cmmbtoupu0009nu2v53wjxbtv"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/courses/{courseId}",
+              "id": "26d44cec-a23a-42fb-a80f-e38028f18d90",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses/cmmbtoupu0009nu2v53wjxbtv",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses",
+                    "cmmbtoupu0009nu2v53wjxbtv"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "00b8a565-b728-4e2b-b45c-affe97018b99"
+        },
+        {
+          "name": "employment",
+          "item": [
+            {
+              "name": "/profile/employment",
+              "id": "bfb6943e-fbee-45f3-8150-25e3dbfaa9d6",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/employment",
+              "id": "ffac5573-af88-44e8-8c4e-b06cd47e8f67",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jobTitle\": \"Senior Software Engineer\",\n  \"company\": \"Google\",\n  \"startDate\": \"2019-06-01\",\n  \"endDate\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/employment/{employmentId}",
+              "id": "c75bf113-1893-4fcc-86df-a7341016a8db",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n        \"jobTitle\": \"Software Engineer\",\n        \"company\": \"Google\",\n        \"startDate\": \"2019-06-01T00:00:00.000Z\",\n        \"endDate\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment/cmmbuvbft0001nu2vc1bq5d81",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment",
+                    "cmmbuvbft0001nu2vc1bq5d81"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/employment/{employmentId}",
+              "id": "9dc50a53-ac40-4422-89b9-0f87f44449f3",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment/cmmbuvbft0001nu2vc1bq5d81",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment",
+                    "cmmbuvbft0001nu2vc1bq5d81"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "2f9f0ecd-dcd9-43ce-93db-7e27c1950a70"
+        },
+        {
+          "name": "image",
+          "item": [
+            {
+              "name": "/profile/image",
+              "id": "86a82e57-6944-4426-895b-531af29b2153",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "description": "test",
+                      "type": "file",
+                      "src": "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/image",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "image"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/profile/image",
+              "id": "444c0bba-0f56-440d-9819-34e485f84acb",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "description": "test",
+                      "type": "file",
+                      "src": "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/image",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "image"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "d51faf1b-be06-4c6b-92bc-2f55a4db1553"
+        },
+        {
+          "name": "/profile",
+          "id": "4fedecb1-6951-4bfa-bc39-a03872562d72",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/profile",
+          "id": "d41cfee6-8b8f-4a68-922f-51ab00455119",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"biography\": \"Software engineer with 10 years of experience in EdTech.\",\n  \"linkedinUrl\": \"https://www.linkedin.com/in/janedoe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/profile",
+          "id": "14d94764-13ed-4fdc-9f26-0c0b8f558f3b",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "1f61ddd6-ab30-4316-b887-fb655dd89b36",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4MTk2MjQsImV4cCI6MTc3MjgyMzIyNCwianRpIjoiMDRiNzQ3Zjg4NDQwZTc3ZTNlZDViMmRlIn0.SQg1REjwva7pMgWq4AC0R5_sAPuZBFcadB1zzDsp3SU",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "a793a85c-b9a1-415c-a715-3e86fc57ba9a",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "0dde6556-1d52-4c53-8474-160a2844a692",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sponsorship",
+      "item": [
+        {
+          "name": "organizations (admin)",
+          "item": [
+            {
+              "name": "/sponsorships/organizations",
+              "id": "a9f558f3-6a7a-4745-94cf-af192ff8bcf6",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations",
+              "id": "22be0f9f-dcff-4528-a240-9f0b4df686f2",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "id": "0d5cf895-4643-4107-86d4-0d7bdc3b2eff",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "id": "56246984-fc8e-4274-9828-35a7e172659a",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "id": "cef094b3-c3f0-45eb-8508-da521311f9e8",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users",
+              "id": "7318f7bc-378f-4523-8efa-4092c1e1a890",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users/{userId}",
+              "id": "cb769ac1-b0eb-4ed1-8d58-4615c9d6729c",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users/cmmbsfua10001nuhjbas4gcb8",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users",
+                    "cmmbsfua10001nuhjbas4gcb8"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users/{userId}",
+              "id": "9c04647a-c31e-498d-8dfd-2652ce96ad11",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users/cmmbsfua10001nuhjbas4gcb8",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users",
+                    "cmmbsfua10001nuhjbas4gcb8"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "c6b114eb-6d0c-4206-bf9d-a502bafac7b3",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3MjgxNzA1MiwiZXhwIjoxNzcyODIwNjUyLCJqdGkiOiJiZjM4YzRmYWNlODM4N2I1Mzk4MzAzOGMifQ.3pT4LBe3STPtzOs52rdDDbMjCV_oUGdt1iHP5UAPEzM",
+                "type": "string"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "9911ec1e-bc50-4645-aa73-cc390fe5ac32",
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "3ff2eaef-3a1f-4ee6-8837-05cdfb862edf",
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "offers (sponsors)",
+          "item": [
+            {
+              "name": "/sponsorships/offers",
+              "id": "da29929e-9e00-47cb-814d-6ba97a16e83c",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/offers",
+              "id": "9737e1ca-e577-45c1-ae32-529dfc3a14a6",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/offers/{offerId}",
+              "id": "3aedd716-7dd6-438b-be2a-949add151e2e",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmmf7asgs0003nuxx15c54urq"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/offers/{offerId} Copy",
+              "id": "ddbdbda3-3522-409f-a07f-a2938366077b",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmmf7asgs0003nuxx15c54urq"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/alumni/credentials",
+              "id": "cd21f8a8-d5bf-4573-b01d-8ec62895f3db",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/alumni/credentials",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "alumni",
+                    "credentials"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "d6f18a11-bf54-4984-90ba-e56a9fa3a6f6"
+        },
+        {
+          "name": "offers (alumni)",
+          "item": [
+            {
+              "name": "/sponsorships/offers/{offerId}/response",
+              "id": "1f775e4d-d33e-46fd-9f05-136dd8550414",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"accept\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq/response",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmmf7asgs0003nuxx15c54urq",
+                    "response"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/offers/me",
+              "id": "17b397ce-7ceb-4ceb-a28b-3ef7490e4e58",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/me",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "me"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/balance",
+              "id": "e219ae04-9f65-4daf-91a8-a82f0637f412",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/balance",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "balance"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/payouts",
+              "id": "a0880637-9d2e-4b72-8616-9ba91e23d116",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/payouts",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "payouts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "/sponsorships/payouts/{payoutId}",
+              "id": "8da123be-f2ce-4e58-aaf6-fa1718a6c2e3",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/payouts",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "payouts"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "id": "14e9c15d-77c8-4d9a-8a33-26158f47a48d",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4MjEwNTYsImV4cCI6MTc3MjgyNDY1NiwianRpIjoiMWM1YzE5YjkxMjllMGQ1MGZiODIyMTc2In0.0ogCV3N8JXRZNTL4djmAVi9vuk2my53yTjjkvn64GnU",
+                "type": "string"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "b7231380-75ca-4629-a0f7-f457a88f8626",
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "dafa4c42-6b01-4ad7-9d2c-93207e8ee055",
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "id": "05573408-8215-4468-bb97-3cc47c0bb4e8",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1ic2Z1YTEwMDAxbnVoamJhczRnY2I4IiwiZW1haWwiOiJ1c2VyQHNwb25zb3IuY29tIiwicm9sZSI6InNwb25zb3IiLCJpYXQiOjE3NzI4MTgxNjgsImV4cCI6MTc3MjgyMTc2OCwianRpIjoiNjk5MGFhOTQwMGYyMWE4YTcxZjQzYWUxIn0.8m1UM_yewjchVfXpEmBxVTL0hyFETftMXe8TQRCpCPI",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "4bde36c9-82d3-4634-9346-320ccf674cc4",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "39e5aa48-2513-4003-9acc-1a9b9a57b52c",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "bidding",
+      "item": [
+        {
+          "name": "/bids",
+          "id": "478ec300-3532-416f-b6ab-4980e39444bc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/bids",
+          "id": "19597f82-e243-4da7-9b76-6de2b31b59e1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/bids/{bidId}",
+          "id": "a1b92b05-e91d-41a6-b431-5a51699635fb",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/{bidId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "{bidId}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/bids/{bidId}",
+          "id": "d101e7d2-67dd-4f8e-b8ce-5aaa5c50a9d6",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/{bidId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "{bidId}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/bids/summary",
+          "id": "7894bc7e-26b9-4b17-a962-3ee1d20a7746",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/summary",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/bids/current",
+          "id": "9915aaa1-a2a7-4e3c-9566-885e99237777",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "8a1ad915-1900-4663-97b8-7eb22b1b195c",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4NjAwOTUsImV4cCI6MTc3Mjg2MzY5NSwianRpIjoiNmI1ZmVlMTMyMGZjM2YzY2ViOTZhNjVhIn0.T93mZ-NZLOAO3aOl1O-aO9Xi0bGbNUHLVAaF6lEI5cs",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "02b78195-626f-42a1-8bef-31ee3cce5181",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "f0eb6368-5774-4bf1-9fce-7ac7302792d6",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "/public/alumni/featured",
+          "id": "2184b52c-bf1e-43dc-92da-8302f6c11066",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/featured",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "featured"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/public/alumni/featured/history",
+          "id": "0ae06a5f-e059-46ea-9bca-69b5abd7aca7",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/featured/history",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "featured",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/public/alumni/{alumniId}",
+          "id": "0ada86c1-023a-4cba-b77e-890024529f6d",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/{alumniId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "{alumniId}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "f614b2a3-e6c8-4202-a25e-4596f860f10a",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "e81464bdc673513a1ba4754a5279b3a50e1bfdf03820060ea91e404b529cde4039e4ab20f6397feb",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "id": "dcb4fb80-ee7a-4afd-8b71-3cc91da5bd15",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "id": "e5fae3b4-6b9a-4fc2-b114-dec5eea467fc",
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "5b62f732-9ab3-478f-a352-fae3b2b0aff4",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "9f1b86b3-0b10-47d0-8280-8424ec88cc35",
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "15421529-78ac-4a09-be65-abdd1567de7f",
+      "key": "API_BASE_URL",
+      "value": ""
+    },
+    {
+      "id": "62572628-0090-4fa6-80c4-81a852733074",
+      "value": ""
+    }
+  ]
+}
