@@ -6,6 +6,9 @@ const CSRF_HEADER_NAME = 'x-csrf-token'
 const CSRF_EXEMPT_MUTATING_ROUTES = new Set([
   'POST /api/v1/auth/sessions'
 ])
+const CSRF_EXEMPT_SAFE_ROUTES = new Set([
+  'GET /api/v1/auth/csrf-token'
+])
 
 const isMutatingMethod = (method) => {
   return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
@@ -41,6 +44,10 @@ const csrfProtection = (req, res, next) => {
   const routeKey = `${method} ${req.path}`
 
   if (!isMutatingMethod(method)) {
+    if (CSRF_EXEMPT_SAFE_ROUTES.has(routeKey)) {
+      return next()
+    }
+
     ensureCsrfCookie(req, res)
     return next()
   }

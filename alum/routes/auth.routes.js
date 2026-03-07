@@ -14,6 +14,7 @@ const {
 const router = express.Router()
 
 router.post('/auth/users', validate(registerBodySchema), authController.register)
+router.get('/auth/csrf-token', authController.createCsrfToken)
 router.get('/auth/verify-email/:token', validate(verifyEmailParamsSchema, 'params'), authController.verifyEmail)
 router.post('/auth/verify-email', validate(createEmailVerificationBodySchema), authController.createEmailVerification)
 router.post('/auth/sessions', validate(createSessionBodySchema), authController.createSession)

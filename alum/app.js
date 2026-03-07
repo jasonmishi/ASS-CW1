@@ -25,6 +25,7 @@ if (!fs.existsSync(swaggerFilePath)) {
 }
 
 const swaggerDocument = YAML.load(swaggerFilePath)
+const csrfCookieName = process.env.CSRF_COOKIE_NAME || 'csrf_token'
 
 const app = express()
 app.use(helmet())
@@ -32,9 +33,13 @@ app.use(buildCorsMiddleware())
 app.use(express.json())
 app.use(csrfProtection)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+app.use('/assets', express.static(path.join(__dirname, 'public')))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customJs: '/assets/swagger-custom.js',
+  customJsStr: `window.__CSRF_COOKIE_NAME__ = ${JSON.stringify(csrfCookieName)};`,
   swaggerOptions: {
-    persistAuthorization: true
+    persistAuthorization: true,
+    withCredentials: true
   }
 }))
 

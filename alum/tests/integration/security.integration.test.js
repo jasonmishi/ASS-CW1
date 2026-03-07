@@ -36,6 +36,16 @@ describe('Security middleware', () => {
   })
 
   describe('CSRF', () => {
+    it('issues CSRF token via dedicated endpoint', async () => {
+      const response = await request(app).get('/api/v1/auth/csrf-token')
+
+      expect(response.status).toBe(200)
+      expect(response.body.success).toBe(true)
+      expect(response.body.data.csrfToken).toBeTruthy()
+      expect(response.headers['set-cookie']).toBeDefined()
+      expect(response.headers['set-cookie'][0]).toMatch(/csrf_token=/)
+    })
+
     it('rejects mutating requests without CSRF token', async () => {
       const response = await request(app)
         .post('/api/v1/auth/users')
@@ -49,6 +59,29 @@ describe('Security middleware', () => {
 
       expect(response.status).toBe(403)
       expect(response.body.message).toMatch(/csrf/i)
+    })
+
+    it('allows bootstrapping CSRF via endpoint then posting', async () => {
+      const bootstrap = await request(app).get('/api/v1/auth/csrf-token')
+      const csrfToken = bootstrap.body.data.csrfToken
+      const csrfCookie = bootstrap.headers['set-cookie']
+        .find((cookie) => cookie.startsWith('csrf_token='))
+        .split(';')[0]
+
+      const response = await request(app)
+        .post('/api/v1/auth/users')
+        .set('Cookie', csrfCookie)
+        .set('X-CSRF-Token', csrfToken)
+        .send({
+          email: 'csrf.endpoint@eastminster.ac.uk',
+          password: 'Strong!Pass1',
+          confirmPassword: 'Strong!Pass1',
+          firstName: 'Csrf',
+          lastName: 'Endpoint'
+        })
+
+      expect(response.status).toBe(201)
+      expect(response.body.success).toBe(true)
     })
 
     it('allows mutating requests with valid CSRF cookie and header', async () => {

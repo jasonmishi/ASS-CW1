@@ -86,6 +86,19 @@ const createEmailVerification = async (req, res) => {
   })
 }
 
+const createCsrfToken = (_req, res) => {
+  const token = generateCsrfToken()
+  res.cookie(CSRF_COOKIE_NAME, token, getCsrfCookieOptions())
+
+  return res.status(200).json({
+    success: true,
+    message: 'CSRF token issued.',
+    data: {
+      csrfToken: token
+    }
+  })
+}
+
 const createSession = async (req, res) => {
   const result = await authModel.createSessionForCredentials(req.body)
 
@@ -170,6 +183,7 @@ const completePasswordReset = async (req, res) => {
 
 module.exports = {
   completePasswordReset,
+  createCsrfToken,
   createEmailVerification,
   createPasswordReset,
   getSessionSummary,
