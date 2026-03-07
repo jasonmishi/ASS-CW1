@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const authModel = require('../models/auth.model')
+const prisma = require('../lib/prisma')
 const { hashToken } = require('../utils/security')
 
 const getSecret = () => {
@@ -110,8 +111,114 @@ const requireAdminOrAlumni = (req, res, next) => {
   return next()
 }
 
+const authenticateApiClient = async (req, res, next) => {
+  const token = getBearerToken(req.headers.authorization)
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Valid API client bearer token is required.'
+    })
+  }
+
+  const tokenHash = hashToken(token)
+
+  const tokenRecord = await prisma.apiClientToken.findFirst({
+    where: {
+      token_hash: tokenHash,
+      revoked_at: null,
+      OR: [
+        { expires_at: null },
+        { expires_at: { gt: new Date() } }
+      ],
+      client: {
+        is_revoked: false
+      }
+    },
+    include: {
+      client: true
+    }
+  })
+
+  if (!tokenRecord) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Valid API client bearer token is required.'
+    })
+  }
+
+  req.apiClient = {
+    client_id: tokenRecord.client_id,
+    client_name: tokenRecord.client.client_name,
+    token_id: tokenRecord.token_id
+  }
+
+  return next()
+}
+
+const recordApiClientUsage = (req, _res, next) => {
+  if (!req.apiClient?.token_id) {
+    return next()
+  }
+
+  const endpoint = req.originalUrl.split('?')[0]
+  const httpMethod = req.method.toUpperCase()
+  const now = new Date()
+  const usageDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const nextDay = new Date(usageDate)
+  nextDay.setUTCDate(nextDay.getUTCDate() + 1)
+
+  void (async () => {
+    const existing = await prisma.apiClientEndpointUsage.findFirst({
+      where: {
+        token_id: req.apiClient.token_id,
+        endpoint,
+        http_method: httpMethod,
+        usage_date: {
+          gte: usageDate,
+          lt: nextDay
+        }
+      },
+      select: {
+        usage_id: true
+      }
+    })
+
+    if (existing) {
+      await prisma.apiClientEndpointUsage.update({
+        where: {
+          usage_id: existing.usage_id
+        },
+        data: {
+          request_count: {
+            increment: 1
+          },
+          last_accessed_at: now
+        }
+      })
+
+      return
+    }
+
+    await prisma.apiClientEndpointUsage.create({
+      data: {
+        token_id: req.apiClient.token_id,
+        endpoint,
+        http_method: httpMethod,
+        usage_date: usageDate,
+        request_count: 1,
+        last_accessed_at: now
+      }
+    })
+  })().catch(() => {})
+
+  return next()
+}
+
 module.exports = {
+  authenticateApiClient,
   authenticateJwt,
+  recordApiClientUsage,
   requireAdmin,
   requireAdminOrAlumni,
   requireAlumni,

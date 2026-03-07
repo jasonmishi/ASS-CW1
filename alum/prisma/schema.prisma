@@ -40,6 +40,11 @@ model User {
   org_user_association     OrgUserAssociation?
   sponsorship_offers       SponsorshipOffer[]       @relation("SponsorshipOfferAlumni")
   sponsorship_payouts      SponsorshipPayout[]
+  bids                     Bid[]
+  featured_wins            FeaturedWinner[]         @relation("FeaturedWinnerAlumni")
+  winner_selections        FeaturedWinner[]         @relation("FeaturedWinnerSelectedBy")
+  recorded_event_attendances EventAttendance[]      @relation("EventAttendanceRecordedBy")
+  attended_events          EventAttendance[]         @relation("EventAttendanceAlumni")
 
   @@index([role_id])
   @@map("users")
@@ -172,11 +177,64 @@ model SponsorshipPayout {
   status             String
   created_at         DateTime              @default(now())
   alumni             User                  @relation(fields: [alumni_user_id], references: [user_id])
+  winner             FeaturedWinner        @relation(fields: [winner_id], references: [winner_id])
   payout_lines       SponsorshipPayoutLine[]
 
   @@index([winner_id])
   @@index([alumni_user_id])
   @@map("SPONSORSHIP_PAYOUTS")
+}
+
+model Bid {
+  bid_id          String    @id @default(cuid())
+  alumni_user_id  String
+  amount          Decimal   @db.Decimal(12, 2)
+  status          String
+  bid_date        DateTime  @db.Date
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  alumni          User      @relation(fields: [alumni_user_id], references: [user_id])
+  featured_winner FeaturedWinner?
+
+  @@index([alumni_user_id])
+  @@index([bid_date])
+  @@index([alumni_user_id, bid_date])
+  @@map("BIDS")
+}
+
+model FeaturedWinner {
+  winner_id             String             @id @default(cuid())
+  featured_date         DateTime           @unique @db.Date
+  alumni_user_id        String
+  winning_bid_id        String             @unique
+  winning_bid_amount    Decimal            @db.Decimal(12, 2) @map("winning_bid_ammount")
+  selected_by_user_id   String
+  selected_at           DateTime           @default(now())
+  alumni                User               @relation("FeaturedWinnerAlumni", fields: [alumni_user_id], references: [user_id])
+  winning_bid           Bid                @relation(fields: [winning_bid_id], references: [bid_id])
+  selected_by           User               @relation("FeaturedWinnerSelectedBy", fields: [selected_by_user_id], references: [user_id])
+  sponsorship_payouts   SponsorshipPayout[]
+
+  @@index([featured_date])
+  @@index([alumni_user_id])
+  @@index([selected_by_user_id])
+  @@map("FEATURED_WINNERS")
+}
+
+model EventAttendance {
+  attendance_id         String    @id @default(cuid())
+  alumni_user_id        String
+  event_name            String
+  event_date            DateTime  @db.Date
+  recorded_by_user_id   String
+  created_at            DateTime  @default(now())
+  alumni                User      @relation("EventAttendanceAlumni", fields: [alumni_user_id], references: [user_id])
+  recorded_by           User      @relation("EventAttendanceRecordedBy", fields: [recorded_by_user_id], references: [user_id])
+
+  @@index([alumni_user_id])
+  @@index([event_date])
+  @@index([recorded_by_user_id])
+  @@map("EVENT_ATTENDANCES")
 }
 
 model EmailVerificationToken {

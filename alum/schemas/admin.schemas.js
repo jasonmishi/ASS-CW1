@@ -22,8 +22,25 @@ const updateUserRoleBodySchema = z.object({
   role: roleSchema
 })
 
+const createWinnerBodySchema = z.object({
+  date: z.coerce.date()
+})
+
+const listWinnersQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'month must be in YYYY-MM format.').optional()
+})
+
+const eventAttendanceBodySchema = z.object({
+  alumniId: z.string().min(1),
+  eventName: z.string().min(1),
+  eventDate: z.coerce.date()
+})
+
 module.exports = {
   createPrivilegedUserBodySchema,
+  createWinnerBodySchema,
+  eventAttendanceBodySchema,
+  listWinnersQuerySchema,
   updateUserRoleBodySchema,
   updateUserRoleParamsSchema
 }

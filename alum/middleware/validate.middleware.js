@@ -13,7 +13,13 @@ const validate = (schema, target = 'body') => {
       })
     }
 
-    req[target] = parsed.data
+    req.validated = req.validated || {}
+    req.validated[target] = parsed.data
+
+    if (target !== 'query') {
+      req[target] = parsed.data
+    }
+
     return next()
   }
 }

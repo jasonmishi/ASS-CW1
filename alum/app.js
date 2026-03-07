@@ -10,6 +10,8 @@ const clientRoutes = require('./routes/client.routes')
 const adminRoutes = require('./routes/admin.routes')
 const profileRoutes = require('./routes/profile.routes')
 const sponsorshipRoutes = require('./routes/sponsorship.routes')
+const biddingRoutes = require('./routes/bidding.routes')
+const publicRoutes = require('./routes/public.routes')
 
 const app = express()
 app.use(helmet())
@@ -28,6 +30,8 @@ app.use('/api/v1', clientRoutes)
 app.use('/api/v1', adminRoutes)
 app.use('/api/v1', profileRoutes)
 app.use('/api/v1', sponsorshipRoutes)
+app.use('/api/v1', biddingRoutes)
+app.use('/api/v1', publicRoutes)
 
 app.get('/db-check', async (req, res) => {
   const result = await prisma.$queryRaw`SELECT 1 AS ok`
