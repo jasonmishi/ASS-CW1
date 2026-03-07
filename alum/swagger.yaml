@@ -1,0 +1,4100 @@
+openapi: 3.0.3
+info:
+  title: Phantasmagoria Alumni Engagement Platform API
+  description: |
+    # How It Works
+    1. **Alumni as Influencers**: Successful alumni leverage their professional credentials on the platform.
+    2. **Sponsorship Model**: Course providers, licensing bodies, and certification organisations sponsor alumni to promote their offerings. Sponsors offer money to alumni for endorsing their credentials. Sponsors are **only charged if the alumni wins** and their profile is displayed. Alumni pocket their winning bid amount.
+    3. **Daily Blind Bidding**: Alumni use **sponsorship funds** to bid for exclusive 24-hour featured slots ("Alumni of the Day"). The bid amount cannot exceed the alumni's available sponsorship balance. Alumni keep the difference between bid amount and sponsorship as profit.
+    4. **Student Benefits**: Students discover relatable success stories, career paths, and LinkedIn connections.
+
+    ## Authentication
+    - **Alumni Users**: JWT Bearer token authentication after email verification.
+    - **API Clients**: Bearer API key authentication for programmatic access to public endpoints.
+    
+    All authenticated requests must include the `Authorization: Bearer <token>` header.
+
+    ## Bidding Rules
+    - **Blind Bidding**: Alumni cannot see the current highest bid; they only receive win/lose feedback.
+    - **Increase Only**: Bids can only be updated upward.
+    - **Monthly Limit**: Each alumnus can win "Alumni of the Day" a maximum of **3 times per calendar month**. Attending a university alumni event grants eligibility for a **4th win** that month.
+    - **Winner Selection**: Automated daily at **midnight**; the highest bidder's profile is featured for the entire following day.
+
+  version: 1.0.0
+  contact:
+    name: Jason Carvalho
+    email: jasonmishi@gmail.com
+    url: https://jasonmishi.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+  - url: https://api.eastminster-alumni.ac.uk/api/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Alumni registration, login, logout, email verification, and password reset
+  - name: Profile
+    description: Complete alumni profile management (personal info, degrees, certifications, licences, courses, employment, image)
+  - name: Sponsorship
+    description: Sponsorship offers from course providers, licensing bodies, and certification organisations to alumni
+  - name: Bidding
+    description: Blind bidding system for "Alumni of the Day" featured slots
+  - name: Public API
+    description: Public developer endpoints (requires bearer token) – client-agnostic data access
+  - name: API Client Management
+    description: API client registration, token management, usage statistics, and revocation
+  - name: Admin
+    description: Administrative operations (event attendance, winner override)
+
+# ──────────────────────────────────────────────
+# Security Schemes
+# ──────────────────────────────────────────────
+components:
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JSON Web Token issued upon successful alumni login.
+        Include in the `Authorization` header as `Bearer <token>`.
+        Alumni tokens are scoped to alumni operations; 
+    APIKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        API client token for accessing public endpoints.
+        Include in the `Authorization` header as `Bearer <token>`.
+        API client tokens are scoped to viewing public data.
+    
+
+  # ──────────────────────────────────────────
+  # Reusable Schemas
+  # ──────────────────────────────────────────
+  schemas:
+    # ─── Schemas ──────────────────────────
+    UserRole:
+      type: string
+      enum: [Alumni, Admin, Developer, Sponsor]
+      default: Alumni
+      description: |
+        - **Alumni**: Default role for new registrations.
+        - **Admin**: System administrator with full access. Only Admins can grant or revoke Admin role.
+        - **Developer**: Technical role, can be promoted by Admin.
+        - **Sponsor**: External organization account, can be promoted by Admin.
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        email:
+          type: string
+          example: jane.doe@eastminster.ac.uk
+        role:
+          $ref: '#/components/schemas/UserRole'
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+
+    # ─── Error ────────────────────────────
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: An error occurred.
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    # ─── Registration ─────────────────────
+    RegisterRequest:
+      type: object
+      required: [email, password, confirmPassword, firstName]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Must be a valid University of Eastminster domain email (e.g. @eastminster.ac.uk).
+          example: jane.doe@eastminster.ac.uk
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: |
+            Must contain at least 8 characters, one uppercase letter, one lowercase letter,
+            one digit, and one special character.
+          example: S3cure!Pass
+        confirmPassword:
+          type: string
+          format: password
+          example: S3cure!Pass
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+
+    RegisterResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Registration successful. Please check your email to verify your account.
+        data:
+          $ref: '#/components/schemas/User'
+
+    # ─── Email Verification ──────────────
+    RequestEmailVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Alumni email address to send a fresh verification link.
+          example: jane.doe@eastminster.ac.uk
+
+    # ─── Login ────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: jane.doe@eastminster.ac.uk
+        password:
+          type: string
+          format: password
+          example: S3cure!Pass
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login successful.
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: Signed JWT access token. Include in the Authorization header as `Bearer <token>`.
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjVhMWIyYzNkNGU1ZjZhN2I4YzlkMGUiLCJpYXQiOjE3MDk4MzA0MDAsImV4cCI6MTcwOTgzNDAwMH0.abc123
+            expiresIn:
+              type: integer
+              description: Token expiry time in seconds.
+              example: 3600
+            userId:
+              type: string
+              example: 665a1b2c3d4e5f6a7b8c9d0e
+            email:
+              type: string
+              example: jane.doe@eastminster.ac.uk
+            firstName:
+              type: string
+              example: Jane
+            lastName:
+              type: string
+              example: Doe
+
+    SessionSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            activeSessionsCount:
+              type: integer
+              example: 2
+            lastLoginAt:
+              type: string
+              format: date-time
+              nullable: true
+              example: 2026-03-02T18:00:00.000Z
+
+    # ─── Password Reset ──────────────────
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: jane.doe@eastminster.ac.uk
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword, confirmNewPassword]
+      properties:
+        token:
+          type: string
+          description: Secure password reset token sent via email. Single-use with expiry.
+          example: f1e2d3c4b5a69788796a5b4c3d2e1f00
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: N3wS3cure!Pass
+        confirmNewPassword:
+          type: string
+          format: password
+          example: N3wS3cure!Pass
+
+    # ─── Profile ──────────────────────────
+    Profile:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+        biography:
+          type: string
+          example: Software engineer with 10 years of experience in EdTech.
+        linkedinUrl:
+          type: string
+          format: uri
+          example: https://www.linkedin.com/in/janedoe
+        profileImageUrl:
+          type: string
+          format: uri
+          example: /uploads/profiles/665a1b2c3d4e5f6a7b8c9d0e.jpg
+        degrees:
+          type: array
+          items:
+            $ref: '#/components/schemas/Degree'
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Certification'
+        licences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Licence'
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+        employmentHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employment'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Jane
+        lastName:
+          type: string
+          example: Doe
+        biography:
+          type: string
+          example: Software engineer with 10 years of experience in EdTech.
+        linkedinUrl:
+          type: string
+          format: uri
+          example: https://www.linkedin.com/in/janedoe
+
+    Degree:
+      type: object
+      required: [title, university, degreeUrl, completionDate]
+      properties:
+        degreeId:
+          type: string
+          example: d1a2b3c4d5e6f7a8b9c0d1e2
+        title:
+          type: string
+          example: BSc Computer Science
+        university:
+          type: string
+          example: University of Eastminster
+        degreeUrl:
+          type: string
+          format: uri
+          description: URL to the official university degree page.
+          example: https://www.eastminster.ac.uk/degrees/bsc-cs
+        completionDate:
+          type: string
+          format: date
+          example: "2018-07-15"
+
+    DegreeRequest:
+      type: object
+      required: [title, university, degreeUrl, completionDate]
+      properties:
+        title:
+          type: string
+          example: BSc Computer Science
+        university:
+          type: string
+          example: University of Eastminster
+        degreeUrl:
+          type: string
+          format: uri
+          description: URL to the official university degree page.
+          example: https://www.eastminster.ac.uk/degrees/bsc-cs
+        completionDate:
+          type: string
+          format: date
+          example: "2018-07-15"
+
+    Certification:
+      type: object
+      required: [title, issuingOrganisation, certificationUrl, completionDate]
+      properties:
+        id:
+          type: string
+          example: c1a2b3c4d5e6f7a8b9c0d1e2
+        title:
+          type: string
+          example: AWS Solutions Architect Associate
+        issuingOrganisation:
+          type: string
+          example: Amazon Web Services
+        certificationUrl:
+          type: string
+          format: uri
+          description: URL to the certification/course page.
+          example: https://aws.amazon.com/certification/solutions-architect-associate
+        completionDate:
+          type: string
+          format: date
+          example: "2021-03-20"
+
+    CertificationRequest:
+      type: object
+      required: [title, issuingOrganisation, certificationUrl, completionDate]
+      properties:
+        title:
+          type: string
+          example: AWS Solutions Architect Associate
+        issuingOrganisation:
+          type: string
+          example: Amazon Web Services
+        certificationUrl:
+          type: string
+          format: uri
+          description: URL to the certification/course page.
+          example: https://aws.amazon.com/certification/solutions-architect-associate
+        completionDate:
+          type: string
+          format: date
+          example: "2021-03-20"
+
+    Licence:
+      type: object
+      required: [title, awardingBody, licenceUrl, completionDate]
+      properties:
+        id:
+          type: string
+          example: l1a2b3c4d5e6f7a8b9c0d1e2
+        title:
+          type: string
+          example: Chartered Engineer (CEng)
+        awardingBody:
+          type: string
+          example: Engineering Council UK
+        licenceUrl:
+          type: string
+          format: uri
+          description: URL to the licence awarding body.
+          example: https://www.engc.org.uk/ceng
+        completionDate:
+          type: string
+          format: date
+          example: "2020-09-01"
+
+    LicenceRequest:
+      type: object
+      required: [title, awardingBody, licenceUrl, completionDate]
+      properties:
+        title:
+          type: string
+          example: Chartered Engineer (CEng)
+        awardingBody:
+          type: string
+          example: Engineering Council UK
+        licenceUrl:
+          type: string
+          format: uri
+          description: URL to the licence awarding body.
+          example: https://www.engc.org.uk/ceng
+        completionDate:
+          type: string
+          format: date
+          example: "2020-09-01"
+
+    Course:
+      type: object
+      required: [title, provider, courseUrl, completionDate]
+      properties:
+        id:
+          type: string
+          example: cr1a2b3c4d5e6f7a8b9c0d1e2
+        title:
+          type: string
+          example: Machine Learning Specialisation
+        provider:
+          type: string
+          example: Coursera / Stanford
+        courseUrl:
+          type: string
+          format: uri
+          description: URL to the course page.
+          example: https://www.coursera.org/specializations/machine-learning
+        completionDate:
+          type: string
+          format: date
+          example: "2022-01-10"
+
+    CourseRequest:
+      type: object
+      required: [title, provider, courseUrl, completionDate]
+      properties:
+        title:
+          type: string
+          example: Machine Learning Specialisation
+        provider:
+          type: string
+          example: Coursera / Stanford
+        courseUrl:
+          type: string
+          format: uri
+          description: URL to the course page.
+          example: https://www.coursera.org/specializations/machine-learning
+        completionDate:
+          type: string
+          format: date
+          example: "2022-01-10"
+
+    Employment:
+      type: object
+      required: [jobTitle, company, startDate]
+      properties:
+        employmentId:
+          type: string
+          example: e1a2b3c4d5e6f7a8b9c0d1e2
+        jobTitle:
+          type: string
+          example: Senior Software Engineer
+        company:
+          type: string
+          example: Google
+        startDate:
+          type: string
+          format: date
+          example: "2019-06-01"
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: Null if currently employed.
+          example: null
+
+    EmploymentRequest:
+      type: object
+      required: [jobTitle, company, startDate]
+      properties:
+        jobTitle:
+          type: string
+          example: Senior Software Engineer
+        company:
+          type: string
+          example: Google
+        startDate:
+          type: string
+          format: date
+          example: "2019-06-01"
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: Null if currently employed.
+          example: null
+
+    # ─── Bidding ──────────────────────────
+    BidRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+          description: |
+            Bid amount in GBP (£). Must be greater than the alumni's previous bid if updating.
+            This amount is funded from the alumni's accepted sponsorship pool.
+            The bid amount cannot exceed the total available sponsorship funds.
+            If the alumni wins, they pocket this bid amount.
+          example: 250.00
+
+    BidResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Bid placed successfully.
+        data:
+          type: object
+          properties:
+            bidId:
+              type: string
+              example: b1a2b3c4d5e6f7a8b9c0d1e2
+            amount:
+              type: number
+              format: double
+              example: 250.00
+            status:
+              type: string
+              enum: [winning, losing]
+              description: Indicates whether the alumni is currently the highest bidder. Does NOT reveal the actual highest bid amount.
+              example: winning
+            bidDate:
+              type: string
+              format: date
+              description: The date for which this bid applies (the following day after midnight selection).
+              example: "2026-02-20"
+            createdAt:
+              type: string
+              format: date-time
+
+    BidStatus:
+      type: object
+      properties:
+        bidId:
+          type: string
+          example: b1a2b3c4d5e6f7a8b9c0d1e2
+        amount:
+          type: number
+          format: double
+          example: 250.00
+        status:
+          type: string
+          enum: [winning, losing, won, lost, pending]
+          example: winning
+        bidDate:
+          type: string
+          format: date
+          example: "2026-02-20"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MonthlyBidSummary:
+      type: object
+      properties:
+        month:
+          type: string
+          example: "2026-02"
+        winsThisMonth:
+          type: integer
+          example: 2
+        maxWinsAllowed:
+          type: integer
+          description: 3 by default, 4 if the alumni attended a university event this month.
+          example: 3
+        remainingSlots:
+          type: integer
+          example: 1
+        attendedEventThisMonth:
+          type: boolean
+          example: false
+        bids:
+          type: array
+          items:
+            $ref: '#/components/schemas/BidStatus'
+
+    WinnerResult:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: The featured date.
+          example: "2026-02-20"
+        winnerId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        winningBidAmount:
+          type: number
+          format: double
+          example: 250.00
+        payout:
+          $ref: '#/components/schemas/SponsorshipPayout'
+        selectedAt:
+          type: string
+          format: date-time
+
+    # ─── Featured Alumni (Public) ─────────
+    FeaturedAlumni:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-02-20"
+        alumni:
+          type: object
+          properties:
+            firstName:
+              type: string
+              example: Jane
+            lastName:
+              type: string
+              example: Doe
+            biography:
+              type: string
+              example: Software engineer with 10 years of experience in EdTech.
+            linkedinUrl:
+              type: string
+              format: uri
+              example: https://www.linkedin.com/in/janedoe
+            profileImageUrl:
+              type: string
+              format: uri
+              example: /uploads/profiles/665a1b2c3d4e5f6a7b8c9d0e.jpg
+            degrees:
+              type: array
+              items:
+                $ref: '#/components/schemas/Degree'
+            certifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Certification'
+            licences:
+              type: array
+              items:
+                $ref: '#/components/schemas/Licence'
+            courses:
+              type: array
+              items:
+                $ref: '#/components/schemas/Course'
+            employmentHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/Employment'
+
+    # ─── API Client ───────────────────────
+    ApiClientRegisterRequest:
+      type: object
+      required: [clientName, description, contactEmail]
+      properties:
+        clientName:
+          type: string
+          example: AR Campus App
+        description:
+          type: string
+          example: Augmented reality mobile application for campus tours.
+        contactEmail:
+          type: string
+          format: email
+          example: dev@arcampus.io
+
+    ApiClientRegisterResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: API client registered successfully. Store your token securely; it will not be shown again.
+        data:
+          type: object
+          properties:
+            client_id:
+              type: string
+              example: cli_a1b2c3d4e5f6
+            client_name:
+              type: string
+              example: AR Campus App
+            description:
+              type: string
+              example: Augmented reality mobile application for campus tours.
+            contact_email:
+              type: string
+              format: email
+              example: dev@arcampus.io
+            is_revoked:
+              type: boolean
+              example: false
+            created_by_user_id:
+              type: string
+              example: usr_a1b2c3d4
+            created_at:
+              type: string
+              format: date-time
+            token:
+              type: string
+              description: Bearer token for API access. Shown once; store securely.
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    ApiClientUsageStats:
+      type: object
+      properties:
+        client_id:
+          type: string
+          example: cli_a1b2c3d4e5f6
+        client_name:
+          type: string
+          example: AR Campus App
+        description:
+          type: string
+          example: Augmented reality mobile application for campus tours.
+        contact_email:
+          type: string
+          format: email
+          example: dev@arcampus.io
+        is_revoked:
+          type: boolean
+          example: false
+        created_by_user_id:
+          type: string
+          example: usr_a1b2c3d4
+        created_at:
+          type: string
+          format: date-time
+        total_request_count:
+          type: integer
+          example: 1542
+        last_accessed_at:
+          type: string
+          format: date-time
+          nullable: true
+        tokens:
+          type: array
+          items:
+            type: object
+            properties:
+              token_id:
+                type: string
+              client_id:
+                type: string
+              issued_at:
+                type: string
+                format: date-time
+              expires_at:
+                type: string
+                format: date-time
+                nullable: true
+              revoked_at:
+                type: string
+                format: date-time
+                nullable: true
+        endpoint_usage:
+          type: array
+          items:
+            type: object
+            properties:
+              usage_id:
+                type: string
+              token_id:
+                type: string
+              endpoint:
+                type: string
+                example: /api/v1/public/featured
+              http_method:
+                type: string
+                example: GET
+              usage_date:
+                type: string
+                format: date-time
+              request_count:
+                type: integer
+                example: 5
+              last_accessed_at:
+                type: string
+                format: date-time
+        latest_token:
+          type: object
+          nullable: true
+          properties:
+            token_id:
+              type: string
+            client_id:
+              type: string
+            issued_at:
+              type: string
+              format: date-time
+            expires_at:
+              type: string
+              format: date-time
+              nullable: true
+            revoked_at:
+              type: string
+              format: date-time
+              nullable: true
+
+    # ─── Sponsorship ──────────────────────
+    SponsorOrganization:
+      type: object
+      properties:
+        sponsorOrgId:
+          type: string
+          example: so1a2b3c4d5e6f7a8b9c0d1e2
+        sponsorName:
+          type: string
+          example: Amazon Web Services
+        sponsorEmail:
+          type: string
+          format: email
+          example: partnerships@aws.amazon.com
+        createdAt:
+          type: string
+          format: date-time
+
+    SponsorOrganizationCreateRequest:
+      type: object
+      required: [sponsorName, sponsorEmail]
+      properties:
+        sponsorName:
+          type: string
+          example: Amazon Web Services
+        sponsorEmail:
+          type: string
+          format: email
+          example: partnerships@aws.amazon.com
+
+    SponsorOrganizationUpdateRequest:
+      type: object
+      properties:
+        sponsorName:
+          type: string
+          example: Amazon Web Services
+        sponsorEmail:
+          type: string
+          format: email
+          example: partnerships@aws.amazon.com
+
+    SponsorOrganizationAssignment:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        sponsorOrgId:
+          type: string
+          example: so1a2b3c4d5e6f7a8b9c0d1e2
+        sponsorName:
+          type: string
+          example: Amazon Web Services
+        sponsorEmail:
+          type: string
+          format: email
+          example: partnerships@aws.amazon.com
+
+    SponsorshipOffer:
+      type: object
+      properties:
+        id:
+          type: string
+          example: sp1a2b3c4d5e6f7a8b9c0d1e2
+        sponsorName:
+          type: string
+          description: Name of the sponsoring organisation (course provider, licensing body, or certification org).
+          example: Amazon Web Services
+        sponsorEmail:
+          type: string
+          format: email
+          example: partnerships@aws.amazon.com
+        credentialType:
+          type: string
+          enum: [certification, licence, course]
+          description: The type of credential being sponsored.
+          example: certification
+        credentialId:
+          type: string
+          description: The ID of the alumni's credential (certification, licence, or course) being sponsored.
+          example: c1a2b3c4d5e6f7a8b9c0d1e2
+        credentialTitle:
+          type: string
+          description: Human-readable title of the credential.
+          example: AWS Solutions Architect Associate
+        amountOffered:
+          type: number
+          format: double
+          description: Amount (£) the sponsor is offering the alumni to endorse/promote this credential.
+          example: 300.00
+        status:
+          type: string
+          enum: [pending, accepted, declined, expired, paid, cancelled]
+          description: |
+            - **pending**: Offer sent, awaiting alumni response.
+            - **accepted**: Alumni accepted; funds available for bidding.
+            - **declined**: Alumni declined the offer.
+            - **expired**: Offer expired before alumni responded.
+            - **paid**: Sponsor payment processed after a winning bid displayed the profile.
+            - **cancelled**: Sponsor withdrew the offer.
+          example: accepted
+        message:
+          type: string
+          description: Optional message from the sponsor to the alumni.
+          example: We'd love for you to showcase your AWS certification on the platform!
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the offer expires if not accepted.
+          example: "2026-03-01T23:59:59.000Z"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SponsorshipOfferRequest:
+      type: object
+      required: [credentialType, credentialId, amountOffered]
+      properties:
+        credentialType:
+          type: string
+          enum: [certification, licence, course]
+          example: certification
+        credentialId:
+          type: string
+          description: The ID of the specific credential on the alumni's profile.
+          example: c1a2b3c4d5e6f7a8b9c0d1e2
+        amountOffered:
+          type: number
+          format: double
+          minimum: 1.00
+          description: Amount (£) being offered to the alumni.
+          example: 300.00
+        message:
+          type: string
+          description: Optional message to the alumni.
+          example: We'd love for you to showcase your AWS certification on the platform!
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 7
+          description: Number of days before the offer expires.
+          example: 7
+
+    SponsorableAlumniCredential:
+      type: object
+      properties:
+        alumniId:
+          type: string
+        alumniEmail:
+          type: string
+          format: email
+        alumniFirstName:
+          type: string
+        alumniLastName:
+          type: string
+        credentialId:
+          type: string
+        credentialType:
+          type: string
+          enum: [certification, licence, course]
+        credentialTitle:
+          type: string
+        providerName:
+          type: string
+        credentialUrl:
+          type: string
+        completionDate:
+          type: string
+          format: date-time
+        hasActiveOfferFromMyOrg:
+          type: boolean
+
+    SponsorshipRespondRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [accept, decline]
+          description: Whether the alumni accepts or declines the sponsorship offer.
+          example: accept
+
+    SponsorshipSummary:
+      type: object
+      description: Summary of an alumni's sponsorship funds available for bidding.
+      properties:
+        alumniId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        totalOffered:
+          type: number
+          format: double
+          description: Total amount (£) offered across all accepted sponsorships.
+          example: 500.00
+        totalUsedInBids:
+          type: number
+          format: double
+          description: Total amount (£) committed in active/won bids.
+          example: 250.00
+        availableForBidding:
+          type: number
+          format: double
+          description: Remaining sponsorship funds (£) available to place bids.
+          example: 250.00
+        acceptedOffers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SponsorshipOffer'
+
+    SponsorshipPayout:
+      type: object
+      description: |
+        Payout record created when an alumni wins "Alumni of the Day".
+        The sponsor only pays if the alumni wins and their profile is displayed.
+        The alumni pockets their winning bid amount from the pooled sponsorship funds.
+      properties:
+        payoutId:
+          type: string
+          example: po1a2b3c4d5e6f7a8b9c0d1e2
+        alumniId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        featuredDate:
+          type: string
+          format: date
+          example: "2026-02-20"
+        winningBidAmount:
+          type: number
+          format: double
+          description: The bid amount the alumni placed and won with. This is what the alumni pockets.
+          example: 250.00
+        sponsorshipBreakdown:
+          type: array
+          description: How the winning bid is funded from the accepted sponsorships.
+          items:
+            type: object
+            properties:
+              sponsorshipOfferId:
+                type: string
+                example: sp1a2b3c4d5e6f7a8b9c0d1e2
+              sponsorName:
+                type: string
+                example: Amazon Web Services
+              credentialTitle:
+                type: string
+                example: AWS Solutions Architect Associate
+              amountCharged:
+                type: number
+                format: double
+                description: The full accepted offer amount (£) charged to this sponsor after a win.
+                example: 150.00
+        alumniPayout:
+          type: number
+          format: double
+          description: Total amount (£) the alumni pockets (equals winningBidAmount).
+          example: 250.00
+        status:
+          type: string
+          enum: [pending, processed, failed]
+          example: processed
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── Event Attendance ─────────────────
+    EventAttendanceRequest:
+      type: object
+      required: [alumniId, eventName, eventDate]
+      properties:
+        alumniId:
+          type: string
+          example: 665a1b2c3d4e5f6a7b8c9d0e
+        eventName:
+          type: string
+          example: Eastminster Spring Alumni Networking 2026
+        eventDate:
+          type: string
+          format: date
+          example: "2026-02-15"
+
+    # ─── Generic Success ──────────────────
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 5
+        totalItems:
+          type: integer
+          example: 47
+        itemsPerPage:
+          type: integer
+          example: 10
+
+  # ──────────────────────────────────────────
+  # Reusable Responses
+  # ──────────────────────────────────────────
+  responses:
+    BadRequest:
+      description: Bad request – validation error or malformed input.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Validation failed.
+            errors:
+              - field: email
+                message: Must be a valid @eastminster.ac.uk email address.
+
+    Unauthorized:
+      description: Unauthorized – missing or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Authentication required. Please log in.
+
+    Forbidden:
+      description: Forbidden – insufficient permissions.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: You do not have permission to access this resource.
+
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Resource not found.
+
+    Conflict:
+      description: Conflict – duplicate resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: An account with this email already exists.
+
+    TooManyRequests:
+      description: Rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Too many requests. Please try again later.
+
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: An unexpected error occurred. Please try again later.
+
+# ════════════════════════════════════════════
+# PATHS
+# ════════════════════════════════════════════
+paths:
+
+  # ──────────────────────────────────────────
+  # AUTHENTICATION
+  # ──────────────────────────────────────────
+  /auth/users:
+    post:
+      tags: [Authentication]
+      summary: Register a new alumni account
+      security: []
+      description: |
+        Creates a new alumni account. The email **must** belong to the university domain
+        (`@eastminster.ac.uk`). A verification email with a secure token is sent upon
+        successful registration. The alumni cannot log in until the email is verified.
+
+        **Password requirements:**
+        - Minimum 8 characters
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one digit
+        - At least one special character
+
+        Passwords are hashed using **bcrypt** with an appropriate number of salt rounds before storage.
+      operationId: registerAlumni
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful. Verification email sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/verify-email/{token}:
+    get:
+      tags: [Authentication]
+      summary: Verify alumni email address
+      security: []
+      description: |
+        Verifies the alumni's email address using the token sent during registration.
+        The token is **cryptographically random**, **single-use**, and has a configurable
+        **expiry time** (default: 24 hours). Once verified, the alumni can log in.
+      operationId: verifyEmail
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Email verification token from the verification email.
+          example: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
+      responses:
+        '200':
+          description: Email verified successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: Email verified successfully. You can now log in.
+        '400':
+          description: Invalid or expired verification token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Invalid or expired verification token. Please request a new one.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/verify-email:
+    post:
+      tags: [Authentication]
+      summary: Request a new email verification token
+      security: []
+      description: Creates a new verification token and sends the verification email. The previous token is invalidated.
+      operationId: createEmailVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestEmailVerificationRequest'
+      responses:
+        '201':
+          description: Verification token created and email sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: Verification email has been sent. Please check your inbox.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/sessions:
+    post:
+      tags: [Authentication]
+      summary: Create a new authentication session
+      security: []
+      description: |
+        Authenticates the alumni and returns a signed JWT access token.
+        The token has a configurable expiry (default: 1 hour) and must be included
+        in the `Authorization: Bearer <token>` header for all subsequent requests.
+
+        Login is blocked if the email has not been verified.
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '201':
+          description: Session created. JWT token returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials or email not verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Invalid email or password.
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Authentication]
+      summary: Destroy the current authentication session
+      description: Invalidates the current JWT token by adding it to a server-side deny list (token blacklist). The token will be rejected for all subsequent requests until it naturally expires.
+      operationId: deleteSession
+      security:
+        - JWTAuth: []
+      responses:
+        '204':
+          description: Session destroyed successfully. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/sessions/summary:
+    get:
+      tags: [Authentication]
+      summary: Get current user's session summary
+      description: Returns the current user's active session count and last login time.
+      operationId: getSessionSummary
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Session summary returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/password-resets:
+    post:
+      tags: [Authentication]
+      summary: Create a password reset request
+      security: []
+      description: |
+        Creates a password reset resource and sends an email with a **cryptographically random, single-use** token.
+        The token expires after a configurable period (default: 1 hour).
+        For security, a success response is returned regardless of whether the email exists.
+      operationId: createPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '201':
+          description: Password reset resource created (email sent if account exists).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: If an account with that email exists, a password reset link has been sent.
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags: [Authentication]
+      summary: Complete a password reset
+      security: []
+      description: |
+        Completes a password reset using the secure token from the password reset email.
+        The token is validated for authenticity, expiry, and single-use.
+        The new password must meet the same strength requirements as registration.
+        All existing JWT tokens for the user are invalidated (blacklisted) after a successful reset.
+      operationId: completePasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: Password has been reset successfully. Please log in with your new password.
+        '400':
+          description: Invalid or expired reset token, or password does not meet requirements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # PROFILE MANAGEMENT
+  # ──────────────────────────────────────────
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get current alumni's full profile
+      description: Retrieves the authenticated alumni's complete profile including all degrees, certifications, licences, courses, and employment history.
+      operationId: getMyProfile
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags: [Profile]
+      summary: Update personal information
+      description: Updates the alumni's basic profile information (name, biography, LinkedIn URL).
+      operationId: updateProfile
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Profile updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Clear personal profile fields
+      description: Clears the alumni's profile fields (biography, LinkedIn URL, and profile image URL).
+      operationId: clearProfile
+      security:
+        - JWTAuth: []
+      responses:
+        '204':
+          description: Profile fields cleared. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/image:
+    put:
+      tags: [Profile]
+      summary: Upload or replace profile image
+      description: |
+        Creates or replaces the alumni's profile image.
+        Accepted formats: JPEG, PNG, WebP. Maximum file size: 5 MB.
+        Images are stored securely and served via a static URL.
+      operationId: replaceProfileImage
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Profile image file (JPEG, PNG, or WebP; max 5 MB).
+      responses:
+        '200':
+          description: Profile image uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Profile image uploaded successfully.
+                  data:
+                    type: object
+                    properties:
+                      profileImageUrl:
+                        type: string
+                        format: uri
+                        example: /uploads/profiles/665a1b2c3d4e5f6a7b8c9d0e.jpg
+        '400':
+          description: Invalid file type or size exceeds limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete profile image
+      description: Removes the alumni's current profile image.
+      operationId: deleteProfileImage
+      security:
+        - JWTAuth: []
+      responses:
+        '204':
+          description: Profile image deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Degrees ────────────────────────────
+  /profile/degrees:
+    get:
+      tags: [Profile]
+      summary: List all degrees
+      description: Returns all degrees for the authenticated alumni.
+      operationId: listDegrees
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Degrees retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Degree'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Profile]
+      summary: Add a degree
+      description: Adds a new degree to the alumni's profile. The URL is validated to ensure it is a well-formed URI.
+      operationId: addDegree
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DegreeRequest'
+      responses:
+        '201':
+          description: Degree added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Degree added successfully.
+                  data:
+                    $ref: '#/components/schemas/Degree'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/degrees/{degreeId}:
+    put:
+      tags: [Profile]
+      summary: Update a degree
+      description: Updates an existing degree entry.
+      operationId: updateDegree
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: degreeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DegreeRequest'
+      responses:
+        '200':
+          description: Degree updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Degree updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Degree'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete a degree
+      description: Removes a degree from the alumni's profile.
+      operationId: deleteDegree
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: degreeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Degree deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Certifications ────────────────────
+  /profile/certifications:
+    get:
+      tags: [Profile]
+      summary: List all certifications
+      description: Returns all professional certifications for the authenticated alumni.
+      operationId: listCertifications
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Certifications retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Certification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Profile]
+      summary: Add a certification
+      description: Adds a new professional certification to the alumni's profile.
+      operationId: addCertification
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+      responses:
+        '201':
+          description: Certification added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Certification added successfully.
+                  data:
+                    $ref: '#/components/schemas/Certification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/certifications/{certificationId}:
+    put:
+      tags: [Profile]
+      summary: Update a certification
+      description: Updates an existing certification entry.
+      operationId: updateCertification
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: certificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+      responses:
+        '200':
+          description: Certification updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Certification updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Certification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete a certification
+      description: Removes a certification from the alumni's profile.
+      operationId: deleteCertification
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: certificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Certification deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Licences ──────────────────────────
+  /profile/licences:
+    get:
+      tags: [Profile]
+      summary: List all licences
+      description: Returns all professional licences for the authenticated alumni.
+      operationId: listLicences
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Licences retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Licence'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Profile]
+      summary: Add a licence
+      description: Adds a new professional licence to the alumni's profile.
+      operationId: addLicence
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenceRequest'
+      responses:
+        '201':
+          description: Licence added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Licence added successfully.
+                  data:
+                    $ref: '#/components/schemas/Licence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/licences/{licenceId}:
+    put:
+      tags: [Profile]
+      summary: Update a licence
+      description: Updates an existing licence entry.
+      operationId: updateLicence
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: licenceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenceRequest'
+      responses:
+        '200':
+          description: Licence updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Licence updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Licence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete a licence
+      description: Removes a licence from the alumni's profile.
+      operationId: deleteLicence
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: licenceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Licence deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Short Professional Courses ────────
+  /profile/courses:
+    get:
+      tags: [Profile]
+      summary: List all short professional courses
+      description: Returns all short professional courses for the authenticated alumni.
+      operationId: listCourses
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Courses retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Course'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Profile]
+      summary: Add a short professional course
+      description: Adds a new short professional course to the alumni's profile.
+      operationId: addCourse
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRequest'
+      responses:
+        '201':
+          description: Course added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Course added successfully.
+                  data:
+                    $ref: '#/components/schemas/Course'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/courses/{courseId}:
+    put:
+      tags: [Profile]
+      summary: Update a course
+      description: Updates an existing short professional course entry.
+      operationId: updateCourse
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRequest'
+      responses:
+        '200':
+          description: Course updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Course updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Course'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete a course
+      description: Removes a short professional course from the alumni's profile.
+      operationId: deleteCourse
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Course deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ─── Employment History ────────────────
+  /profile/employment:
+    get:
+      tags: [Profile]
+      summary: List employment history
+      description: Returns the full employment history for the authenticated alumni.
+      operationId: listEmployment
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Employment history retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Profile]
+      summary: Add an employment entry
+      description: Adds a new employment record to the alumni's profile. If `endDate` is null, the position is considered current.
+      operationId: addEmployment
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmploymentRequest'
+      responses:
+        '201':
+          description: Employment entry added successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Employment entry added successfully.
+                  data:
+                    $ref: '#/components/schemas/Employment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /profile/employment/{employmentId}:
+    put:
+      tags: [Profile]
+      summary: Update an employment entry
+      description: Updates an existing employment record.
+      operationId: updateEmployment
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: employmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmploymentRequest'
+      responses:
+        '200':
+          description: Employment entry updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Employment entry updated successfully.
+                  data:
+                    $ref: '#/components/schemas/Employment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Profile]
+      summary: Delete an employment entry
+      description: Removes an employment record from the alumni's profile.
+      operationId: deleteEmployment
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: employmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Employment entry deleted. No content returned.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # BLIND BIDDING SYSTEM
+  # ──────────────────────────────────────────
+  /bids:
+    post:
+      tags: [Bidding]
+      summary: Place a new bid
+      description: |
+        Places a blind bid for the next available "Alumni of the Day" slot.
+
+        **Blind Bidding Rules:**
+        - The alumni **cannot** see the current highest bid amount.
+        - After placing a bid, the alumni receives only a **winning/losing** status.
+        - Bids can only be **increased** (not decreased or withdrawn).
+        - Each alumnus can win a maximum of **3 times per calendar month** (4 if they attended a university event that month).
+        - The winner is automatically selected daily at **midnight**.
+
+        **Sponsorship-Funded Bidding:**
+        - Bids are funded from the alumni's pool of **accepted sponsorship offers**.
+        - The bid amount **cannot exceed** the alumni's total available sponsorship funds.
+        - Example: If an alumni has accepted sponsorships of £200 (from Coursera) and £300 (from AWS),
+          they have £500 available. They may bid £250. If they win, they pocket the £250.
+        - Sponsors are only charged if the alumni **wins** and their profile is displayed.
+        - After a win, each accepted sponsor is charged their full accepted offer amount.
+      operationId: placeBid
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BidRequest'
+      responses:
+        '201':
+          description: Bid placed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BidResponse'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - Amount must be a positive number.
+            - Amount must be greater than your current bid (increase only).
+            - You have already reached the monthly win limit.
+            - Bidding is currently closed (after midnight cutoff).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Forbidden. Possible reasons:
+            - Monthly win limit reached (3 wins, or 4 with event attendance).
+            - Insufficient sponsorship funds to cover the bid amount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                monthlyLimit:
+                  summary: Monthly limit reached
+                  value:
+                    success: false
+                    message: You have reached the maximum number of wins (3) for this month. Attend a university event to unlock 1 additional slot.
+                insufficientFunds:
+                  summary: Insufficient sponsorship funds
+                  value:
+                    success: false
+                    message: "Insufficient sponsorship funds. Your available balance is £200.00 but you attempted to bid £300.00."
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [Bidding]
+      summary: Get all my bids
+      description: |
+        Returns all bids placed by the authenticated alumni.
+        Each bid includes its **winning/losing** status (but never the actual highest bid).
+      operationId: getMyBids
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Filter by month (YYYY-MM format).
+          schema:
+            type: string
+            example: "2026-02"
+      responses:
+        '200':
+          description: Bids retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BidStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /bids/{bidId}:
+    get:
+      tags: [Bidding]
+      summary: Get a specific bid's details
+      description: Returns the details of a specific bid including its current status (winning/losing/won/lost).
+      operationId: getBidById
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bid details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BidStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags: [Bidding]
+      summary: Update (increase) an existing bid
+      description: |
+        Updates an existing bid. The new amount **must be higher** than the previous bid amount.
+        Bids cannot be decreased or withdrawn. Only bids for the current bidding window (today's selection) can be updated.
+      operationId: updateBid
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BidRequest'
+      responses:
+        '200':
+          description: Bid updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BidResponse'
+        '400':
+          description: New amount must be higher than current bid, or bidding window has closed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: New bid amount must be greater than your current bid of £250.00.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /bids/summary:
+    get:
+      tags: [Bidding]
+      summary: Get bid summary for a month
+      description: |
+        Returns the alumni's bidding summary for the specified month, including:
+        - Number of wins this month
+        - Maximum wins allowed (3 or 4)
+        - Remaining available slots
+        - Whether the alumni attended a university event this month
+        - All bids placed during the month
+      operationId: getMonthlyBidSummary
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Month to query in YYYY-MM format. Defaults to current month.
+          schema:
+            type: string
+            example: "2026-02"
+      responses:
+        '200':
+          description: Monthly summary retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/MonthlyBidSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /bids/current:
+    get:
+      tags: [Bidding]
+      summary: Get current active bid
+      description: |
+        Returns the alumni's bid for the **current active bidding window**.
+        Indicates whether they are currently **winning** or **losing** without revealing the highest bid amount.
+      operationId: getCurrentBid
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Current bid status retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      hasBid:
+                        type: boolean
+                        example: true
+                      status:
+                        type: string
+                        enum: [winning, losing, no_bid]
+                        example: winning
+                      currentBidAmount:
+                        type: number
+                        format: double
+                        description: The alumni's own current bid amount.
+                        example: 250.00
+                      bidId:
+                        type: string
+                        example: b1a2b3c4d5e6f7a8b9c0d1e2
+                      biddingClosesAt:
+                        type: string
+                        format: date-time
+                        description: When the current bidding window closes (midnight today).
+                        example: "2026-02-20T00:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # SPONSORSHIP
+  # ──────────────────────────────────────────
+  /sponsorships/organizations:
+    post:
+      tags: [Sponsorship]
+      summary: Create sponsor organization
+      description: Creates a sponsor organization that can issue sponsorship offers.
+      operationId: createSponsorOrganization
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorOrganizationCreateRequest'
+      responses:
+        '201':
+          description: Sponsor organization created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Sponsor organization created successfully.
+                  data:
+                    $ref: '#/components/schemas/SponsorOrganization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      tags: [Sponsorship]
+      summary: List sponsor organizations
+      description: Returns all sponsor organizations (admin only).
+      operationId: listSponsorOrganizations
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Sponsor organizations retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SponsorOrganization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/organizations/me:
+    get:
+      tags: [Sponsorship]
+      summary: Get my sponsor organization assignment
+      description: Returns the sponsor organization assignment for the authenticated user.
+      operationId: getMySponsorOrganization
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: User sponsor organization assignment retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SponsorOrganizationAssignment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Sponsorship]
+      summary: Leave my sponsor organization
+      description: Removes the authenticated user's sponsor organization assignment.
+      operationId: leaveMySponsorOrganization
+      security:
+        - JWTAuth: []
+      responses:
+        '204':
+          description: Association removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/organizations/{sponsorOrgId}:
+    get:
+      tags: [Sponsorship]
+      summary: Get sponsor organization
+      operationId: getSponsorOrganization
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsor organization retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SponsorOrganization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Sponsorship]
+      summary: Update sponsor organization
+      operationId: updateSponsorOrganization
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorOrganizationUpdateRequest'
+      responses:
+        '200':
+          description: Sponsor organization updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Sponsor organization updated successfully.
+                  data:
+                    $ref: '#/components/schemas/SponsorOrganization'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Sponsorship]
+      summary: Delete sponsor organization
+      operationId: deleteSponsorOrganization
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sponsor organization deleted.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/organizations/{sponsorOrgId}/users/{userId}:
+    put:
+      tags: [Sponsorship]
+      summary: Assign sponsor user to organization
+      description: Assigns a Sponsor-role user to an existing sponsor organization. A user can belong to only one sponsor organization.
+      operationId: assignSponsorUserToOrganization
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsor user assigned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Sponsor user assigned to organization successfully.
+                  data:
+                    $ref: '#/components/schemas/SponsorOrganizationAssignment'
+        '400':
+          description: User is not a sponsor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/organizations/{sponsorOrgId}/users:
+    get:
+      tags: [Sponsorship]
+      summary: List users assigned to sponsor organization
+      description: Returns users assigned to the specified sponsor organization.
+      operationId: listSponsorOrganizationUsers
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsor organization users retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        email:
+                          type: string
+                          format: email
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        role:
+                          type: string
+                        sponsorOrgId:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Sponsorship]
+      summary: Remove sponsor user from organization
+      description: Removes a user's association to the specified sponsor organization.
+      operationId: removeUserFromSponsorOrganization
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: sponsorOrgId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User removed from sponsor organization.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/alumni/credentials:
+    get:
+      tags: [Sponsorship]
+      summary: List sponsorable alumni credentials
+      description: |
+        Returns alumni credentials that sponsors can create offers against.
+        Sponsors also receive `hasActiveOfferFromMyOrg` to avoid duplicate active offers.
+      operationId: listSponsorableAlumniCredentials
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: credentialType
+          in: query
+          schema:
+            type: string
+            enum: [certification, licence, course]
+        - name: q
+          in: query
+          description: Search by alumni name/email, credential title, or provider.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsorable credentials retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SponsorableAlumniCredential'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/offers:
+    post:
+      tags: [Sponsorship]
+      summary: Create a sponsorship offer for an alumni
+      description: |
+        A sponsor (course provider, licensing body, or certification organisation) creates
+        a sponsorship offer for a specific credential on an alumni's profile.
+
+        **How it works:**
+        - The sponsor selects one alumni credential (certification, licence, or course).
+        - The sponsor offers an amount (£) to the alumni to endorse/promote that credential.
+        - The alumni can accept or decline the offer.
+        - If accepted, the funds become available in the alumni's bidding pool.
+        - The sponsor is **only charged** if the alumni wins "Alumni of the Day" and their profile is displayed.
+
+        This endpoint is accessible to authenticated sponsors/admins.
+      operationId: createSponsorshipOffer
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorshipOfferRequest'
+      responses:
+        '201':
+          description: Sponsorship offer created and sent to alumni.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Sponsorship offer sent to the alumni.
+                  data:
+                    $ref: '#/components/schemas/SponsorshipOffer'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - Invalid credential type or ID.
+            - Credential does not exist on the alumni's profile.
+            - Amount must be at least £1.00.
+            - Duplicate active offer for the same credential.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Alumni or credential not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [Sponsorship]
+      summary: List my sent sponsorship offers
+      description: Returns sponsorship offers created by the authenticated sponsor's organization. Filterable by status, alumni, or sponsor.
+      operationId: listAllSponsorshipOffers
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by offer status.
+          schema:
+            type: string
+            enum: [pending, accepted, declined, expired, paid, cancelled]
+        - name: alumniId
+          in: query
+          description: Filter by alumni ID.
+          schema:
+            type: string
+        - name: sponsorName
+          in: query
+          description: Filter by sponsor name (partial match).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsorship offers retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SponsorshipOffer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/offers/{offerId}:
+    get:
+      tags: [Sponsorship]
+      summary: Get a specific sponsorship offer
+      description: Returns full details of a specific sponsorship offer.
+      operationId: getSponsorshipOffer
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sponsorship offer details retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SponsorshipOffer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [Sponsorship]
+      summary: Cancel a pending sponsorship offer
+      description: |
+        Deletes (cancels) a pending sponsorship offer.
+        Accepted offers cannot be cancelled.
+        Only offers in `pending` status can be deleted.
+      operationId: deleteSponsorshipOffer
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sponsorship offer deleted. No content returned.
+        '400':
+          description: Offer cannot be deleted because it is not in pending status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Only pending offers can be cancelled.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/offers/{offerId}/response:
+    put:
+      tags: [Sponsorship]
+      summary: Accept or decline a sponsorship offer
+      description: |
+        The alumni sets their response to a sponsorship offer for one of their credentials.
+
+        - **Accept**: The offered amount is added to the alumni's available bidding pool.
+        - **Decline**: The offer is marked as declined and no funds are added.
+
+        Only offers in `pending` status can be responded to.
+      operationId: setOfferResponse
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SponsorshipRespondRequest'
+      responses:
+        '200':
+          description: Response recorded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Sponsorship offer accepted. £300.00 added to your bidding pool.
+                  data:
+                    $ref: '#/components/schemas/SponsorshipOffer'
+        '400':
+          description: Offer is not in pending status or has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: This offer has already expired and can no longer be accepted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/offers/me:
+    get:
+      tags: [Sponsorship]
+      summary: List my received sponsorship offers
+      description: |
+        Returns all sponsorship offers received by the authenticated alumni,
+        including pending, accepted, declined, and expired offers.
+      operationId: getMyReceivedOffers
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by offer status.
+          schema:
+            type: string
+            enum: [pending, accepted, declined, expired, paid, cancelled]
+      responses:
+        '200':
+          description: Sponsorship offers retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SponsorshipOffer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/balance:
+    get:
+      tags: [Sponsorship]
+      summary: Get sponsorship balance and available bidding funds
+      description: |
+        Returns a summary of the authenticated alumni's sponsorship situation:
+        - Total funds from accepted sponsorships
+        - Amount already committed in active bids
+        - Remaining balance available for new bids
+        - Breakdown of each accepted sponsorship offer
+
+        **Example:** Alumni has 4 certifications. 2 sponsors offer £200 and £300 respectively.
+        Alumni accepts both → total pool is £500. Alumni bids £250 → available balance is £250.
+        If they win, they pocket £250 and accepted sponsors are charged their full accepted amounts (£200 and £300).
+      operationId: getMySponsorshipBalance
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Sponsorship balance summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SponsorshipSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/payouts:
+    get:
+      tags: [Sponsorship]
+      summary: List sponsorship payouts
+      description: |
+        Returns sponsorship payout history — records created when an
+        alumni wins "Alumni of the Day". Shows how each winning bid was funded by
+        sponsors and how much the alumni pocketed.
+
+        Accessible to admins (all payouts) or alumni (own payouts only).
+      operationId: listSponsorshipPayouts
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: alumniId
+          in: query
+          description: Filter by alumni ID (admin only).
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: Start date (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: End date (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Payout history retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SponsorshipPayout'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /sponsorships/payouts/{payoutId}:
+    get:
+      tags: [Sponsorship]
+      summary: Get payout details
+      description: Returns full details of a specific sponsorship payout including the sponsor-by-sponsor breakdown.
+      operationId: getSponsorshipPayout
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payout details retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SponsorshipPayout'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # PUBLIC DEVELOPER API (Bearer Token)
+  # ──────────────────────────────────────────
+  /public/alumni/featured:
+    get:
+      tags: [Public API]
+      summary: Get today's featured Alumni of the Day
+      description: |
+        Returns the full profile of today's "Alumni of the Day" — the alumni who won
+        yesterday's blind bidding at midnight. This is the primary endpoint consumed by
+        the AR client and any other registered API clients.
+
+        **Requires a valid Bearer token** issued to a registered API client.
+      operationId: getFeaturedAlumni
+      security:
+        - APIKeyAuth: []
+      responses:
+        '200':
+          description: Today's featured alumni profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FeaturedAlumni'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No featured alumni for today (no bids were placed or winner not yet selected).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: No Alumni of the Day has been selected for today.
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /public/alumni/featured/history:
+    get:
+      tags: [Public API]
+      summary: Get featured alumni history
+      description: Returns a list of past "Alumni of the Day" winners.
+      operationId: getFeaturedHistory
+      security:
+        - APIKeyAuth: []
+      parameters:
+        - name: from
+          in: query
+          description: Start date filter (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: End date filter (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Featured alumni history retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeaturedAlumni'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /public/alumni/{alumniId}:
+    get:
+      tags: [Public API]
+      summary: Get a specific alumni's public profile
+      description: Returns the public-facing profile of a specific alumni by their ID. Only displays information the alumni has made public.
+      operationId: getAlumniPublicProfile
+      security:
+        - APIKeyAuth: []
+      parameters:
+        - name: alumniId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alumni public profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # API CLIENT MANAGEMENT
+  # ──────────────────────────────────────────
+  /clients:
+    post:
+      tags: [API Client Management]
+      summary: Create a new API client
+      description: |
+        Creates a new API client resource (e.g. AR app, third-party integration) and returns
+        a **Bearer token** for accessing public API endpoints. The token is shown **once**
+        and must be stored securely by the client.
+
+        This endpoint is restricted to administrators.
+      operationId: createApiClient
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClientRegisterRequest'
+      responses:
+        '201':
+          description: API client registered. Token issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiClientRegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [API Client Management]
+      summary: List all API clients
+      description: Returns a list of all registered API clients and their basic information. Admin only.
+      operationId: listApiClients
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: API clients listed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        client_id:
+                          type: string
+                          example: cli_a1b2c3d4e5f6
+                        client_name:
+                          type: string
+                          example: AR Campus App
+                        description:
+                          type: string
+                        contact_email:
+                          type: string
+                          format: email
+                        created_by_user_id:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                        is_revoked:
+                          type: boolean
+                          example: false
+                        # Backward compatibility aliases
+                        clientId:
+                          type: string
+                          deprecated: true
+                        clientName:
+                          type: string
+                          deprecated: true
+                        contactEmail:
+                          type: string
+                          deprecated: true
+                        isRevoked:
+                          type: boolean
+                          deprecated: true
+                        createdAt:
+                          type: string
+                          format: date-time
+                          deprecated: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clients/{clientId}/usage:
+    get:
+      tags: [API Client Management]
+      summary: Get API client usage
+      description: |
+        Returns detailed usage statistics for a specific API client, including:
+        - API client metadata
+        - Token history (`api_client_tokens`)
+        - Endpoint usage rows (`api_client_endpoint_usage`)
+        - Aggregate totals
+      operationId: getClientUsageStats
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          description: Start date for usage stats (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: End date for usage stats (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Usage statistics retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ApiClientUsageStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clients/{clientId}/tokens:
+    post:
+      tags: [API Client Management]
+      summary: Create an additional API client token
+      description: |
+        Creates a new token for the specified API client without revoking existing tokens.
+        This supports multiple active tokens per client.
+      operationId: createClientToken
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: Optional token expiry datetime. Must be in the future.
+                  example: "2026-03-05T12:00:00.000Z"
+      responses:
+        '201':
+          description: Additional token created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Client token created successfully. Store it securely; it will not be shown again.
+                  data:
+                    type: object
+                    properties:
+                      client_id:
+                        type: string
+                      token:
+                        type: string
+                      token_id:
+                        type: string
+                      issued_at:
+                        type: string
+                        format: date-time
+                      expires_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      revoked_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [API Client Management]
+      summary: List API client tokens
+      description: Returns all tokens (active and revoked) for a specific API client.
+      operationId: listClientTokens
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client tokens listed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        token_id:
+                          type: string
+                        client_id:
+                          type: string
+                        issued_at:
+                          type: string
+                          format: date-time
+                        expires_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        revoked_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /clients/{clientId}/tokens/{tokenId}:
+    delete:
+      tags: [API Client Management]
+      summary: Revoke a specific API client token
+      description: Revokes only the specified token for the given API client.
+      operationId: revokeClientTokenByTokenId
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Token revoked successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ──────────────────────────────────────────
+  # ADMIN – EVENT ATTENDANCE
+  # ──────────────────────────────────────────
+  /admin/event-attendances:
+    post:
+      tags: [Admin]
+      summary: Record alumni event attendance
+      description: |
+        Records that an alumnus attended a university alumni event, granting them
+        eligibility for a **4th "Alumni of the Day" win** that calendar month.
+        Admin only.
+      operationId: recordEventAttendance
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventAttendanceRequest'
+      responses:
+        '201':
+          description: Event attendance recorded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: Event attendance recorded. Alumni now has 4 available slots this month.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/winners:
+    post:
+      tags: [Admin]
+      summary: Create a daily winner
+      description: |
+        Manually creates a winner resource for the specified date (normally automated at midnight daily).
+        Selects the highest bidder as the "Alumni of the Day" for the specified date,
+        marks their profile for display, and sends email notifications to the winner
+        and all other bidders.
+
+        This is an **admin-only fallback** in case the automated job fails.
+      operationId: createWinner
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date]
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: The date for which to select the winner (YYYY-MM-DD).
+                  example: "2026-02-20"
+      responses:
+        '201':
+          description: Winner created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Winner created for 2026-02-20.
+                  data:
+                    $ref: '#/components/schemas/WinnerResult'
+        '400':
+          description: Winner already exists for this date, or no bids exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags: [Admin]
+      summary: List all past winners
+      description: Returns all past "Alumni of the Day" winners with their winning bid amounts. Admin only.
+      operationId: listWinners
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: month
+          in: query
+          description: Filter by month (YYYY-MM).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Winners list retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WinnerResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List current users
+      description: Returns all current users with their roles. Admin only.
+      operationId: listAdminUsers
+      security:
+        - JWTAuth: []
+      responses:
+        '200':
+          description: Users listed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Admin]
+      summary: Create a new Developer or Sponsor account
+      description: |
+        Allows Admins to create new accounts with specific roles (Developer, Sponsor, or Admin).
+        Default role is 'Alumni' if not specified, but this endpoint is intended for privileged account creation.
+        Use this to onboard Admin users when needed.
+      operationId: createPrivilegedUser
+      security:
+        - JWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, firstName, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                role:
+                  $ref: '#/components/schemas/UserRole'
+      responses:
+        '201':
+          description: User created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/role:
+    put:
+      tags: [Admin]
+      summary: Promote a user's role
+      description: |
+        Allows Admins to set an existing user's role to 'Developer', 'Sponsor', or 'Admin'.
+        Assigning the Admin role is restricted to Admins only.
+        The last remaining Admin cannot be demoted.
+      operationId: updateUserRole
+      security:
+        - JWTAuth: []
+      parameters:
+        - name: userId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The ID of the user to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  $ref: '#/components/schemas/UserRole'
+      responses:
+        '200':
+          description: User role updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User role updated to Developer.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
