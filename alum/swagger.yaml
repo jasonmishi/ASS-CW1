@@ -9,10 +9,14 @@ info:
     4. **Student Benefits**: Students discover relatable success stories, career paths, and LinkedIn connections.
 
     ## Authentication
-    - **Alumni Users**: JWT Bearer token authentication after email verification.
+    - **Alumni Users**: Cookie-based session authentication after email verification.
     - **API Clients**: Bearer API key authentication for programmatic access to public endpoints.
-    
-    All authenticated requests must include the `Authorization: Bearer <token>` header.
+
+    Alumni flow:
+    1. `POST /auth/sessions` to log in.
+    2. Server sets `access_token` (HttpOnly) and `csrf_token` cookies.
+    3. For authenticated write operations (`POST`, `PUT`, `PATCH`, `DELETE`), send `X-CSRF-Token` header with the same value as `csrf_token`.
+    4. Public API endpoints still use `Authorization: Bearer <api_client_token>`.
 
     ## Bidding Rules
     - **Blind Bidding**: Alumni cannot see the current highest bid; they only receive win/lose feedback.
@@ -55,14 +59,22 @@ tags:
 # ──────────────────────────────────────────────
 components:
   securitySchemes:
-    JWTAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    SessionCookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
       description: |
-        JSON Web Token issued upon successful alumni login.
-        Include in the `Authorization` header as `Bearer <token>`.
-        Alumni tokens are scoped to alumni operations; 
+        Alumni authenticated session cookie.
+        Issued by `POST /auth/sessions` as `Set-Cookie: access_token=...`.
+        Used for non-public alumni/admin/sponsor endpoints.
+    CsrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: |
+        CSRF header required for authenticated mutating operations.
+        Must match the `csrf_token` cookie value.
+        `POST /auth/sessions` is exempt from CSRF validation.
     APIKeyAuth:
       type: http
       scheme: bearer
@@ -206,7 +218,7 @@ components:
           properties:
             token:
               type: string
-              description: Signed JWT access token. Include in the Authorization header as `Bearer <token>`.
+              description: Signed JWT value stored in the `access_token` cookie. Returned for compatibility but cookie auth is authoritative.
               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjVhMWIyYzNkNGU1ZjZhN2I4YzlkMGUiLCJpYXQiOjE3MDk4MzA0MDAsImV4cCI6MTcwOTgzNDAwMH0.abc123
             expiresIn:
               type: integer
@@ -1279,6 +1291,7 @@ paths:
         Creates a new alumni account. The email **must** belong to the university domain
         (`@eastminster.ac.uk`). A verification email with a secure token is sent upon
         successful registration. The alumni cannot log in until the email is verified.
+        This is a mutating endpoint and requires CSRF (`csrf_token` cookie + `X-CSRF-Token` header).
 
         **Password requirements:**
         - Minimum 8 characters
@@ -1308,6 +1321,43 @@ paths:
           $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/csrf-token:
+    get:
+      tags: [Authentication]
+      summary: Issue a CSRF token for subsequent mutating requests
+      security: []
+      description: |
+        Issues a CSRF token for clients (e.g. Postman, Swagger UI setup) before calling mutating endpoints.
+        Returns the token in response body and sets the `csrf_token` cookie.
+      operationId: createCsrfToken
+      responses:
+        '200':
+          description: CSRF token issued.
+          headers:
+            Set-Cookie:
+              description: Sets `csrf_token` cookie.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: CSRF token issued.
+                  data:
+                    type: object
+                    properties:
+                      csrfToken:
+                        type: string
+                        example: 6f79e5f0f1cc4a42a13fd58fdf7d98f95ca22a6d4a6428a5795e22692e85d07f
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -1387,9 +1437,10 @@ paths:
       summary: Create a new authentication session
       security: []
       description: |
-        Authenticates the alumni and returns a signed JWT access token.
-        The token has a configurable expiry (default: 1 hour) and must be included
-        in the `Authorization: Bearer <token>` header for all subsequent requests.
+        Authenticates the alumni and creates a cookie-based session.
+        On success, the server sets:
+        - `access_token` (HttpOnly) for authentication
+        - `csrf_token` (readable cookie) for CSRF protection
 
         Login is blocked if the email has not been verified.
       operationId: createSession
@@ -1401,7 +1452,12 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '201':
-          description: Session created. JWT token returned.
+          description: Session created. Authentication and CSRF cookies are set.
+          headers:
+            Set-Cookie:
+              description: Sets `access_token` and `csrf_token` cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1423,10 +1479,11 @@ paths:
     delete:
       tags: [Authentication]
       summary: Destroy the current authentication session
-      description: Invalidates the current JWT token by adding it to a server-side deny list (token blacklist). The token will be rejected for all subsequent requests until it naturally expires.
+      description: Invalidates the current session and clears `access_token` and `csrf_token` cookies.
       operationId: deleteSession
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '204':
           description: Session destroyed successfully. No content returned.
@@ -1442,7 +1499,8 @@ paths:
       description: Returns the current user's active session count and last login time.
       operationId: getSessionSummary
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Session summary returned successfully.
@@ -1533,7 +1591,8 @@ paths:
       description: Retrieves the authenticated alumni's complete profile including all degrees, certifications, licences, courses, and employment history.
       operationId: getMyProfile
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Profile retrieved successfully.
@@ -1558,7 +1617,8 @@ paths:
       description: Updates the alumni's basic profile information (name, biography, LinkedIn URL).
       operationId: updateProfile
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -1594,7 +1654,8 @@ paths:
       description: Clears the alumni's profile fields (biography, LinkedIn URL, and profile image URL).
       operationId: clearProfile
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '204':
           description: Profile fields cleared. No content returned.
@@ -1613,7 +1674,8 @@ paths:
         Images are stored securely and served via a static URL.
       operationId: replaceProfileImage
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -1664,7 +1726,8 @@ paths:
       description: Removes the alumni's current profile image.
       operationId: deleteProfileImage
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '204':
           description: Profile image deleted. No content returned.
@@ -1683,7 +1746,8 @@ paths:
       description: Returns all degrees for the authenticated alumni.
       operationId: listDegrees
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Degrees retrieved successfully.
@@ -1710,7 +1774,8 @@ paths:
       description: Adds a new degree to the alumni's profile. The URL is validated to ensure it is a well-formed URI.
       operationId: addDegree
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -1747,7 +1812,8 @@ paths:
       description: Updates an existing degree entry.
       operationId: updateDegree
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: degreeId
           in: path
@@ -1791,7 +1857,8 @@ paths:
       description: Removes a degree from the alumni's profile.
       operationId: deleteDegree
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: degreeId
           in: path
@@ -1816,7 +1883,8 @@ paths:
       description: Returns all professional certifications for the authenticated alumni.
       operationId: listCertifications
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Certifications retrieved successfully.
@@ -1843,7 +1911,8 @@ paths:
       description: Adds a new professional certification to the alumni's profile.
       operationId: addCertification
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -1880,7 +1949,8 @@ paths:
       description: Updates an existing certification entry.
       operationId: updateCertification
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: certificationId
           in: path
@@ -1924,7 +1994,8 @@ paths:
       description: Removes a certification from the alumni's profile.
       operationId: deleteCertification
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: certificationId
           in: path
@@ -1949,7 +2020,8 @@ paths:
       description: Returns all professional licences for the authenticated alumni.
       operationId: listLicences
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Licences retrieved successfully.
@@ -1976,7 +2048,8 @@ paths:
       description: Adds a new professional licence to the alumni's profile.
       operationId: addLicence
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -2013,7 +2086,8 @@ paths:
       description: Updates an existing licence entry.
       operationId: updateLicence
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: licenceId
           in: path
@@ -2057,7 +2131,8 @@ paths:
       description: Removes a licence from the alumni's profile.
       operationId: deleteLicence
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: licenceId
           in: path
@@ -2082,7 +2157,8 @@ paths:
       description: Returns all short professional courses for the authenticated alumni.
       operationId: listCourses
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Courses retrieved successfully.
@@ -2109,7 +2185,8 @@ paths:
       description: Adds a new short professional course to the alumni's profile.
       operationId: addCourse
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -2146,7 +2223,8 @@ paths:
       description: Updates an existing short professional course entry.
       operationId: updateCourse
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: courseId
           in: path
@@ -2190,7 +2268,8 @@ paths:
       description: Removes a short professional course from the alumni's profile.
       operationId: deleteCourse
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: courseId
           in: path
@@ -2215,7 +2294,8 @@ paths:
       description: Returns the full employment history for the authenticated alumni.
       operationId: listEmployment
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Employment history retrieved successfully.
@@ -2242,7 +2322,8 @@ paths:
       description: Adds a new employment record to the alumni's profile. If `endDate` is null, the position is considered current.
       operationId: addEmployment
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -2279,7 +2360,8 @@ paths:
       description: Updates an existing employment record.
       operationId: updateEmployment
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: employmentId
           in: path
@@ -2323,7 +2405,8 @@ paths:
       description: Removes an employment record from the alumni's profile.
       operationId: deleteEmployment
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: employmentId
           in: path
@@ -2366,7 +2449,8 @@ paths:
         - After a win, each accepted sponsor is charged their full accepted offer amount.
       operationId: placeBid
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -2426,7 +2510,8 @@ paths:
         Each bid includes its **winning/losing** status (but never the actual highest bid).
       operationId: getMyBids
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -2461,7 +2546,8 @@ paths:
       description: Returns the details of a specific bid including its current status (winning/losing/won/lost).
       operationId: getBidById
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: bidId
           in: path
@@ -2496,7 +2582,8 @@ paths:
         Bids cannot be decreased or withdrawn. Only bids for the current bidding window (today's selection) can be updated.
       operationId: updateBid
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: bidId
           in: path
@@ -2545,7 +2632,8 @@ paths:
         - All bids placed during the month
       operationId: getMonthlyBidSummary
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -2580,7 +2668,8 @@ paths:
         Indicates whether they are currently **winning** or **losing** without revealing the highest bid amount.
       operationId: getCurrentBid
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Current bid status retrieved.
@@ -2630,7 +2719,8 @@ paths:
       description: Creates a sponsor organization that can issue sponsorship offers.
       operationId: createSponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -2667,7 +2757,8 @@ paths:
       description: Returns all sponsor organizations (admin only).
       operationId: listSponsorOrganizations
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Sponsor organizations retrieved.
@@ -2697,7 +2788,8 @@ paths:
       description: Returns the sponsor organization assignment for the authenticated user.
       operationId: getMySponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: User sponsor organization assignment retrieved.
@@ -2723,7 +2815,8 @@ paths:
       description: Removes the authenticated user's sponsor organization assignment.
       operationId: leaveMySponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '204':
           description: Association removed.
@@ -2738,7 +2831,8 @@ paths:
       summary: Get sponsor organization
       operationId: getSponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2771,7 +2865,8 @@ paths:
       summary: Update sponsor organization
       operationId: updateSponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2815,7 +2910,8 @@ paths:
       summary: Delete sponsor organization
       operationId: deleteSponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2843,7 +2939,8 @@ paths:
       description: Assigns a Sponsor-role user to an existing sponsor organization. A user can belong to only one sponsor organization.
       operationId: assignSponsorUserToOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2893,7 +2990,8 @@ paths:
       description: Returns users assigned to the specified sponsor organization.
       operationId: listSponsorOrganizationUsers
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2943,7 +3041,8 @@ paths:
       description: Removes a user's association to the specified sponsor organization.
       operationId: removeUserFromSponsorOrganization
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2978,7 +3077,8 @@ paths:
         Sponsors also receive `hasActiveOfferFromMyOrg` to avoid duplicate active offers.
       operationId: listSponsorableAlumniCredentials
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: credentialType
           in: query
@@ -3032,7 +3132,8 @@ paths:
         This endpoint is accessible to authenticated sponsors/admins.
       operationId: createSponsorshipOffer
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -3085,7 +3186,8 @@ paths:
       description: Returns sponsorship offers created by the authenticated sponsor's organization. Filterable by status, alumni, or sponsor.
       operationId: listAllSponsorshipOffers
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: status
           in: query
@@ -3132,7 +3234,8 @@ paths:
       description: Returns full details of a specific sponsorship offer.
       operationId: getSponsorshipOffer
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: offerId
           in: path
@@ -3168,7 +3271,8 @@ paths:
         Only offers in `pending` status can be deleted.
       operationId: deleteSponsorshipOffer
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: offerId
           in: path
@@ -3207,7 +3311,8 @@ paths:
         Only offers in `pending` status can be responded to.
       operationId: setOfferResponse
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: offerId
           in: path
@@ -3261,7 +3366,8 @@ paths:
         including pending, accepted, declined, and expired offers.
       operationId: getMyReceivedOffers
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: status
           in: query
@@ -3305,7 +3411,8 @@ paths:
         If they win, they pocket £250 and accepted sponsors are charged their full accepted amounts (£200 and £300).
       operationId: getMySponsorshipBalance
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Sponsorship balance summary.
@@ -3336,7 +3443,8 @@ paths:
         Accessible to admins (all payouts) or alumni (own payouts only).
       operationId: listSponsorshipPayouts
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: alumniId
           in: query
@@ -3382,7 +3490,8 @@ paths:
       description: Returns full details of a specific sponsorship payout including the sponsor-by-sponsor breakdown.
       operationId: getSponsorshipPayout
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: payoutId
           in: path
@@ -3548,7 +3657,8 @@ paths:
         This endpoint is restricted to administrators.
       operationId: createApiClient
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -3579,7 +3689,8 @@ paths:
       description: Returns a list of all registered API clients and their basic information. Admin only.
       operationId: listApiClients
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: API clients listed successfully.
@@ -3651,7 +3762,8 @@ paths:
         - Aggregate totals
       operationId: getClientUsageStats
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -3701,7 +3813,8 @@ paths:
         This supports multiple active tokens per client.
       operationId: createClientToken
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -3769,7 +3882,8 @@ paths:
       description: Returns all tokens (active and revoked) for a specific API client.
       operationId: listClientTokens
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -3823,7 +3937,8 @@ paths:
       description: Revokes only the specified token for the given API client.
       operationId: revokeClientTokenByTokenId
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -3860,7 +3975,8 @@ paths:
         Admin only.
       operationId: recordEventAttendance
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -3899,7 +4015,8 @@ paths:
         This is an **admin-only fallback** in case the automated job fails.
       operationId: createWinner
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -3948,7 +4065,8 @@ paths:
       description: Returns all past "Alumni of the Day" winners with their winning bid amounts. Admin only.
       operationId: listWinners
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -3984,7 +4102,8 @@ paths:
       description: Returns all current users with their roles. Admin only.
       operationId: listAdminUsers
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       responses:
         '200':
           description: Users listed successfully.
@@ -4014,7 +4133,8 @@ paths:
         Use this to onboard Admin users when needed.
       operationId: createPrivilegedUser
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       requestBody:
         required: true
         content:
@@ -4060,7 +4180,8 @@ paths:
         The last remaining Admin cannot be demoted.
       operationId: updateUserRole
       security:
-        - JWTAuth: []
+        - SessionCookieAuth: []
+          CsrfHeader: []
       parameters:
         - name: userId
           in: path
