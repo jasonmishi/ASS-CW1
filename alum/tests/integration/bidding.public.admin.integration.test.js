@@ -1,6 +1,7 @@
 const { api, authHeader } = require('../helpers/http')
 const { createApiClientWithToken, createAuthenticatedUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
+const emailService = require('../../services/email.service')
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -14,6 +15,22 @@ const addUtcDays = (date, days) => {
 }
 
 describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
+  let winnerEmailSpy
+  let loserEmailSpy
+  let outbidEmailSpy
+
+  beforeEach(() => {
+    winnerEmailSpy = jest.spyOn(emailService, 'sendWinnerNotificationEmail').mockResolvedValue({})
+    loserEmailSpy = jest.spyOn(emailService, 'sendLosingBidNotificationEmail').mockResolvedValue({})
+    outbidEmailSpy = jest.spyOn(emailService, 'sendOutbidNotificationEmail').mockResolvedValue({})
+  })
+
+  afterEach(() => {
+    winnerEmailSpy.mockRestore()
+    loserEmailSpy.mockRestore()
+    outbidEmailSpy.mockRestore()
+  })
+
   it('prevents bidding without accepted sponsorship balance', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'bid.no.funds@eastminster.ac.uk',
@@ -212,6 +229,94 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
     expect(updateTo550.body.message).toMatch(/£500.00/)
   })
 
+  it('sends outbid email when a leading bidder becomes losing', async () => {
+    const { user: leadingAlumni, token: leadingToken } = await createAuthenticatedUser({
+      email: 'bid.leader@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const { user: challengerAlumni, token: challengerToken } = await createAuthenticatedUser({
+      email: 'bid.challenger@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const [leaderCredential, challengerCredential] = await Promise.all([
+      prisma.credential.create({
+        data: {
+          user_id: leadingAlumni.user_id,
+          credential_type: 'course',
+          title: 'Leader Credential',
+          provider_name: 'Provider A',
+          credential_url: 'https://example.com/leader',
+          completion_date: new Date('2025-12-05T00:00:00.000Z')
+        }
+      }),
+      prisma.credential.create({
+        data: {
+          user_id: challengerAlumni.user_id,
+          credential_type: 'course',
+          title: 'Challenger Credential',
+          provider_name: 'Provider B',
+          credential_url: 'https://example.com/challenger',
+          completion_date: new Date('2025-12-06T00:00:00.000Z')
+        }
+      })
+    ])
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Shared Sponsor',
+        sponsor_email: 'shared@sponsor.org'
+      }
+    })
+
+    await prisma.sponsorshipOffer.createMany({
+      data: [
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: leadingAlumni.user_id,
+          credential_id: leaderCredential.credential_id,
+          amount_offered: 500,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        },
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: challengerAlumni.user_id,
+          credential_id: challengerCredential.credential_id,
+          amount_offered: 500,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        }
+      ]
+    })
+
+    const leaderBidResponse = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(leadingToken))
+      .send({
+        amount: 250
+      })
+
+    expect(leaderBidResponse.status).toBe(201)
+    expect(outbidEmailSpy).toHaveBeenCalledTimes(0)
+
+    const challengerBidResponse = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(challengerToken))
+      .send({
+        amount: 300
+      })
+
+    expect(challengerBidResponse.status).toBe(201)
+    expect(outbidEmailSpy).toHaveBeenCalledTimes(1)
+    expect(outbidEmailSpy).toHaveBeenCalledWith(expect.objectContaining({
+      to: leadingAlumni.email
+    }))
+  })
+
   it('records event attendance and creates winner via admin endpoints', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
       email: 'winner.admin@eastminster.ac.uk',
@@ -225,6 +330,12 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
       roleName: 'alumni'
     })
 
+    const { user: losingAlumniUser } = await createAuthenticatedUser({
+      email: 'loser.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
     const tomorrow = addUtcDays(new Date(), 1)
 
     await prisma.bid.create({
@@ -232,6 +343,15 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
         alumni_user_id: alumniUser.user_id,
         amount: 300,
         status: 'winning',
+        bid_date: tomorrow
+      }
+    })
+
+    await prisma.bid.create({
+      data: {
+        alumni_user_id: losingAlumniUser.user_id,
+        amount: 280,
+        status: 'losing',
         bid_date: tomorrow
       }
     })
@@ -258,6 +378,14 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
     expect(winnerResponse.status).toBe(201)
     expect(winnerResponse.body.success).toBe(true)
     expect(winnerResponse.body.data.winnerId).toBe(alumniUser.user_id)
+    expect(winnerEmailSpy).toHaveBeenCalledTimes(1)
+    expect(winnerEmailSpy).toHaveBeenCalledWith(expect.objectContaining({
+      to: alumniUser.email
+    }))
+    expect(loserEmailSpy).toHaveBeenCalledTimes(1)
+    expect(loserEmailSpy).toHaveBeenCalledWith(expect.objectContaining({
+      to: losingAlumniUser.email
+    }))
 
     const listResponse = await api()
       .get('/api/v1/admin/winners')

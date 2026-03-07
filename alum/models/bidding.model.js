@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma')
+const emailService = require('../services/email.service')
 
 const toNumber = (value) => Number(value)
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
@@ -131,6 +132,15 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
     where: {
       bid_date: bidDate
     },
+    include: {
+      alumni: {
+        select: {
+          user_id: true,
+          email: true,
+          first_name: true
+        }
+      }
+    },
     orderBy: [
       {
         amount: 'desc'
@@ -142,10 +152,13 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
   })
 
   if (bids.length === 0) {
-    return
+    return {
+      outbidBids: []
+    }
   }
 
   const leader = bids[0]
+  const outbidBids = bids.filter((bid) => bid.bid_id !== leader.bid_id && bid.status === 'winning')
 
   await tx.bid.updateMany({
     where: {
@@ -172,13 +185,52 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
       }
     })
   }
+
+  return {
+    outbidBids
+  }
+}
+
+const sendOutbidNotifications = async ({ outbidBids, bidDate }) => {
+  if (!outbidBids || outbidBids.length === 0) {
+    return
+  }
+
+  const seenAlumni = new Set()
+  const tasks = []
+
+  for (const bid of outbidBids) {
+    const alumniId = bid.alumni_user_id
+
+    if (!bid.alumni?.email || !alumniId || seenAlumni.has(alumniId)) {
+      continue
+    }
+
+    seenAlumni.add(alumniId)
+    tasks.push(emailService.sendOutbidNotificationEmail({
+      to: bid.alumni.email,
+      firstName: bid.alumni.first_name,
+      bidDate
+    }))
+  }
+
+  if (tasks.length === 0) {
+    return
+  }
+
+  const settled = await Promise.allSettled(tasks)
+  const failures = settled.filter((result) => result.status === 'rejected')
+
+  if (failures.length > 0) {
+    console.warn(`[notifications] outbid emails failed for ${failures.length} recipient(s)`)
+  }
 }
 
 const placeBid = async ({ alumniUserId, amount }) => {
   const bidDate = getActiveBidDate()
   const { start, end } = parseMonthToRange(`${bidDate.getUTCFullYear()}-${String(bidDate.getUTCMonth() + 1).padStart(2, '0')}`)
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const existingBid = await tx.bid.findFirst({
       where: {
         alumni_user_id: alumniUserId,
@@ -222,7 +274,7 @@ const placeBid = async ({ alumniUserId, amount }) => {
       }
     })
 
-    await recomputeBidStatusesForDate(bidDate, tx)
+    const recomputeResult = await recomputeBidStatusesForDate(bidDate, tx)
 
     const fresh = await tx.bid.findUnique({
       where: {
@@ -232,9 +284,20 @@ const placeBid = async ({ alumniUserId, amount }) => {
 
     return {
       ok: true,
+      notificationContext: {
+        outbidBids: recomputeResult.outbidBids,
+        bidDate
+      },
       bid: formatBid(fresh)
     }
   })
+
+  if (result.ok && result.notificationContext) {
+    await sendOutbidNotifications(result.notificationContext)
+    delete result.notificationContext
+  }
+
+  return result
 }
 
 const listMyBids = async ({ alumniUserId, month }) => {
@@ -283,7 +346,7 @@ const getBidById = async ({ alumniUserId, bidId }) => {
 const updateBid = async ({ alumniUserId, bidId, amount }) => {
   const activeBidDate = getActiveBidDate()
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const existingBid = await tx.bid.findFirst({
       where: {
         bid_id: bidId,
@@ -336,7 +399,7 @@ const updateBid = async ({ alumniUserId, bidId, amount }) => {
       }
     })
 
-    await recomputeBidStatusesForDate(activeBidDate, tx)
+    const recomputeResult = await recomputeBidStatusesForDate(activeBidDate, tx)
 
     const fresh = await tx.bid.findUnique({
       where: {
@@ -346,9 +409,20 @@ const updateBid = async ({ alumniUserId, bidId, amount }) => {
 
     return {
       ok: true,
+      notificationContext: {
+        outbidBids: recomputeResult.outbidBids,
+        bidDate: activeBidDate
+      },
       bid: formatBid(fresh)
     }
   })
+
+  if (result.ok && result.notificationContext) {
+    await sendOutbidNotifications(result.notificationContext)
+    delete result.notificationContext
+  }
+
+  return result
 }
 
 const getMonthlySummary = async ({ alumniUserId, month }) => {
@@ -444,12 +518,53 @@ const formatPayout = (payout) => ({
   }))
 })
 
+const sendWinnerSelectionNotifications = async ({ featuredDate, winningBidAmount, winnerBid, losingBids }) => {
+  const tasks = []
+
+  if (winnerBid && winnerBid.alumni?.email) {
+    tasks.push(emailService.sendWinnerNotificationEmail({
+      to: winnerBid.alumni.email,
+      firstName: winnerBid.alumni.first_name,
+      featuredDate,
+      winningBidAmount
+    }))
+  }
+
+  const seenLoserAlumni = new Set()
+
+  for (const bid of losingBids) {
+    const alumniId = bid.alumni_user_id
+
+    if (!bid.alumni?.email || !alumniId || seenLoserAlumni.has(alumniId)) {
+      continue
+    }
+
+    seenLoserAlumni.add(alumniId)
+    tasks.push(emailService.sendLosingBidNotificationEmail({
+      to: bid.alumni.email,
+      firstName: bid.alumni.first_name,
+      featuredDate
+    }))
+  }
+
+  if (tasks.length === 0) {
+    return
+  }
+
+  const settled = await Promise.allSettled(tasks)
+  const failures = settled.filter((result) => result.status === 'rejected')
+
+  if (failures.length > 0) {
+    console.warn(`[notifications] winner selection emails failed for ${failures.length} recipient(s)`)
+  }
+}
+
 const createWinner = async ({ date, selectedByUserId }) => {
   const featuredDate = toUtcDateOnly(date)
   const monthStart = new Date(Date.UTC(featuredDate.getUTCFullYear(), featuredDate.getUTCMonth(), 1))
   const monthEnd = new Date(Date.UTC(featuredDate.getUTCFullYear(), featuredDate.getUTCMonth() + 1, 1))
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const existingWinner = await tx.featuredWinner.findUnique({
       where: {
         featured_date: featuredDate
@@ -463,9 +578,18 @@ const createWinner = async ({ date, selectedByUserId }) => {
       }
     }
 
-    const highestBid = await tx.bid.findFirst({
+    const bidsForDate = await tx.bid.findMany({
       where: {
         bid_date: featuredDate
+      },
+      include: {
+        alumni: {
+          select: {
+            user_id: true,
+            email: true,
+            first_name: true
+          }
+        }
       },
       orderBy: [
         {
@@ -476,6 +600,8 @@ const createWinner = async ({ date, selectedByUserId }) => {
         }
       ]
     })
+
+    const highestBid = bidsForDate[0]
 
     if (!highestBid) {
       return {
@@ -584,6 +710,12 @@ const createWinner = async ({ date, selectedByUserId }) => {
 
     return {
       ok: true,
+      notificationContext: {
+        winnerBid: highestBid,
+        losingBids: bidsForDate.filter((bid) => bid.bid_id !== highestBid.bid_id),
+        featuredDate: winner.featured_date,
+        winningBidAmount: toNumber(winner.winning_bid_amount)
+      },
       winner: {
         date: winner.featured_date,
         winnerId: winner.alumni_user_id,
@@ -593,6 +725,13 @@ const createWinner = async ({ date, selectedByUserId }) => {
       }
     }
   })
+
+  if (result.ok && result.notificationContext) {
+    await sendWinnerSelectionNotifications(result.notificationContext)
+    delete result.notificationContext
+  }
+
+  return result
 }
 
 const listWinners = async ({ month }) => {
