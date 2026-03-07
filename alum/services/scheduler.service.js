@@ -1,6 +1,7 @@
 const biddingModel = require('../models/bidding.model')
 const sponsorshipModel = require('../models/sponsorship.model')
 const adminModel = require('../models/admin.model')
+const biddingNotificationService = require('./bidding-notification.service')
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -47,6 +48,8 @@ const runWinnerSelectionForDate = async (dateInput, logger = console) => {
 
     throw new Error(`Unexpected winner selection failure: ${result.reason || 'unknown'}`)
   }
+
+  await biddingNotificationService.sendWinnerSelectionNotifications(result.notificationContext)
 
   logger.info(`[scheduler] winner created for ${dateKey(date)} (winnerId=${result.winner.winnerId})`)
 

@@ -1,4 +1,5 @@
 const biddingModel = require('../models/bidding.model')
+const biddingNotificationService = require('../services/bidding-notification.service')
 
 const placeBid = async (req, res) => {
   const result = await biddingModel.placeBid({
@@ -26,6 +27,8 @@ const placeBid = async (req, res) => {
       message: `Insufficient sponsorship funds. Your available balance is £${result.availableBalance.toFixed(2)} but you attempted to bid £${Number(req.body.amount).toFixed(2)}.`
     })
   }
+
+  await biddingNotificationService.sendOutbidNotifications(result.notificationContext)
 
   return res.status(201).json({
     success: true,
@@ -101,6 +104,8 @@ const updateBid = async (req, res) => {
       message: `Insufficient sponsorship funds. Your available balance is £${result.availableBalance.toFixed(2)} but you attempted to bid £${Number(req.body.amount).toFixed(2)}.`
     })
   }
+
+  await biddingNotificationService.sendOutbidNotifications(result.notificationContext)
 
   return res.status(200).json({
     success: true,

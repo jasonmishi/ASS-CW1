@@ -1,5 +1,6 @@
 const adminModel = require('../models/admin.model')
 const biddingModel = require('../models/bidding.model')
+const biddingNotificationService = require('../services/bidding-notification.service')
 
 const createPrivilegedUser = async (req, res) => {
   const result = await adminModel.createPrivilegedUser(req.body)
@@ -93,6 +94,8 @@ const createWinner = async (req, res) => {
       message: `Cannot create winner because the selected alumni has reached the monthly win limit (${result.maxWinsAllowed}).`
     })
   }
+
+  await biddingNotificationService.sendWinnerSelectionNotifications(result.notificationContext)
 
   return res.status(201).json({
     success: true,
