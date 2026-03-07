@@ -2,6 +2,8 @@ const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser, createUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
 const { hashToken } = require('../../utils/security')
+const request = require('supertest')
+const app = require('../../app')
 
 describe('POST /api/v1/auth/users', () => {
   it('returns 400 for non-university email', async () => {
@@ -195,6 +197,26 @@ describe('POST /api/v1/auth/sessions', () => {
 
     const session = await prisma.authSession.findFirst({ where: { revoked_at: null } })
     expect(session).toBeTruthy()
+  })
+
+  it('allows login without pre-existing CSRF token and sets csrf cookie', async () => {
+    await createUser({
+      email: 'login.no.csrf@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      verified: true
+    })
+
+    const response = await request(app)
+      .post('/api/v1/auth/sessions')
+      .send({
+        email: 'login.no.csrf@eastminster.ac.uk',
+        password: 'Strong!Pass1'
+      })
+
+    expect(response.status).toBe(201)
+    const setCookieHeader = response.headers['set-cookie'] || []
+    expect(setCookieHeader.some((value) => value.startsWith('csrf_token='))).toBe(true)
+    expect(setCookieHeader.some((value) => value.startsWith('access_token='))).toBe(true)
   })
 })
 

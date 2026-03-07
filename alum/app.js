@@ -5,6 +5,8 @@ const path = require('node:path')
 const swaggerUi = require('swagger-ui-express')
 const YAML = require('yamljs')
 const prisma = require('./lib/prisma')
+const { buildCorsMiddleware } = require('./middleware/cors.middleware')
+const { csrfProtection } = require('./middleware/csrf.middleware')
 const { ensureFirstAdmin } = require('./lib/bootstrap-admin')
 const roleModel = require('./models/role.model')
 const userRoutes = require('./routes/user.routes')
@@ -26,7 +28,9 @@ const swaggerDocument = YAML.load(swaggerFilePath)
 
 const app = express()
 app.use(helmet())
+app.use(buildCorsMiddleware())
 app.use(express.json())
+app.use(csrfProtection)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
   swaggerOptions: {

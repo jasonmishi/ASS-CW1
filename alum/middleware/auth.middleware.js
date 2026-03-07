@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken')
 const authModel = require('../models/auth.model')
 const prisma = require('../lib/prisma')
 const { hashToken } = require('../utils/security')
+const { parseCookies } = require('../utils/cookies')
 
 const getSecret = () => {
   return process.env.JWT_SECRET || 'dev-insecure-jwt-secret'
@@ -15,8 +16,11 @@ const getBearerToken = (authorizationHeader) => {
   return authorizationHeader.slice(7)
 }
 
+const ACCESS_TOKEN_COOKIE_NAME = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token'
+
 const authenticateJwt = (req, res, next) => {
-  const token = getBearerToken(req.headers.authorization)
+  const cookies = parseCookies(req.headers.cookie)
+  const token = cookies[ACCESS_TOKEN_COOKIE_NAME]
 
   if (!token) {
     return res.status(401).json({

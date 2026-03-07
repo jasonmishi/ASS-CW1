@@ -1,7 +1,24 @@
 const authModel = require('../models/auth.model')
+const { generateCsrfToken } = require('../utils/csrf')
 
 const EMAIL_VERIFICATION_TTL_HOURS = Number(process.env.EMAIL_VERIFICATION_TTL_HOURS || 24)
 const PASSWORD_RESET_TTL_HOURS = Number(process.env.PASSWORD_RESET_TTL_HOURS || 1)
+const ACCESS_TOKEN_COOKIE_NAME = process.env.ACCESS_TOKEN_COOKIE_NAME || 'access_token'
+const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'csrf_token'
+
+const getAccessTokenCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.ACCESS_TOKEN_COOKIE_SAMESITE || 'lax',
+  path: '/'
+})
+
+const getCsrfCookieOptions = () => ({
+  httpOnly: false,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.CSRF_COOKIE_SAMESITE || 'lax',
+  path: '/'
+})
 
 const register = async (req, res) => {
   const result = await authModel.registerUserWithVerification({
@@ -88,6 +105,9 @@ const createSession = async (req, res) => {
 
   const { signedToken, user } = result
 
+  res.cookie(ACCESS_TOKEN_COOKIE_NAME, signedToken.token, getAccessTokenCookieOptions())
+  res.cookie(CSRF_COOKIE_NAME, generateCsrfToken(), getCsrfCookieOptions())
+
   return res.status(201).json({
     success: true,
     message: 'Login successful.',
@@ -104,6 +124,8 @@ const createSession = async (req, res) => {
 
 const deleteSession = async (req, res) => {
   await authModel.revokeAuthSession(req.user.tokenHash)
+  res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, getAccessTokenCookieOptions())
+  res.clearCookie(CSRF_COOKIE_NAME, getCsrfCookieOptions())
   return res.status(204).send()
 }
 
