@@ -4,13 +4,11 @@ const fs = require('node:fs')
 const path = require('node:path')
 const swaggerUi = require('swagger-ui-express')
 const YAML = require('yamljs')
-const prisma = require('./lib/prisma')
 const { buildCorsMiddleware } = require('./middleware/cors.middleware')
 const { csrfProtection } = require('./middleware/csrf.middleware')
 const { applyRateLimitTrustProxy, buildApiRateLimiter } = require('./middleware/rate-limit.middleware')
 const { ensureFirstAdmin } = require('./lib/bootstrap-admin')
 const roleModel = require('./models/role.model')
-const userRoutes = require('./routes/user.routes')
 const authRoutes = require('./routes/auth.routes')
 const clientRoutes = require('./routes/client.routes')
 const adminRoutes = require('./routes/admin.routes')
@@ -57,7 +55,6 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/v1', apiRateLimiter)
-app.use('/api/v1/users', userRoutes)
 app.use('/api/v1', authRoutes)
 app.use('/api/v1', clientRoutes)
 app.use('/api/v1', adminRoutes)
@@ -65,11 +62,6 @@ app.use('/api/v1', profileRoutes)
 app.use('/api/v1', sponsorshipRoutes)
 app.use('/api/v1', biddingRoutes)
 app.use('/api/v1', publicRoutes)
-
-app.get('/db-check', async (req, res) => {
-  const result = await prisma.$queryRaw`SELECT 1 AS ok`
-  res.json({ ok: true, result: result[0] })
-})
 
 const bootstrap = async () => {
   await roleModel.ensureDefaultRoles()
