@@ -415,6 +415,18 @@ const getSponsorshipPayout = async (req, res) => {
   })
 }
 
+const getOrgProfitSummary = async (req, res) => {
+  const summary = await sponsorshipModel.getOrgProfitSummary({
+    from: req.query.from,
+    to: req.query.to
+  })
+
+  return res.status(200).json({
+    success: true,
+    data: summary
+  })
+}
+
 module.exports = {
   assignSponsorUserToOrganization,
   createSponsorOrganization,
@@ -426,6 +438,7 @@ module.exports = {
   getSponsorOrganization,
   getSponsorshipOffer,
   getSponsorshipPayout,
+  getOrgProfitSummary,
   leaveMySponsorOrganization,
   listMySponsorshipOffers,
   listSponsorableAlumniCredentials,

@@ -71,6 +71,19 @@ const listSponsorshipPayoutsQuerySchema = z.object({
   }
 })
 
+const orgProfitQuerySchema = z.object({
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional()
+}).superRefine((value, ctx) => {
+  if (value.from && value.to && value.from > value.to) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['to'],
+      message: 'to must be on or after from.'
+    })
+  }
+})
+
 const sponsorshipPayoutParamsSchema = z.object({
   payoutId: z.string().min(1)
 })
@@ -80,6 +93,7 @@ module.exports = {
   createSponsorshipOfferBodySchema,
   listSponsorableCredentialsQuerySchema,
   listMySponsorshipOffersQuerySchema,
+  orgProfitQuerySchema,
   listSponsorOrganizationsQuerySchema,
   listSponsorshipOffersQuerySchema,
   listSponsorshipPayoutsQuerySchema,

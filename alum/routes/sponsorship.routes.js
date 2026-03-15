@@ -5,6 +5,7 @@ const { validate } = require('../middleware/validate.middleware')
 const {
   createSponsorOrganizationBodySchema,
   createSponsorshipOfferBodySchema,
+  orgProfitQuerySchema,
   listMySponsorshipOffersQuerySchema,
   listSponsorableCredentialsQuerySchema,
   listSponsorOrganizationsQuerySchema,
@@ -43,5 +44,6 @@ router.get('/sponsorships/balance', authenticateJwt, requireAlumni, sponsorshipC
 
 router.get('/sponsorships/payouts', authenticateJwt, requireAdminOrAlumni, validate(listSponsorshipPayoutsQuerySchema, 'query'), sponsorshipController.listSponsorshipPayouts)
 router.get('/sponsorships/payouts/:payoutId', authenticateJwt, requireAdminOrAlumni, validate(sponsorshipPayoutParamsSchema, 'params'), sponsorshipController.getSponsorshipPayout)
+router.get('/sponsorships/profit/org', authenticateJwt, requireAdmin, validate(orgProfitQuerySchema, 'query'), sponsorshipController.getOrgProfitSummary)
 
 module.exports = router

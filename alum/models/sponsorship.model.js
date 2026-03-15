@@ -952,6 +952,57 @@ const getSponsorshipPayoutById = async ({ actorUserId, actorRole, payoutId }) =>
   }
 }
 
+const getOrgProfitSummary = async ({ from, to }) => {
+  const payoutWhere = {}
+
+  if (from || to) {
+    payoutWhere.created_at = {}
+
+    if (from) {
+      payoutWhere.created_at.gte = from
+    }
+
+    if (to) {
+      payoutWhere.created_at.lte = to
+    }
+  }
+
+  const [payoutAggregate, payoutLineAggregate] = await Promise.all([
+    prisma.sponsorshipPayout.aggregate({
+      where: payoutWhere,
+      _sum: {
+        winning_bid_amount: true,
+        alumni_payout: true
+      },
+      _count: {
+        _all: true
+      }
+    }),
+    prisma.sponsorshipPayoutLine.aggregate({
+      where: {
+        payout: payoutWhere
+      },
+      _sum: {
+        amount_charged: true
+      }
+    })
+  ])
+
+  const totalSponsorshipCharged = toNumber(payoutLineAggregate._sum.amount_charged || 0)
+  const totalWinningBidAmount = toNumber(payoutAggregate._sum.winning_bid_amount || 0)
+  const totalAlumniPayout = toNumber(payoutAggregate._sum.alumni_payout || 0)
+  const orgProfit = totalWinningBidAmount
+
+  return {
+    payoutCount: payoutAggregate._count._all,
+    totalSponsorshipCharged,
+    totalWinningBidAmount,
+    totalAlumniPayout,
+    orgProfit,
+    formula: 'orgProfit = totalWinningBidAmount; alumniProfit = totalSponsorshipCharged - totalWinningBidAmount'
+  }
+}
+
 module.exports = {
   assignSponsorUserToOrganization,
   cancelSponsorshipOffer,
@@ -963,6 +1014,7 @@ module.exports = {
   getSponsorOrganizationById,
   getSponsorshipOfferById,
   getSponsorshipPayoutById,
+  getOrgProfitSummary,
   leaveSponsorOrganization,
   listSponsorableAlumniCredentials,
   listMyReceivedSponsorshipOffers,
