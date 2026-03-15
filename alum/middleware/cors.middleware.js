@@ -10,7 +10,7 @@ const DEFAULT_DEV_ORIGINS = [
 const parseAllowedOrigins = () => {
   const raw = process.env.ALLOWED_ORIGINS
 
-  if (!raw || !raw.trim()) {
+  if (!raw?.trim()) {
     return new Set(DEFAULT_DEV_ORIGINS)
   }
 

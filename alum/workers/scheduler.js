@@ -62,7 +62,11 @@ const start = async () => {
   }, TICK_INTERVAL_MS)
 }
 
-void start().catch((error) => {
-  console.error('[scheduler] fatal startup failure', error)
-  process.exit(1)
-})
+void (async () => {
+  try {
+    await start()
+  } catch (error) {
+    console.error('[scheduler] fatal startup failure', error)
+    process.exit(1)
+  }
+})()

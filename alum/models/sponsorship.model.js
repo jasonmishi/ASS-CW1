@@ -3,7 +3,7 @@ const prisma = require('../lib/prisma')
 const ACTIVE_OFFER_STATUSES = ['pending', 'accepted']
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 
-const toNumber = (value) => Number(value)
+const toNumber = Number
 
 const formatOffer = (offer) => ({
   id: offer.offer_id,
@@ -482,7 +482,7 @@ const createSponsorshipOffer = async ({
     }
   })
 
-  if (!credential || credential.user.role.name !== 'alumni') {
+  if (credential?.user?.role?.name !== 'alumni') {
     return {
       ok: false,
       reason: 'credential_not_found'

@@ -38,7 +38,7 @@ const getAlumniPublicProfile = async (alumniId) => {
     }
   })
 
-  if (!user || user.role.name !== 'alumni') {
+  if (user?.role?.name !== 'alumni') {
     return null
   }
 

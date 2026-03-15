@@ -27,7 +27,10 @@ const TABLES = [
 ]
 
 const resetDatabase = async () => {
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${TABLES.map((table) => `"${table}"`).join(', ')} RESTART IDENTITY CASCADE;`)
+  const quotedTables = TABLES.map((table) => `"${table}"`).join(', ')
+  const truncateStatement = `TRUNCATE TABLE ${quotedTables} RESTART IDENTITY CASCADE;`
+
+  await prisma.$executeRawUnsafe(truncateStatement)
   await roleModel.ensureDefaultRoles()
 }
 

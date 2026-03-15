@@ -90,7 +90,7 @@ class PrismaRateLimitStore {
 }
 
 const getApiClientKey = (authorizationHeader) => {
-  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+  if (!authorizationHeader?.startsWith('Bearer ')) {
     return null
   }
 

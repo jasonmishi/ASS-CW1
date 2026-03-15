@@ -1,7 +1,7 @@
 const emailService = require('./email.service')
 
 const sendOutbidNotifications = async (notificationContext) => {
-  if (!notificationContext || !notificationContext.outbidBids || notificationContext.outbidBids.length === 0) {
+  if (!notificationContext?.outbidBids?.length) {
     return
   }
 

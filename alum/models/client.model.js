@@ -258,7 +258,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
   }
 }
 
-const createAdditionalTokenForClient = async (clientId, expiresAt = null, scopes) => {
+const createAdditionalTokenForClient = async (clientId, scopes, expiresAt = null) => {
   const client = await findClientById(clientId)
 
   if (!client) {

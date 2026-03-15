@@ -1,5 +1,5 @@
 (() => {
-  const csrfCookieName = window.__CSRF_COOKIE_NAME__ || 'csrf_token'
+  const csrfCookieName = globalThis.__CSRF_COOKIE_NAME__ || 'csrf_token'
 
   const getCookieValue = (name) => {
     const source = document.cookie || ''
@@ -17,11 +17,11 @@
   }
 
   const attachRequestInterceptor = () => {
-    if (!window.ui || typeof window.ui.getConfigs !== 'function') {
+    if (!globalThis.ui || typeof globalThis.ui.getConfigs !== 'function') {
       return false
     }
 
-    const configs = window.ui.getConfigs()
+    const configs = globalThis.ui.getConfigs()
 
     if (configs.__csrfInterceptorAttached) {
       return true

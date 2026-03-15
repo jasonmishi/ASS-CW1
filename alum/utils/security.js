@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs')
-const crypto = require('crypto')
+const crypto = require('node:crypto')
 
 const UNIVERSITY_DOMAIN = 'eastminster.ac.uk'
 

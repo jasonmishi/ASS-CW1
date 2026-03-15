@@ -101,17 +101,16 @@ const listCredentialVariant = async (userId, variant) => {
 }
 
 const createCredentialVariant = async (userId, variant, payload) => {
-  const providerName = variant === CREDENTIAL_TYPES.certification
-    ? payload.issuingOrganisation
-    : variant === CREDENTIAL_TYPES.licence
-      ? payload.awardingBody
-      : payload.provider
+  let providerName = payload.provider
+  let credentialUrl = payload.courseUrl
 
-  const credentialUrl = variant === CREDENTIAL_TYPES.certification
-    ? payload.certificationUrl
-    : variant === CREDENTIAL_TYPES.licence
-      ? payload.licenceUrl
-      : payload.courseUrl
+  if (variant === CREDENTIAL_TYPES.certification) {
+    providerName = payload.issuingOrganisation
+    credentialUrl = payload.certificationUrl
+  } else if (variant === CREDENTIAL_TYPES.licence) {
+    providerName = payload.awardingBody
+    credentialUrl = payload.licenceUrl
+  }
 
   const credential = await createCredential({
     userId,
@@ -132,17 +131,16 @@ const updateCredentialVariant = async (userId, variant, credentialId, payload) =
     return null
   }
 
-  const providerName = variant === CREDENTIAL_TYPES.certification
-    ? payload.issuingOrganisation
-    : variant === CREDENTIAL_TYPES.licence
-      ? payload.awardingBody
-      : payload.provider
+  let providerName = payload.provider
+  let credentialUrl = payload.courseUrl
 
-  const credentialUrl = variant === CREDENTIAL_TYPES.certification
-    ? payload.certificationUrl
-    : variant === CREDENTIAL_TYPES.licence
-      ? payload.licenceUrl
-      : payload.courseUrl
+  if (variant === CREDENTIAL_TYPES.certification) {
+    providerName = payload.issuingOrganisation
+    credentialUrl = payload.certificationUrl
+  } else if (variant === CREDENTIAL_TYPES.licence) {
+    providerName = payload.awardingBody
+    credentialUrl = payload.licenceUrl
+  }
 
   const updated = await updateCredential(credentialId, {
     title: payload.title,
@@ -403,11 +401,11 @@ const updateProfile = async (userId, payload) => {
   return prisma.$transaction(async (tx) => {
     const userUpdateData = {}
 
-    if (Object.prototype.hasOwnProperty.call(payload, 'firstName')) {
+    if (Object.hasOwn(payload, 'firstName')) {
       userUpdateData.first_name = payload.firstName
     }
 
-    if (Object.prototype.hasOwnProperty.call(payload, 'lastName')) {
+    if (Object.hasOwn(payload, 'lastName')) {
       userUpdateData.last_name = payload.lastName
     }
 
@@ -422,11 +420,11 @@ const updateProfile = async (userId, payload) => {
 
     const profileUpdateData = {}
 
-    if (Object.prototype.hasOwnProperty.call(payload, 'biography')) {
+    if (Object.hasOwn(payload, 'biography')) {
       profileUpdateData.biography = payload.biography
     }
 
-    if (Object.prototype.hasOwnProperty.call(payload, 'linkedinUrl')) {
+    if (Object.hasOwn(payload, 'linkedinUrl')) {
       profileUpdateData.linkedin_url = payload.linkedinUrl
     }
 
@@ -474,7 +472,7 @@ const deleteProfileImage = async (userId) => {
     }
   })
 
-  if (!profile || !profile.profile_image_url) {
+  if (!profile?.profile_image_url) {
     return null
   }
 

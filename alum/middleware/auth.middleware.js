@@ -9,7 +9,7 @@ const getSecret = () => {
 }
 
 const getBearerToken = (authorizationHeader) => {
-  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+  if (!authorizationHeader?.startsWith('Bearer ')) {
     return null
   }
 
@@ -61,7 +61,7 @@ const authenticateJwt = (req, res, next) => {
 }
 
 const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
+  if (req.user?.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Admin access is required.'
@@ -72,7 +72,7 @@ const requireAdmin = (req, res, next) => {
 }
 
 const requireSponsorOrAdmin = (req, res, next) => {
-  if (!req.user || (req.user.role !== 'sponsor' && req.user.role !== 'admin')) {
+  if (req.user?.role !== 'sponsor' && req.user?.role !== 'admin') {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Sponsor or Admin access is required.'
@@ -83,7 +83,7 @@ const requireSponsorOrAdmin = (req, res, next) => {
 }
 
 const requireSponsor = (req, res, next) => {
-  if (!req.user || req.user.role !== 'sponsor') {
+  if (req.user?.role !== 'sponsor') {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Sponsor access is required.'
@@ -94,7 +94,7 @@ const requireSponsor = (req, res, next) => {
 }
 
 const requireAlumni = (req, res, next) => {
-  if (!req.user || req.user.role !== 'alumni') {
+  if (req.user?.role !== 'alumni') {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Alumni access is required.'
@@ -105,7 +105,7 @@ const requireAlumni = (req, res, next) => {
 }
 
 const requireAdminOrAlumni = (req, res, next) => {
-  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'alumni')) {
+  if (req.user?.role !== 'admin' && req.user?.role !== 'alumni') {
     return res.status(403).json({
       success: false,
       message: 'Forbidden. Admin or Alumni access is required.'
