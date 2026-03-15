@@ -154,10 +154,26 @@ const authenticateApiClient = async (req, res, next) => {
   req.apiClient = {
     client_id: tokenRecord.client_id,
     client_name: tokenRecord.client.client_name,
-    token_id: tokenRecord.token_id
+    token_id: tokenRecord.token_id,
+    scopes: tokenRecord.scopes || []
   }
 
   return next()
+}
+
+const requireApiClientScope = (requiredScope) => {
+  return (req, res, next) => {
+    const scopes = Array.isArray(req.apiClient?.scopes) ? req.apiClient.scopes : []
+
+    if (scopes.includes(requiredScope)) {
+      return next()
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. API client token does not include the required scope.'
+    })
+  }
 }
 
 const recordApiClientUsage = (req, _res, next) => {
@@ -223,6 +239,7 @@ module.exports = {
   authenticateApiClient,
   authenticateJwt,
   recordApiClientUsage,
+  requireApiClientScope,
   requireAdmin,
   requireAdminOrAlumni,
   requireAlumni,

@@ -1,6 +1,6 @@
 const { createAuthenticatedUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
-const { runSponsorshipExpirySweep, runWinnerSelectionForDate } = require('../../services/scheduler.service')
+const { runRateLimitCounterCleanup, runSponsorshipExpirySweep, runWinnerSelectionForDate } = require('../../services/scheduler.service')
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -75,6 +75,44 @@ describe('Scheduler service', () => {
     })
 
     expect(refreshedExpiredOffer.status).toBe('expired')
+  })
+
+  it('deletes expired rate limit counters via worker cleanup', async () => {
+    const expiredWindowStart = new Date(Date.now() - (60 * 60 * 1000))
+    const activeWindowStart = new Date()
+
+    await prisma.rateLimitCounter.createMany({
+      data: [
+        {
+          key: 'expired-counter',
+          window_start: expiredWindowStart,
+          request_count: 3,
+          expires_at: new Date(Date.now() - 60_000)
+        },
+        {
+          key: 'active-counter',
+          window_start: activeWindowStart,
+          request_count: 2,
+          expires_at: new Date(Date.now() + (60 * 60 * 1000))
+        }
+      ]
+    })
+
+    const result = await runRateLimitCounterCleanup({
+      info: jest.fn()
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.deletedCount).toBe(1)
+
+    const counters = await prisma.rateLimitCounter.findMany({
+      orderBy: {
+        key: 'asc'
+      }
+    })
+
+    expect(counters).toHaveLength(1)
+    expect(counters[0].key).toBe('active-counter')
   })
 
   it('creates daily winner from existing bids via scheduler service', async () => {

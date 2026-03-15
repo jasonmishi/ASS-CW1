@@ -1,12 +1,13 @@
 const clientModel = require('../models/client.model')
 
 const createClient = async (req, res) => {
-  const { clientName, description, contactEmail } = req.body
+  const { clientName, description, contactEmail, scopes } = req.body
 
   const result = await clientModel.registerClientWithToken({
     clientName,
     description,
     contactEmail,
+    scopes,
     createdByUserId: req.user.user_id
   })
 
@@ -30,6 +31,7 @@ const createClient = async (req, res) => {
       is_revoked: client.is_revoked,
       created_by_user_id: client.created_by_user_id,
       created_at: client.created_at,
+      scopes: result.scopes,
       token
     }
   })
@@ -68,8 +70,8 @@ const getClientUsageStats = async (req, res) => {
 
 const createClientToken = async (req, res) => {
   const { clientId } = req.params
-  const { expiresAt } = req.body
-  const tokenData = await clientModel.createAdditionalTokenForClient(clientId, expiresAt || null)
+  const { expiresAt, scopes } = req.body
+  const tokenData = await clientModel.createAdditionalTokenForClient(clientId, expiresAt || null, scopes)
 
   if (!tokenData) {
     return res.status(404).json({

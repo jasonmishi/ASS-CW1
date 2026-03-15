@@ -1,5 +1,6 @@
 const { hashPassword, hashToken } = require('../../utils/security')
 const { signUserToken } = require('../../utils/jwt')
+const { DEFAULT_PUBLIC_SCOPES } = require('../../utils/api-client-scopes')
 const { prisma } = require('./test-db')
 
 const getRoleId = async (roleName) => {
@@ -65,7 +66,11 @@ const createAuthenticatedUser = async ({
   }
 }
 
-const createApiClientWithToken = async ({ clientName = 'AR Campus App', createdByUserId }) => {
+const createApiClientWithToken = async ({
+  clientName = 'AR Campus App',
+  createdByUserId,
+  scopes = DEFAULT_PUBLIC_SCOPES
+}) => {
   const client = await prisma.apiClient.create({
     data: {
       client_name: clientName,
@@ -79,7 +84,8 @@ const createApiClientWithToken = async ({ clientName = 'AR Campus App', createdB
   const token = await prisma.apiClientToken.create({
     data: {
       client_id: client.client_id,
-      token_hash: hashToken(plainToken)
+      token_hash: hashToken(plainToken),
+      scopes
     }
   })
 

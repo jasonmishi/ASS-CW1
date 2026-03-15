@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma')
 const { generateSecureToken, hashToken } = require('../utils/security')
+const { normalizeScopes } = require('../utils/api-client-scopes')
 
 const createClient = async (data) => {
   return prisma.apiClient.create({
@@ -29,11 +30,14 @@ const findClientById = async (client_id) => {
   })
 }
 
-const createClientToken = async ({ client_id, token_hash, expires_at = null }) => {
+const createClientToken = async ({ client_id, token_hash, scopes, expires_at = null }) => {
+  const normalizedScopes = normalizeScopes(scopes)
+
   return prisma.apiClientToken.create({
     data: {
       client_id,
       token_hash,
+      scopes: normalizedScopes,
       expires_at
     }
   })
@@ -154,6 +158,7 @@ const registerClientWithToken = async ({
   clientName,
   description,
   contactEmail,
+  scopes,
   createdByUserId
 }) => {
   const existingClient = await findClientByName(clientName)
@@ -174,16 +179,19 @@ const registerClientWithToken = async ({
 
   const plainToken = generateSecureToken(40)
   const tokenHash = hashToken(plainToken)
+  const normalizedScopes = normalizeScopes(scopes)
 
   await createClientToken({
     client_id: client.client_id,
-    token_hash: tokenHash
+    token_hash: tokenHash,
+    scopes: normalizedScopes
   })
 
   return {
     ok: true,
     client,
-    token: plainToken
+    token: plainToken,
+    scopes: normalizedScopes
   }
 }
 
@@ -223,6 +231,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
     tokens: usageStats.tokens.map((token) => ({
       token_id: token.token_id,
       client_id: token.client_id,
+      scopes: token.scopes || [],
       issued_at: token.issued_at,
       expires_at: token.expires_at,
       revoked_at: token.revoked_at
@@ -240,6 +249,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
       ? {
         token_id: latestToken.token_id,
         client_id: latestToken.client_id,
+        scopes: latestToken.scopes || [],
         issued_at: latestToken.issued_at,
         expires_at: latestToken.expires_at,
         revoked_at: latestToken.revoked_at
@@ -248,7 +258,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
   }
 }
 
-const createAdditionalTokenForClient = async (clientId, expiresAt = null) => {
+const createAdditionalTokenForClient = async (clientId, expiresAt = null, scopes) => {
   const client = await findClientById(clientId)
 
   if (!client) {
@@ -257,10 +267,12 @@ const createAdditionalTokenForClient = async (clientId, expiresAt = null) => {
 
   const plainToken = generateSecureToken(40)
   const tokenHash = hashToken(plainToken)
+  const normalizedScopes = normalizeScopes(scopes)
 
   const newToken = await createClientToken({
     client_id: clientId,
     token_hash: tokenHash,
+    scopes: normalizedScopes,
     expires_at: expiresAt
   })
 
@@ -270,6 +282,7 @@ const createAdditionalTokenForClient = async (clientId, expiresAt = null) => {
     client_id: clientId,
     token: plainToken,
     token_id: newToken.token_id,
+    scopes: newToken.scopes || [],
     issued_at: newToken.issued_at,
     expires_at: newToken.expires_at,
     revoked_at: newToken.revoked_at
@@ -291,6 +304,7 @@ const listTokensByClientId = async (clientId) => {
   return tokens.map((token) => ({
     token_id: token.token_id,
     client_id: token.client_id,
+    scopes: token.scopes || [],
     issued_at: token.issued_at,
     expires_at: token.expires_at,
     revoked_at: token.revoked_at

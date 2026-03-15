@@ -742,6 +742,13 @@ components:
                 $ref: '#/components/schemas/Employment'
 
     # ─── API Client ───────────────────────
+    ApiClientScope:
+      type: string
+      enum:
+        - public:featured:read
+        - public:history:read
+        - public:profile:read
+
     ApiClientRegisterRequest:
       type: object
       required: [clientName, description, contactEmail]
@@ -756,6 +763,11 @@ components:
           type: string
           format: email
           example: dev@arcampus.io
+        scopes:
+          type: array
+          description: Optional token scopes for the initial token. Defaults to all public read scopes.
+          items:
+            $ref: '#/components/schemas/ApiClientScope'
 
     ApiClientRegisterResponse:
       type: object
@@ -795,6 +807,10 @@ components:
               type: string
               description: Bearer token for API access. Shown once; store securely.
               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            scopes:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiClientScope'
 
     ApiClientUsageStats:
       type: object
@@ -837,6 +853,10 @@ components:
                 type: string
               client_id:
                 type: string
+              scopes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiClientScope'
               issued_at:
                 type: string
                 format: date-time
@@ -880,6 +900,10 @@ components:
               type: string
             client_id:
               type: string
+            scopes:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiClientScope'
             issued_at:
               type: string
               format: date-time
@@ -1110,7 +1134,8 @@ components:
       description: |
         Payout record created when an alumni wins "Alumni of the Day".
         The sponsor only pays if the alumni wins and their profile is displayed.
-        The alumni pockets their winning bid amount from the pooled sponsorship funds.
+        The organization records the winning bid amount as profit, and the alumni pockets
+        the remaining sponsorship surplus after the winning bid is covered.
       properties:
         payoutId:
           type: string
@@ -1125,7 +1150,7 @@ components:
         winningBidAmount:
           type: number
           format: double
-          description: The bid amount the alumni placed and won with. This is what the alumni pockets.
+          description: The bid amount the alumni placed and won with. This is the organization's profit.
           example: 250.00
         sponsorshipBreakdown:
           type: array
@@ -1150,8 +1175,8 @@ components:
         alumniPayout:
           type: number
           format: double
-          description: Total amount (£) the alumni pockets (equals winningBidAmount).
-          example: 250.00
+          description: Total amount (£) the alumni pockets after the winning bid is covered.
+          example: 125.00
         status:
           type: string
           enum: [pending, processed, failed]
@@ -1159,6 +1184,34 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    OrgProfitSummary:
+      type: object
+      description: Aggregated sponsorship profit summary for the organization.
+      properties:
+        payoutCount:
+          type: integer
+          example: 12
+        totalSponsorshipCharged:
+          type: number
+          format: double
+          example: 5400.00
+        totalWinningBidAmount:
+          type: number
+          format: double
+          example: 2750.00
+        totalAlumniPayout:
+          type: number
+          format: double
+          example: 2650.00
+        orgProfit:
+          type: number
+          format: double
+          description: `totalWinningBidAmount`
+          example: 2750.00
+        formula:
+          type: string
+          example: orgProfit = totalWinningBidAmount; alumniProfit = totalSponsorshipCharged - totalWinningBidAmount
 
     # ─── Event Attendance ─────────────────
     EventAttendanceRequest:
@@ -3488,6 +3541,53 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /sponsorships/profit/org:
+    get:
+      tags: [Sponsorship]
+      summary: Get organization sponsorship profit summary
+      description: |
+        Returns aggregate sponsorship accounting over sponsorship payouts.
+        Profit is calculated as:
+        `totalSponsorshipCharged - totalAlumniPayout`.
+
+        Admin access only.
+      operationId: getOrgProfitSummary
+      security:
+        - SessionCookieAuth: []
+          CsrfHeader: []
+      parameters:
+        - name: from
+          in: query
+          description: Start datetime filter (inclusive).
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: End datetime filter (inclusive).
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Organization profit summary retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrgProfitSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /sponsorships/payouts/{payoutId}:
     get:
       tags: [Sponsorship]
@@ -3536,6 +3636,7 @@ paths:
         the AR client and any other registered API clients.
 
         **Requires a valid Bearer token** issued to a registered API client.
+        Required scope: `public:featured:read`.
       operationId: getFeaturedAlumni
       security:
         - APIKeyAuth: []
@@ -3554,6 +3655,8 @@ paths:
                     $ref: '#/components/schemas/FeaturedAlumni'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: No featured alumni for today (no bids were placed or winner not yet selected).
           content:
@@ -3572,7 +3675,9 @@ paths:
     get:
       tags: [Public API]
       summary: Get featured alumni history
-      description: Returns a list of past "Alumni of the Day" winners.
+      description: |
+        Returns a list of past "Alumni of the Day" winners.
+        Required scope: `public:history:read`.
       operationId: getFeaturedHistory
       security:
         - APIKeyAuth: []
@@ -3606,6 +3711,8 @@ paths:
                       $ref: '#/components/schemas/FeaturedAlumni'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -3615,7 +3722,10 @@ paths:
     get:
       tags: [Public API]
       summary: Get a specific alumni's public profile
-      description: Returns the public-facing profile of a specific alumni by their ID. Only displays information the alumni has made public.
+      description: |
+        Returns the public-facing profile of a specific alumni by their ID.
+        Only displays information the alumni has made public.
+        Required scope: `public:profile:read`.
       operationId: getAlumniPublicProfile
       security:
         - APIKeyAuth: []
@@ -3640,6 +3750,8 @@ paths:
                     $ref: '#/components/schemas/Profile'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -3833,6 +3945,11 @@ paths:
             schema:
               type: object
               properties:
+                scopes:
+                  type: array
+                  description: Optional token scopes. Defaults to all public read scopes.
+                  items:
+                    $ref: '#/components/schemas/ApiClientScope'
                 expiresAt:
                   type: string
                   format: date-time
@@ -3861,6 +3978,10 @@ paths:
                         type: string
                       token_id:
                         type: string
+                      scopes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ApiClientScope'
                       issued_at:
                         type: string
                         format: date-time
@@ -3915,6 +4036,10 @@ paths:
                           type: string
                         client_id:
                           type: string
+                        scopes:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/ApiClientScope'
                         issued_at:
                           type: string
                           format: date-time

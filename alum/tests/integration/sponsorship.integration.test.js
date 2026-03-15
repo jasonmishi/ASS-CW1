@@ -1,6 +1,7 @@
 const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
+const { runWinnerSelectionForDate } = require('../../services/scheduler.service')
 
 const addUtcDays = (dateInput, days) => {
   const date = new Date(dateInput)
@@ -217,6 +218,94 @@ describe('Sponsorship endpoints', () => {
     expect(balanceResponse.body.data.totalOffered).toBe(500)
     expect(balanceResponse.body.data.totalUsedInBids).toBe(250)
     expect(balanceResponse.body.data.availableForBidding).toBe(250)
+  })
+
+  it('reports org profit as the winning bid and alumni payout as sponsorship surplus', async () => {
+    const { token: adminToken } = await createAuthenticatedUser({
+      email: 'profit.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: alumniUser } = await createAuthenticatedUser({
+      email: 'profit.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Profit Sponsor',
+        sponsor_email: 'profit@sponsor.org'
+      }
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'course',
+        title: 'Profit Modeling',
+        provider_name: 'Eastminster Labs',
+        credential_url: 'https://example.com/profit-modeling',
+        completion_date: new Date('2025-12-01T00:00:00.000Z')
+      }
+    })
+
+    await prisma.sponsorshipOffer.createMany({
+      data: [
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: alumniUser.user_id,
+          credential_id: credential.credential_id,
+          amount_offered: 100,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        },
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: alumniUser.user_id,
+          credential_id: credential.credential_id,
+          amount_offered: 50,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        }
+      ]
+    })
+
+    const featuredDate = addUtcDays(new Date(), 1)
+
+    await prisma.bid.create({
+      data: {
+        alumni_user_id: alumniUser.user_id,
+        amount: 100,
+        status: 'winning',
+        bid_date: featuredDate
+      }
+    })
+
+    await runWinnerSelectionForDate(featuredDate, {
+      info: jest.fn(),
+      warn: jest.fn()
+    })
+
+    const payoutsResponse = await api()
+      .get('/api/v1/sponsorships/payouts')
+      .set(authHeader(adminToken))
+
+    expect(payoutsResponse.status).toBe(200)
+    expect(payoutsResponse.body.data).toHaveLength(1)
+    expect(payoutsResponse.body.data[0].winningBidAmount).toBe(100)
+    expect(payoutsResponse.body.data[0].alumniPayout).toBe(50)
+
+    const profitResponse = await api()
+      .get('/api/v1/sponsorships/profit/org')
+      .set(authHeader(adminToken))
+
+    expect(profitResponse.status).toBe(200)
+    expect(profitResponse.body.data.totalSponsorshipCharged).toBe(150)
+    expect(profitResponse.body.data.totalWinningBidAmount).toBe(100)
+    expect(profitResponse.body.data.totalAlumniPayout).toBe(50)
+    expect(profitResponse.body.data.orgProfit).toBe(100)
   })
 
   it('supports sponsor organization admin management and user self-service assignment endpoints', async () => {

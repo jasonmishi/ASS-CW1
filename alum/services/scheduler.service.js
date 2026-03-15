@@ -2,6 +2,7 @@ const biddingModel = require('../models/bidding.model')
 const sponsorshipModel = require('../models/sponsorship.model')
 const adminModel = require('../models/admin.model')
 const biddingNotificationService = require('./bidding-notification.service')
+const prisma = require('../lib/prisma')
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -71,7 +72,25 @@ const runSponsorshipExpirySweep = async (logger = console) => {
   }
 }
 
+const runRateLimitCounterCleanup = async (logger = console) => {
+  const result = await prisma.rateLimitCounter.deleteMany({
+    where: {
+      expires_at: {
+        lt: new Date()
+      }
+    }
+  })
+
+  logger.info(`[scheduler] rate limit counter cleanup completed: deleted=${result.count}`)
+
+  return {
+    ok: true,
+    deletedCount: result.count
+  }
+}
+
 module.exports = {
+  runRateLimitCounterCleanup,
   runSponsorshipExpirySweep,
   runWinnerSelectionForDate,
   toUtcDateOnly

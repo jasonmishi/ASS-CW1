@@ -309,6 +309,7 @@ model ApiClientToken {
   token_id            String                    @id @default(cuid())
   client_id           String
   token_hash          String                    @unique
+  scopes              String[]                  @default([])
   issued_at           DateTime                  @default(now())
   expires_at          DateTime?
   revoked_at          DateTime?

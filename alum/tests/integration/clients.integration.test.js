@@ -1,6 +1,7 @@
 const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser, createApiClientWithToken } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
+const { API_CLIENT_SCOPES, DEFAULT_PUBLIC_SCOPES } = require('../../utils/api-client-scopes')
 
 describe('POST /api/v1/clients', () => {
   it('returns 403 for non-admin user', async () => {
@@ -47,12 +48,14 @@ describe('POST /api/v1/clients', () => {
 
     expect(response.status).toBe(201)
     expect(response.body.data).toHaveProperty('token')
+    expect(response.body.data.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
 
     const client = await prisma.apiClient.findUnique({ where: { client_name: requestBody.clientName } })
     expect(client.created_by_user_id).toBe(user.user_id)
 
     const tokenRecord = await prisma.apiClientToken.findFirst({ where: { client_id: client.client_id } })
     expect(tokenRecord.token_hash).not.toBe(response.body.data.token)
+    expect(tokenRecord.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
   })
 })
 
@@ -128,6 +131,7 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
     expect(response.status).toBe(201)
     expect(response.body.data).toHaveProperty('token')
     expect(response.body.data.client_id).toBe(client.client_id)
+    expect(response.body.data.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
 
     const tokens = await prisma.apiClientToken.findMany({
       where: { client_id: client.client_id }
@@ -161,6 +165,35 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
       where: { token_id: response.body.data.token_id }
     })
     expect(createdToken.expires_at).toBeTruthy()
+    expect(createdToken.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
+  })
+
+  it('returns 201 and stores provided scopes', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'admin.token-scopes@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Scoped Token Client',
+      createdByUserId: user.user_id
+    })
+
+    const response = await api()
+      .post(`/api/v1/clients/${client.client_id}/tokens`)
+      .set(authHeader(token))
+      .send({
+        scopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
+      })
+
+    expect(response.status).toBe(201)
+    expect(response.body.data.scopes).toEqual([API_CLIENT_SCOPES.PUBLIC_FEATURED_READ])
+
+    const createdToken = await prisma.apiClientToken.findUnique({
+      where: { token_id: response.body.data.token_id }
+    })
+    expect(createdToken.scopes).toEqual([API_CLIENT_SCOPES.PUBLIC_FEATURED_READ])
   })
 })
 
@@ -193,6 +226,7 @@ describe('GET /api/v1/clients/:clientId/tokens', () => {
     expect(response.body.data.length).toBeGreaterThanOrEqual(2)
     expect(response.body.data[0]).toHaveProperty('token_id')
     expect(response.body.data[0]).toHaveProperty('client_id')
+    expect(response.body.data[0]).toHaveProperty('scopes')
   })
 })
 

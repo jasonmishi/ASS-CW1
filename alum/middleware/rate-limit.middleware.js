@@ -50,16 +50,6 @@ class PrismaRateLimitStore {
       }
     })
 
-    if (Math.random() < 0.01) {
-      void prisma.rateLimitCounter.deleteMany({
-        where: {
-          expires_at: {
-            lt: now
-          }
-        }
-      }).catch(() => {})
-    }
-
     return {
       totalHits: counter.request_count,
       resetTime: expiresAt

@@ -1,9 +1,13 @@
 const { z } = require('zod')
+const { DEFAULT_PUBLIC_SCOPES } = require('../utils/api-client-scopes')
+
+const apiClientScopeSchema = z.enum(DEFAULT_PUBLIC_SCOPES)
 
 const createClientBodySchema = z.object({
   clientName: z.string().min(1),
   description: z.string().min(1),
-  contactEmail: z.string().email()
+  contactEmail: z.string().email(),
+  scopes: z.array(apiClientScopeSchema).min(1).optional()
 })
 
 const clientParamsSchema = z.object({
@@ -16,6 +20,7 @@ const clientTokenParamsSchema = z.object({
 })
 
 const createClientTokenBodySchema = z.object({
+  scopes: z.array(apiClientScopeSchema).min(1).optional(),
   expiresAt: z.coerce.date().optional().refine((value) => {
     if (!value) {
       return true

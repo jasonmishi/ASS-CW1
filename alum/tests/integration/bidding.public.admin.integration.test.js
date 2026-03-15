@@ -1,6 +1,7 @@
 const { api, authHeader } = require('../helpers/http')
 const { createApiClientWithToken, createAuthenticatedUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
+const { API_CLIENT_SCOPES } = require('../../utils/api-client-scopes')
 const emailService = require('../../services/email.service')
 
 const toUtcDateOnly = (dateInput) => {
@@ -456,5 +457,61 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
 
     expect(profileResponse.status).toBe(200)
     expect(profileResponse.body.data.userId).toBe(alumniUser.user_id)
+  })
+
+  it('enforces api client scopes on public endpoints', async () => {
+    const { user: adminUser } = await createAuthenticatedUser({
+      email: 'public.scope.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: alumniUser } = await createAuthenticatedUser({
+      email: 'public.scope.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const { plainToken } = await createApiClientWithToken({
+      createdByUserId: adminUser.user_id,
+      clientName: 'Scoped Public Client',
+      scopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
+    })
+
+    const today = toUtcDateOnly(new Date())
+
+    const bid = await prisma.bid.create({
+      data: {
+        alumni_user_id: alumniUser.user_id,
+        amount: 275,
+        status: 'won',
+        bid_date: today
+      }
+    })
+
+    await prisma.featuredWinner.create({
+      data: {
+        featured_date: today,
+        alumni_user_id: alumniUser.user_id,
+        winning_bid_id: bid.bid_id,
+        winning_bid_amount: 275,
+        selected_by_user_id: adminUser.user_id
+      }
+    })
+
+    const featuredResponse = await api()
+      .get('/api/v1/public/alumni/featured')
+      .set(authHeader(plainToken))
+    expect(featuredResponse.status).toBe(200)
+
+    const historyResponse = await api()
+      .get('/api/v1/public/alumni/featured/history')
+      .set(authHeader(plainToken))
+    expect(historyResponse.status).toBe(403)
+
+    const profileResponse = await api()
+      .get(`/api/v1/public/alumni/${alumniUser.user_id}`)
+      .set(authHeader(plainToken))
+    expect(profileResponse.status).toBe(403)
   })
 })

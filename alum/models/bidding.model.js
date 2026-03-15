@@ -567,12 +567,15 @@ const createWinner = async ({ date, selectedByUserId }) => {
       }
     })
 
+    const totalSponsorshipCharged = acceptedOffers.reduce((sum, offer) => sum + toNumber(offer.amount_offered), 0)
+    const alumniProfit = Math.max(0, totalSponsorshipCharged - toNumber(highestBid.amount))
+
     const payout = await tx.sponsorshipPayout.create({
       data: {
         winner_id: winner.winner_id,
         alumni_user_id: highestBid.alumni_user_id,
         winning_bid_amount: highestBid.amount,
-        alumni_payout: highestBid.amount,
+        alumni_payout: alumniProfit,
         status: 'processed'
       }
     })
