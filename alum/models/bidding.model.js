@@ -1,6 +1,6 @@
 const prisma = require('../lib/prisma')
 
-const toNumber = (value) => Number(value)
+const toNumber = Number
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 
 const toUtcDateOnly = (dateInput) => {
@@ -696,7 +696,7 @@ const recordEventAttendance = async ({ alumniUserId, eventName, eventDate, recor
     }
   })
 
-  if (!alumni || alumni.role.name !== 'alumni') {
+  if (alumni?.role?.name !== 'alumni') {
     return {
       ok: false,
       reason: 'alumni_not_found'
