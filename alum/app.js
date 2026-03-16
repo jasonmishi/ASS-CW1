@@ -17,10 +17,10 @@ const sponsorshipRoutes = require('./routes/sponsorship.routes')
 const biddingRoutes = require('./routes/bidding.routes')
 const publicRoutes = require('./routes/public.routes')
 
-const swaggerFilePath = path.resolve(__dirname, 'swagger.yaml')
+const swaggerFilePath = path.resolve(__dirname, 'docs', 'swagger.yaml')
 
 if (!fs.existsSync(swaggerFilePath)) {
-  throw new Error('swagger.yaml not found at alum/swagger.yaml')
+  throw new Error('swagger.yaml not found at alum/docs/swagger.yaml')
 }
 
 const swaggerDocument = YAML.load(swaggerFilePath)
