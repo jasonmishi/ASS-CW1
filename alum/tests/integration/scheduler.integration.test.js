@@ -105,14 +105,27 @@ describe('Scheduler service', () => {
     expect(result.ok).toBe(true)
     expect(result.deletedCount).toBe(1)
 
-    const counters = await prisma.rateLimitCounter.findMany({
-      orderBy: {
-        key: 'asc'
+    const expiredCounter = await prisma.rateLimitCounter.findUnique({
+      where: {
+        key_window_start: {
+          key: 'expired-counter',
+          window_start: expiredWindowStart
+        }
       }
     })
 
-    expect(counters).toHaveLength(1)
-    expect(counters[0].key).toBe('active-counter')
+    const activeCounter = await prisma.rateLimitCounter.findUnique({
+      where: {
+        key_window_start: {
+          key: 'active-counter',
+          window_start: activeWindowStart
+        }
+      }
+    })
+
+    expect(expiredCounter).toBeNull()
+    expect(activeCounter).toBeTruthy()
+    expect(activeCounter.key).toBe('active-counter')
   })
 
   it('creates daily winner from existing bids via scheduler service', async () => {

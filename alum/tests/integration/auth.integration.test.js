@@ -62,6 +62,7 @@ describe('POST /api/v1/auth/users', () => {
 
     expect(response.status).toBe(201)
     expect(response.body.success).toBe(true)
+    expect(response.body.message).toBe('Please check your email to complete registration.')
     expect(response.body.data).not.toHaveProperty('verificationToken')
 
     const user = await prisma.user.findUnique({
@@ -154,7 +155,7 @@ describe('POST /api/v1/auth/verify-email', () => {
 
 describe('POST /api/v1/auth/sessions', () => {
   it('returns 401 when user email is not verified', async () => {
-    await createUser({
+    const user = await createUser({
       email: 'pending@eastminster.ac.uk',
       password: 'Strong!Pass1',
       verified: false
@@ -172,7 +173,11 @@ describe('POST /api/v1/auth/sessions', () => {
     expect(response.status).toBe(401)
     expect(response.body.message).toMatch(/Email not verified/)
 
-    const sessions = await prisma.authSession.findMany()
+    const sessions = await prisma.authSession.findMany({
+      where: {
+        user_id: user.user_id
+      }
+    })
     expect(sessions).toHaveLength(0)
   })
 
