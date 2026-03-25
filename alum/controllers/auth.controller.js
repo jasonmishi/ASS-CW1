@@ -44,7 +44,7 @@ const register = async (req, res) => {
 
   return res.status(201).json({
     success: true,
-    message: 'Registration successful. Please check your email to verify your account.',
+    message: 'Please check your email to complete registration.',
     data: {
       id: user.user_id,
       email: user.email,
