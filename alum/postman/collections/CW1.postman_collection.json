@@ -12,6 +12,14 @@
           "name": "/auth/users",
           "request": {
             "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "",
+                "type": "text",
+                "uuid": "846e9679-5743-4fc4-b546-34ccd2a1a0ec"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "  {\"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\",\n  \"confirmPassword\": \"S3cure!Pass\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"}",
@@ -81,42 +89,13 @@
         },
         {
           "name": "/auth/sessions",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var xsrfCookie = pm.cookies.get(\"csrf_token\");",
-                  "",
-                  "if (xsrfCookie) {",
-                  "    // Set the cookie value as an environment variable named 'csrftoken'",
-                  "    pm.environment.set(\"csrftoken\", xsrfCookie);",
-                  "    console.log(\"CSRF Token stored:\", xsrfCookie);",
-                  "} else {",
-                  "    console.log(\"CSRF Token not found in cookies\");",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "X-CSRF-Token",
-                "value": "",
-                "type": "text",
-                "disabled": true
+                "value": "{{csrftoken}}",
+                "type": "text"
               }
             ],
             "body": {
@@ -265,10 +244,15 @@
             "method": "DELETE",
             "header": [
               {
-                "key": "X-CSRF-TOKEN",
-                "value": "{{csrftoken}}",
+                "key": "",
+                "value": "",
                 "type": "text",
-                "uuid": "94370f0b-ec5b-458e-936d-0249fbbd6d26"
+                "uuid": "94370f0b-ec5b-458e-936d-0249fbbd6d26",
+                "disabled": true
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrftoken}}"
               }
             ],
             "url": {
@@ -363,34 +347,6 @@
         },
         {
           "name": "/auth/csrf-token",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var xsrfCookie = pm.cookies.get(\"csrf_token\");",
-                  "",
-                  "if (xsrfCookie) {",
-                  "    // Set the cookie value as an environment variable named 'csrftoken'",
-                  "    pm.environment.set(\"csrftoken\", xsrfCookie);",
-                  "    console.log(\"CSRF Token stored:\", xsrfCookie);",
-                  "} else {",
-                  "    console.log(\"CSRF Token not found in cookies\");",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "body": {
@@ -1957,6 +1913,78 @@
             "value": "e81464bdc673513a1ba4754a5279b3a50e1bfdf03820060ea91e404b529cde4039e4ab20f6397feb",
             "type": "string"
           }
+        ]
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "  const baseUrl = pm.environment.get('API_BASE_URL') || pm.collectionVariables.get('API_BASE_URL')",
+          "  const csrfCookieName = 'csrf_token'",
+          "  const csrfHeaderName = 'X-CSRF-Token'",
+          "",
+          "  if (!baseUrl) {",
+          "    throw new Error('API_BASE_URL is not set')",
+          "  }",
+          "",
+          "  const setCsrfHeaderFromCookie = () => {",
+          "    const token = pm.cookies.get(csrfCookieName)",
+          "",
+          "    if (token) {",
+          "      pm.environment.set('csrftoken', token)",
+          "      pm.request.headers.upsert({",
+          "        key: csrfHeaderName,",
+          "        value: token",
+          "      })",
+          "      return true",
+          "    }",
+          "",
+          "    return false",
+          "  }",
+          "",
+          "  // If the cookie already exists for this domain, use it.",
+          "  if (!setCsrfHeaderFromCookie()) {",
+          "    pm.sendRequest({",
+          "      url: `${baseUrl}/auth/csrf-token`,",
+          "      method: 'GET',",
+          "      header: {",
+          "        Accept: 'application/json'",
+          "      }",
+          "    }, (err, res) => {",
+          "      if (err) {",
+          "        console.error('Failed to fetch CSRF token', err)",
+          "        throw err",
+          "      }",
+          "",
+          "      const tokenFromCookie = pm.cookies.get(csrfCookieName)",
+          "      const tokenFromBody = res.json()?.data?.csrfToken",
+          "",
+          "      const token = tokenFromCookie || tokenFromBody",
+          "",
+          "      if (!token) {",
+          "        throw new Error('CSRF token was not returned by /auth/csrf-token')",
+          "      }",
+          "",
+          "      pm.environment.set('csrftoken', token)",
+          "      pm.request.headers.upsert({",
+          "        key: csrfHeaderName,",
+          "        value: token",
+          "      })",
+          "    })",
+          "  }"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
         ]
       }
     }
