@@ -15,7 +15,7 @@ info:
     Alumni flow:
     1. `POST /auth/sessions` to log in.
     2. Server sets `access_token` (HttpOnly) and `csrf_token` cookies.
-    3. For authenticated write operations (`POST`, `PUT`, `PATCH`, `DELETE`), send `X-CSRF-Token` header with the same value as `csrf_token`.
+    3. For authenticated write operations (`POST`, `PUT`, `PATCH`, `DELETE`), send the `csrf_token` cookie and an `X-CSRF-Token` header with the same value.
     4. Public API endpoints still use `Authorization: Bearer <api_client_token>`.
 
     ## Bidding Rules
@@ -72,12 +72,21 @@ components:
         Alumni authenticated session cookie.
         Issued by `POST /auth/sessions` as `Set-Cookie: access_token=...`.
         Used for non-public alumni/admin/sponsor endpoints.
+    CsrfCookie:
+      type: apiKey
+      in: cookie
+      name: csrf_token
+      description: |
+        CSRF cookie required for mutating operations.
+        Its value must match the `X-CSRF-Token` header.
+        Safe routes do not require this cookie and usually issue it automatically if missing.
+        `GET /auth/csrf-token` can be used to fetch it explicitly.
     CsrfHeader:
       type: apiKey
       in: header
       name: X-CSRF-Token
       description: |
-        CSRF header required for authenticated mutating operations.
+        CSRF header required for mutating operations.
         Must match the `csrf_token` cookie value.
         `POST /auth/sessions` is exempt from CSRF validation.
     APIKeyAuth:
@@ -122,6 +131,9 @@ components:
         lastName:
           type: string
           example: Doe
+        emailVerified:
+          type: boolean
+          example: true
 
     # ─── Error ────────────────────────────
     Error:
@@ -1344,7 +1356,9 @@ paths:
     post:
       tags: [Authentication]
       summary: Register a new alumni account
-      security: []
+      security:
+        - CsrfCookie: []
+          CsrfHeader: []
       description: |
         Creates a new alumni account. The email **must** belong to the university domain
         (`@eastminster.ac.uk`). A verification email with a secure token is sent upon
@@ -1389,6 +1403,7 @@ paths:
       security: []
       description: |
         Issues a CSRF token for clients (e.g. Postman, Swagger UI setup) before calling mutating endpoints.
+        Most safe routes also set a `csrf_token` cookie automatically when one is missing.
         Returns the token in response body and sets the `csrf_token` cookie.
       operationId: createCsrfToken
       responses:
@@ -1463,8 +1478,12 @@ paths:
     post:
       tags: [Authentication]
       summary: Request a new email verification token
-      security: []
-      description: Creates a new verification token and sends the verification email. The previous token is invalidated.
+      security:
+        - CsrfCookie: []
+          CsrfHeader: []
+      description: |
+        Creates a new verification token and sends the verification email. The previous token is invalidated.
+        This is a mutating endpoint and requires CSRF (`csrf_token` cookie + `X-CSRF-Token` header).
       operationId: createEmailVerification
       requestBody:
         required: true
@@ -1541,6 +1560,7 @@ paths:
       operationId: deleteSession
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       responses:
         '204':
@@ -1558,7 +1578,6 @@ paths:
       operationId: getSessionSummary
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Session summary returned successfully.
@@ -1575,7 +1594,9 @@ paths:
     post:
       tags: [Authentication]
       summary: Create a password reset request
-      security: []
+      security:
+        - CsrfCookie: []
+          CsrfHeader: []
       description: |
         Creates a password reset resource and sends an email with a **cryptographically random, single-use** token.
         The token expires after a configurable period (default: 1 hour).
@@ -1596,7 +1617,7 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
               example:
                 success: true
-                message: If an account with that email exists, a password reset link has been sent.
+                message: If an account with that email exists, a password reset token has been sent.
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -1605,7 +1626,9 @@ paths:
     patch:
       tags: [Authentication]
       summary: Complete a password reset
-      security: []
+      security:
+        - CsrfCookie: []
+          CsrfHeader: []
       description: |
         Completes a password reset using the secure token from the password reset email.
         The token is validated for authenticity, expiry, and single-use.
@@ -1650,7 +1673,6 @@ paths:
       operationId: getMyProfile
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Profile retrieved successfully.
@@ -1676,6 +1698,7 @@ paths:
       operationId: updateProfile
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -1713,6 +1736,7 @@ paths:
       operationId: clearProfile
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       responses:
         '204':
@@ -1733,6 +1757,7 @@ paths:
       operationId: replaceProfileImage
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -1785,6 +1810,7 @@ paths:
       operationId: deleteProfileImage
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       responses:
         '204':
@@ -1805,7 +1831,6 @@ paths:
       operationId: listDegrees
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Degrees retrieved successfully.
@@ -1833,6 +1858,7 @@ paths:
       operationId: addDegree
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -1871,6 +1897,7 @@ paths:
       operationId: updateDegree
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: degreeId
@@ -1916,6 +1943,7 @@ paths:
       operationId: deleteDegree
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: degreeId
@@ -1942,7 +1970,6 @@ paths:
       operationId: listCertifications
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Certifications retrieved successfully.
@@ -1970,6 +1997,7 @@ paths:
       operationId: addCertification
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2008,6 +2036,7 @@ paths:
       operationId: updateCertification
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: certificationId
@@ -2053,6 +2082,7 @@ paths:
       operationId: deleteCertification
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: certificationId
@@ -2079,7 +2109,6 @@ paths:
       operationId: listLicences
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Licences retrieved successfully.
@@ -2107,6 +2136,7 @@ paths:
       operationId: addLicence
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2145,6 +2175,7 @@ paths:
       operationId: updateLicence
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: licenceId
@@ -2190,6 +2221,7 @@ paths:
       operationId: deleteLicence
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: licenceId
@@ -2216,7 +2248,6 @@ paths:
       operationId: listCourses
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Courses retrieved successfully.
@@ -2244,6 +2275,7 @@ paths:
       operationId: addCourse
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2282,6 +2314,7 @@ paths:
       operationId: updateCourse
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: courseId
@@ -2327,6 +2360,7 @@ paths:
       operationId: deleteCourse
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: courseId
@@ -2353,7 +2387,6 @@ paths:
       operationId: listEmployment
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Employment history retrieved successfully.
@@ -2381,6 +2414,7 @@ paths:
       operationId: addEmployment
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2419,6 +2453,7 @@ paths:
       operationId: updateEmployment
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: employmentId
@@ -2464,6 +2499,7 @@ paths:
       operationId: deleteEmployment
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: employmentId
@@ -2508,6 +2544,7 @@ paths:
       operationId: placeBid
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2569,7 +2606,6 @@ paths:
       operationId: getMyBids
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -2605,7 +2641,6 @@ paths:
       operationId: getBidById
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: bidId
           in: path
@@ -2641,6 +2676,7 @@ paths:
       operationId: updateBid
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: bidId
@@ -2691,7 +2727,6 @@ paths:
       operationId: getMonthlyBidSummary
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -2727,7 +2762,6 @@ paths:
       operationId: getCurrentBid
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Current bid status retrieved.
@@ -2778,6 +2812,7 @@ paths:
       operationId: createSponsorOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -2816,7 +2851,6 @@ paths:
       operationId: listSponsorOrganizations
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Sponsor organizations retrieved.
@@ -2847,7 +2881,6 @@ paths:
       operationId: getMySponsorOrganization
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: User sponsor organization assignment retrieved.
@@ -2874,6 +2907,7 @@ paths:
       operationId: leaveMySponsorOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       responses:
         '204':
@@ -2890,7 +2924,6 @@ paths:
       operationId: getSponsorOrganization
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -2924,6 +2957,7 @@ paths:
       operationId: updateSponsorOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: sponsorOrgId
@@ -2969,6 +3003,7 @@ paths:
       operationId: deleteSponsorOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: sponsorOrgId
@@ -2998,6 +3033,7 @@ paths:
       operationId: assignSponsorUserToOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: sponsorOrgId
@@ -3047,6 +3083,7 @@ paths:
       operationId: removeUserFromSponsorOrganization
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: sponsorOrgId
@@ -3081,7 +3118,6 @@ paths:
       operationId: listSponsorOrganizationUsers
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: sponsorOrgId
           in: path
@@ -3136,7 +3172,6 @@ paths:
       operationId: listSponsorableAlumniCredentials
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: credentialType
           in: query
@@ -3191,6 +3226,7 @@ paths:
       operationId: createSponsorshipOffer
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -3245,7 +3281,6 @@ paths:
       operationId: listAllSponsorshipOffers
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: status
           in: query
@@ -3293,7 +3328,6 @@ paths:
       operationId: getSponsorshipOffer
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: offerId
           in: path
@@ -3330,6 +3364,7 @@ paths:
       operationId: deleteSponsorshipOffer
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: offerId
@@ -3370,6 +3405,7 @@ paths:
       operationId: setOfferResponse
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: offerId
@@ -3425,7 +3461,6 @@ paths:
       operationId: getMyReceivedOffers
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: status
           in: query
@@ -3470,7 +3505,6 @@ paths:
       operationId: getMySponsorshipBalance
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Sponsorship balance summary.
@@ -3502,7 +3536,6 @@ paths:
       operationId: listSponsorshipPayouts
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: alumniId
           in: query
@@ -3554,7 +3587,6 @@ paths:
       operationId: getOrgProfitSummary
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: from
           in: query
@@ -3596,7 +3628,6 @@ paths:
       operationId: getSponsorshipPayout
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: payoutId
           in: path
@@ -3775,6 +3806,7 @@ paths:
       operationId: createApiClient
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -3807,7 +3839,6 @@ paths:
       operationId: listApiClients
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: API clients listed successfully.
@@ -3880,7 +3911,6 @@ paths:
       operationId: getClientUsageStats
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -3931,6 +3961,7 @@ paths:
       operationId: createClientToken
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: clientId
@@ -4009,7 +4040,6 @@ paths:
       operationId: listClientTokens
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: clientId
           in: path
@@ -4068,6 +4098,7 @@ paths:
       operationId: revokeClientTokenByTokenId
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: clientId
@@ -4106,6 +4137,7 @@ paths:
       operationId: recordEventAttendance
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -4146,6 +4178,7 @@ paths:
       operationId: createWinner
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -4196,7 +4229,6 @@ paths:
       operationId: listWinners
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       parameters:
         - name: month
           in: query
@@ -4233,7 +4265,6 @@ paths:
       operationId: listAdminUsers
       security:
         - SessionCookieAuth: []
-          CsrfHeader: []
       responses:
         '200':
           description: Users listed successfully.
@@ -4261,9 +4292,11 @@ paths:
         Allows Admins to create new accounts with specific roles (Developer, Sponsor, or Admin).
         Default role is 'Alumni' if not specified, but this endpoint is intended for privileged account creation.
         Use this to onboard Admin users when needed.
+        A verification email is sent to the created user, and the account remains unverified until the email link is used.
       operationId: createPrivilegedUser
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       requestBody:
         required: true
@@ -4311,6 +4344,7 @@ paths:
       operationId: updateUserRole
       security:
         - SessionCookieAuth: []
+          CsrfCookie: []
           CsrfHeader: []
       parameters:
         - name: userId

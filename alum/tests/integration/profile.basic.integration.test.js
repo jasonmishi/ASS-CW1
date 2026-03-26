@@ -124,4 +124,19 @@ describe('Profile basic endpoints', () => {
     expect(getResponse.body.data.linkedinUrl).toBeNull()
     expect(getResponse.body.data.profileImageUrl).toBeNull()
   })
+
+  it('blocks profile access for alumni accounts without an eastminster email', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'external.alumni@sponsor.com',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const response = await api()
+      .get('/api/v1/profile')
+      .set(authHeader(token))
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
+  })
 })

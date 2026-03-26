@@ -287,7 +287,16 @@ const issueEmailVerification = async ({ email, emailVerificationTtlHours }) => {
   const user = await findUserByEmail(email.toLowerCase())
 
   if (!user) {
-    return
+    return {
+      ok: true
+    }
+  }
+
+  if (user.email_verified_at) {
+    return {
+      ok: false,
+      reason: 'already_verified'
+    }
   }
 
   const verificationToken = generateSecureToken()
@@ -304,6 +313,10 @@ const issueEmailVerification = async ({ email, emailVerificationTtlHours }) => {
     to: user.email,
     token: verificationToken
   })
+
+  return {
+    ok: true
+  }
 }
 
 const createSessionForCredentials = async ({ email, password }) => {

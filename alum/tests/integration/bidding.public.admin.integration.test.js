@@ -50,6 +50,24 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
     expect(response.body.message).toMatch(/Insufficient sponsorship funds/i)
   })
 
+  it('blocks bidding for alumni accounts without an eastminster email', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'external.bidder@sponsor.com',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const response = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(token))
+      .send({
+        amount: 200
+      })
+
+    expect(response.status).toBe(403)
+    expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
+  })
+
   it('allows alumni to place and view current bid when accepted sponsorship exists', async () => {
     const { user: alumniUser, token } = await createAuthenticatedUser({
       email: 'bid.with.funds@eastminster.ac.uk',

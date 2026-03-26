@@ -16,13 +16,11 @@ const sendVerificationEmail = async ({ to, token }) => {
 }
 
 const sendPasswordResetEmail = async ({ to, token }) => {
-  const resetUrl = `${getBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`
-
   return sendMail({
     to,
     subject: 'Reset your Eastminster Alumni password',
-    text: `You can reset your password by visiting: ${resetUrl}`,
-    html: `<p>You can reset your password by visiting <a href="${resetUrl}">${resetUrl}</a></p>`
+    text: `Use this password reset token to complete the password reset request: ${token}`,
+    html: `<p>Use this password reset token to complete the password reset request:</p><p><strong>${token}</strong></p>`
   })
 }
 

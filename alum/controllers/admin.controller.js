@@ -2,8 +2,13 @@ const adminModel = require('../models/admin.model')
 const biddingModel = require('../models/bidding.model')
 const biddingNotificationService = require('../services/bidding-notification.service')
 
+const EMAIL_VERIFICATION_TTL_HOURS = Number(process.env.EMAIL_VERIFICATION_TTL_HOURS || 24)
+
 const createPrivilegedUser = async (req, res) => {
-  const result = await adminModel.createPrivilegedUser(req.body)
+  const result = await adminModel.createPrivilegedUser({
+    ...req.body,
+    emailVerificationTtlHours: EMAIL_VERIFICATION_TTL_HOURS
+  })
 
   if (!result.ok && result.reason === 'duplicate') {
     return res.status(409).json({
@@ -19,9 +24,16 @@ const createPrivilegedUser = async (req, res) => {
     })
   }
 
+  if (!result.ok && result.reason === 'invalid_alumni_email_domain') {
+    return res.status(400).json({
+      success: false,
+      message: 'Alumni accounts must use a valid @eastminster.ac.uk email address.'
+    })
+  }
+
   return res.status(201).json({
     success: true,
-    message: 'User created successfully.',
+    message: 'User created successfully. Verification email sent.',
     data: result.user
   })
 }
@@ -52,6 +64,13 @@ const updateUserRole = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Invalid role.'
+    })
+  }
+
+  if (!result.ok && result.reason === 'invalid_alumni_email_domain') {
+    return res.status(400).json({
+      success: false,
+      message: 'Alumni accounts must use a valid @eastminster.ac.uk email address.'
     })
   }
 

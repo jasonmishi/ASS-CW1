@@ -1,6 +1,7 @@
 const { api, authHeader } = require('../helpers/http')
 const { createAuthenticatedUser, createUser } = require('../helpers/factories')
 const { prisma } = require('../helpers/test-db')
+const emailService = require('../../services/email.service')
 
 describe('GET /api/v1/admin/users', () => {
   it('returns 403 for non-admin caller', async () => {
@@ -39,9 +40,46 @@ describe('GET /api/v1/admin/users', () => {
     expect(Array.isArray(response.body.data)).toBe(true)
     expect(response.body.data.some((user) => user.email === 'listed.user@eastminster.ac.uk')).toBe(true)
   })
+
+  it('includes email verification state for verified accounts', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'status.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    await createUser({
+      email: 'verified.only@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni',
+      verified: true
+    })
+
+    const response = await api()
+      .get('/api/v1/admin/users')
+      .set(authHeader(token))
+
+    expect(response.status).toBe(200)
+
+    const listedUser = response.body.data.find((user) => user.email === 'verified.only@eastminster.ac.uk')
+
+    expect(listedUser).toBeTruthy()
+    expect(listedUser.emailVerified).toBe(true)
+    expect(listedUser.accountStatus).toBeUndefined()
+  })
 })
 
 describe('POST /api/v1/admin/users', () => {
+  let verificationEmailSpy
+
+  beforeEach(() => {
+    verificationEmailSpy = jest.spyOn(emailService, 'sendVerificationEmail').mockResolvedValue({})
+  })
+
+  afterEach(() => {
+    verificationEmailSpy.mockRestore()
+  })
+
   it('returns 403 for non-admin caller', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'nonadmin@eastminster.ac.uk',
@@ -84,6 +122,7 @@ describe('POST /api/v1/admin/users', () => {
     expect(response.status).toBe(201)
     expect(response.body.success).toBe(true)
     expect(response.body.data.role).toBe('Sponsor')
+    expect(response.body.message).toMatch(/verification email sent/i)
 
     const created = await prisma.user.findUnique({
       where: { email: 'new.sponsor@eastminster.ac.uk' },
@@ -91,6 +130,20 @@ describe('POST /api/v1/admin/users', () => {
     })
     expect(created).toBeTruthy()
     expect(created.role.name).toBe('sponsor')
+    expect(created.email_verified_at).toBeNull()
+
+    const tokenRecord = await prisma.emailVerificationToken.findFirst({
+      where: {
+        user_id: created.user_id,
+        used_at: null
+      }
+    })
+
+    expect(tokenRecord).toBeTruthy()
+    expect(verificationEmailSpy).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'new.sponsor@eastminster.ac.uk',
+      token: expect.any(String)
+    }))
   })
 
   it('returns 201 when lastName is omitted', async () => {
@@ -118,6 +171,27 @@ describe('POST /api/v1/admin/users', () => {
     })
     expect(created).toBeTruthy()
     expect(created.last_name).toBe('')
+  })
+
+  it('returns 400 when creating an alumni account with a non-eastminster email', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'admin.creator.invalid@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const response = await api()
+      .post('/api/v1/admin/users')
+      .set(authHeader(token))
+      .send({
+        email: 'external.alumni@sponsor.com',
+        password: 'Strong!Pass1',
+        firstName: 'External',
+        role: 'Alumni'
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
   })
 })
 
@@ -199,5 +273,29 @@ describe('PUT /api/v1/admin/users/:userId/role', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.message).toMatch(/last remaining Admin/i)
+  })
+
+  it('returns 400 when promoting a non-eastminster user to alumni', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'admin.promoter.domain@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const user = await createUser({
+      email: 'external.user@sponsor.com',
+      password: 'Strong!Pass1',
+      roleName: 'sponsor'
+    })
+
+    const response = await api()
+      .put(`/api/v1/admin/users/${user.user_id}/role`)
+      .set(authHeader(token))
+      .send({
+        role: 'Alumni'
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
   })
 })

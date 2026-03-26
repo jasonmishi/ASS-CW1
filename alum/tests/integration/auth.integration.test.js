@@ -151,6 +151,27 @@ describe('POST /api/v1/auth/verify-email', () => {
     })
     expect(tokenRecord).toBeTruthy()
   })
+
+  it('returns 409 and does not issue a token when email is already verified', async () => {
+    const user = await createUser({
+      email: 'already.verified@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      verified: true
+    })
+
+    const response = await api()
+      .post('/api/v1/auth/verify-email')
+      .send({ email: user.email })
+
+    expect(response.status).toBe(409)
+    expect(response.body.success).toBe(false)
+    expect(response.body.message).toBe('Email is already verified.')
+
+    const tokenRecord = await prisma.emailVerificationToken.findFirst({
+      where: { user_id: user.user_id }
+    })
+    expect(tokenRecord).toBeNull()
+  })
 })
 
 describe('POST /api/v1/auth/sessions', () => {

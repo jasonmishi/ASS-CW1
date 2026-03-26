@@ -75,10 +75,17 @@ const verifyEmail = async (req, res) => {
 const createEmailVerification = async (req, res) => {
   const { email } = req.body
 
-  await authModel.issueEmailVerification({
+  const result = await authModel.issueEmailVerification({
     email,
     emailVerificationTtlHours: EMAIL_VERIFICATION_TTL_HOURS
   })
+
+  if (!result.ok && result.reason === 'already_verified') {
+    return res.status(409).json({
+      success: false,
+      message: 'Email is already verified.'
+    })
+  }
 
   return res.status(201).json({
     success: true,
@@ -159,7 +166,7 @@ const createPasswordReset = async (req, res) => {
 
   return res.status(201).json({
     success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.'
+    message: 'If an account with that email exists, a password reset token has been sent.'
   })
 }
 

@@ -4,6 +4,7 @@ jest.mock('../../lib/mailer', () => ({
 
 const { sendMail } = require('../../lib/mailer')
 const {
+  sendPasswordResetEmail,
   sendLosingBidNotificationEmail,
   sendOutbidNotificationEmail,
   sendWinnerNotificationEmail
@@ -51,6 +52,20 @@ describe('email service winner notifications', () => {
     expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'outbid@eastminster.ac.uk',
       subject: 'You have been outbid for 2026-03-07'
+    }))
+  })
+
+  test('sends password reset email with raw token', async () => {
+    await sendPasswordResetEmail({
+      to: 'reset@eastminster.ac.uk',
+      token: 'plain-reset-token'
+    })
+
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'reset@eastminster.ac.uk',
+      subject: 'Reset your Eastminster Alumni password',
+      text: expect.stringContaining('plain-reset-token'),
+      html: expect.stringContaining('<strong>plain-reset-token</strong>')
     }))
   })
 })

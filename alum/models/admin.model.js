@@ -1,20 +1,49 @@
 const prisma = require('../lib/prisma')
 const roleModel = require('./role.model')
-const { generateSecureToken, hashPassword } = require('../utils/security')
+const emailService = require('../services/email.service')
+const { generateSecureToken, hashPassword, hashToken, isUniversityEmail } = require('../utils/security')
 
 const normalizeRole = (role) => role.toLowerCase()
 
 const displayRole = (roleName) => roleName.charAt(0).toUpperCase() + roleName.slice(1)
+
+const createEmailVerificationToken = async ({ user_id, token_hash, expires_at }) => {
+  await prisma.emailVerificationToken.updateMany({
+    where: {
+      user_id,
+      used_at: null
+    },
+    data: {
+      used_at: new Date()
+    }
+  })
+
+  return prisma.emailVerificationToken.create({
+    data: {
+      user_id,
+      token_hash,
+      expires_at
+    }
+  })
+}
 
 const createPrivilegedUser = async ({
   email,
   password,
   firstName,
   lastName,
-  role
+  role,
+  emailVerificationTtlHours
 }) => {
   const normalizedEmail = email.toLowerCase()
   const roleName = normalizeRole(role)
+
+  if (roleName === 'alumni' && !isUniversityEmail(normalizedEmail)) {
+    return {
+      ok: false,
+      reason: 'invalid_alumni_email_domain'
+    }
+  }
 
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -46,12 +75,26 @@ const createPrivilegedUser = async ({
       password_hash,
       role_id: targetRole.role_id,
       first_name: firstName,
-      last_name: lastName || '',
-      email_verified_at: new Date()
+      last_name: lastName || ''
     },
     include: {
       role: true
     }
+  })
+
+  const verificationToken = generateSecureToken()
+  const verificationTokenHash = hashToken(verificationToken)
+  const expiresAt = new Date(Date.now() + (emailVerificationTtlHours * 60 * 60 * 1000))
+
+  await createEmailVerificationToken({
+    user_id: user.user_id,
+    token_hash: verificationTokenHash,
+    expires_at: expiresAt
+  })
+
+  await emailService.sendVerificationEmail({
+    to: user.email,
+    token: verificationToken
   })
 
   return {
@@ -96,6 +139,13 @@ const updateUserRole = async (userId, role) => {
       return {
         ok: false,
         reason: 'role_not_found'
+      }
+    }
+
+    if (targetRoleName === 'alumni' && !isUniversityEmail(user.email)) {
+      return {
+        ok: false,
+        reason: 'invalid_alumni_email_domain'
       }
     }
 
@@ -152,7 +202,8 @@ const listAdminUsers = async () => {
     email: user.email,
     role: displayRole(user.role.name),
     firstName: user.first_name,
-    lastName: user.last_name
+    lastName: user.last_name,
+    emailVerified: Boolean(user.email_verified_at)
   }))
 }
 

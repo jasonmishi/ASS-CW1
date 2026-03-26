@@ -3,6 +3,7 @@ const authModel = require('../models/auth.model')
 const prisma = require('../lib/prisma')
 const { hashToken } = require('../utils/security')
 const { parseCookies } = require('../utils/cookies')
+const { isUniversityEmail } = require('../utils/security')
 
 const getSecret = () => {
   return process.env.JWT_SECRET || 'dev-insecure-jwt-secret'
@@ -94,10 +95,10 @@ const requireSponsor = (req, res, next) => {
 }
 
 const requireAlumni = (req, res, next) => {
-  if (req.user?.role !== 'alumni') {
+  if (req.user?.role !== 'alumni' || !isUniversityEmail(req.user?.email)) {
     return res.status(403).json({
       success: false,
-      message: 'Forbidden. Alumni access is required.'
+      message: 'Forbidden. Alumni access requires a valid @eastminster.ac.uk email address.'
     })
   }
 
@@ -105,10 +106,13 @@ const requireAlumni = (req, res, next) => {
 }
 
 const requireAdminOrAlumni = (req, res, next) => {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'alumni') {
+  const isAdmin = req.user?.role === 'admin'
+  const isEligibleAlumni = req.user?.role === 'alumni' && isUniversityEmail(req.user?.email)
+
+  if (!isAdmin && !isEligibleAlumni) {
     return res.status(403).json({
       success: false,
-      message: 'Forbidden. Admin or Alumni access is required.'
+      message: 'Forbidden. Admin access or an eligible alumni account is required.'
     })
   }
 
