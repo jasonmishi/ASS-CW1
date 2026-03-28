@@ -336,6 +336,116 @@ describe('Bidding, Public, and Admin winner/attendance endpoints', () => {
     }))
   })
 
+  it('keeps the earlier-updated bid winning when another bidder only ties the amount later', async () => {
+    const { user: leadingAlumni, token: leadingToken } = await createAuthenticatedUser({
+      email: 'bid.tie.leader@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const { user: challengerAlumni, token: challengerToken } = await createAuthenticatedUser({
+      email: 'bid.tie.challenger@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const [leaderCredential, challengerCredential] = await Promise.all([
+      prisma.credential.create({
+        data: {
+          user_id: leadingAlumni.user_id,
+          credential_type: 'course',
+          title: 'Tie Leader Credential',
+          provider_name: 'Provider A',
+          credential_url: 'https://example.com/tie-leader',
+          completion_date: new Date('2025-12-05T00:00:00.000Z')
+        }
+      }),
+      prisma.credential.create({
+        data: {
+          user_id: challengerAlumni.user_id,
+          credential_type: 'course',
+          title: 'Tie Challenger Credential',
+          provider_name: 'Provider B',
+          credential_url: 'https://example.com/tie-challenger',
+          completion_date: new Date('2025-12-06T00:00:00.000Z')
+        }
+      })
+    ])
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Tie Sponsor',
+        sponsor_email: 'tie@sponsor.org'
+      }
+    })
+
+    await prisma.sponsorshipOffer.createMany({
+      data: [
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: leadingAlumni.user_id,
+          credential_id: leaderCredential.credential_id,
+          amount_offered: 500,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        },
+        {
+          sponsor_org_id: sponsorOrg.sponsor_org_id,
+          alumni_user_id: challengerAlumni.user_id,
+          credential_id: challengerCredential.credential_id,
+          amount_offered: 500,
+          status: 'accepted',
+          expires_at: addUtcDays(new Date(), 10)
+        }
+      ]
+    })
+
+    const leaderBidResponse = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(leadingToken))
+      .send({
+        amount: 200
+      })
+
+    expect(leaderBidResponse.status).toBe(201)
+
+    const challengerBidResponse = await api()
+      .post('/api/v1/bids')
+      .set(authHeader(challengerToken))
+      .send({
+        amount: 250
+      })
+
+    expect(challengerBidResponse.status).toBe(201)
+    expect(outbidEmailSpy).toHaveBeenCalledTimes(1)
+
+    const tieUpdateResponse = await api()
+      .patch(`/api/v1/bids/${leaderBidResponse.body.data.bidId}`)
+      .set(authHeader(leadingToken))
+      .send({
+        amount: 250
+      })
+
+    expect(tieUpdateResponse.status).toBe(200)
+
+    const [refreshedLeaderBid, refreshedChallengerBid] = await Promise.all([
+      prisma.bid.findUnique({
+        where: {
+          bid_id: leaderBidResponse.body.data.bidId
+        }
+      }),
+      prisma.bid.findUnique({
+        where: {
+          bid_id: challengerBidResponse.body.data.bidId
+        }
+      })
+    ])
+
+    expect(refreshedLeaderBid.status).toBe('losing')
+    expect(refreshedChallengerBid.status).toBe('winning')
+    expect(outbidEmailSpy).toHaveBeenCalledTimes(1)
+  })
+
   it('records event attendance and creates winner via admin endpoints', async () => {
     const { token: adminToken } = await createAuthenticatedUser({
       email: 'winner.admin@eastminster.ac.uk',

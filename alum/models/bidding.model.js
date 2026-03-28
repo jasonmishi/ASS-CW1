@@ -2,6 +2,15 @@ const prisma = require('../lib/prisma')
 
 const toNumber = Number
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
+const ACTIVE_BID_STATUS_SET = new Set(ACTIVE_BID_STATUSES)
+const BID_LEADER_ORDER_BY = [
+  {
+    amount: 'desc'
+  },
+  {
+    updated_at: 'asc'
+  }
+]
 
 const toUtcDateOnly = (dateInput) => {
   const date = new Date(dateInput)
@@ -53,6 +62,44 @@ const formatBid = (bid) => ({
   createdAt: bid.created_at,
   updatedAt: bid.updated_at
 })
+
+const getBidLeaderOrderBy = () => BID_LEADER_ORDER_BY
+
+const isActiveBidStatus = (status) => ACTIVE_BID_STATUS_SET.has(status)
+
+// Active bid statuses must only be derived through recomputeBidStatusesForDate so
+// place/update flows and read paths stay aligned on the same leader ordering rule.
+const findLeaderBidForDate = async (bidDate, tx = prisma, options = {}) => {
+  return tx.bid.findFirst({
+    where: {
+      bid_date: bidDate
+    },
+    ...options,
+    orderBy: getBidLeaderOrderBy()
+  })
+}
+
+const setWinningBidStatus = async (leaderBidId, tx = prisma) => {
+  await tx.bid.update({
+    where: {
+      bid_id: leaderBidId
+    },
+    data: {
+      status: 'winning'
+    }
+  })
+}
+
+const setWonBidStatus = async (leaderBidId, tx = prisma) => {
+  await tx.bid.update({
+    where: {
+      bid_id: leaderBidId
+    },
+    data: {
+      status: 'won'
+    }
+  })
+}
 
 const getAvailableBalance = async (alumniUserId, tx = prisma, options = {}) => {
   const [offeredResult, usedResult] = await Promise.all([
@@ -140,14 +187,7 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
         }
       }
     },
-    orderBy: [
-      {
-        amount: 'desc'
-      },
-      {
-        created_at: 'asc'
-      }
-    ]
+    orderBy: getBidLeaderOrderBy()
   })
 
   if (bids.length === 0) {
@@ -174,15 +214,8 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
     }
   })
 
-  if (leader.status === 'pending' || leader.status === 'winning' || leader.status === 'losing') {
-    await tx.bid.update({
-      where: {
-        bid_id: leader.bid_id
-      },
-      data: {
-        status: 'winning'
-      }
-    })
+  if (isActiveBidStatus(leader.status)) {
+    await setWinningBidStatus(leader.bid_id, tx)
   }
 
   return {
@@ -419,19 +452,7 @@ const getCurrentBid = async ({ alumniUserId }) => {
         bid_date: activeBidDate
       }
     }),
-    prisma.bid.findFirst({
-      where: {
-        bid_date: activeBidDate
-      },
-      orderBy: [
-        {
-          amount: 'desc'
-        },
-        {
-          created_at: 'asc'
-        }
-      ]
-    })
+    findLeaderBidForDate(activeBidDate)
   ])
 
   if (!bid) {
@@ -500,14 +521,7 @@ const createWinner = async ({ date, selectedByUserId }) => {
           }
         }
       },
-      orderBy: [
-        {
-          amount: 'desc'
-        },
-        {
-          created_at: 'asc'
-        }
-      ]
+      orderBy: getBidLeaderOrderBy()
     })
 
     const highestBid = bidsForDate[0]
@@ -551,14 +565,7 @@ const createWinner = async ({ date, selectedByUserId }) => {
       }
     })
 
-    await tx.bid.update({
-      where: {
-        bid_id: highestBid.bid_id
-      },
-      data: {
-        status: 'won'
-      }
-    })
+    await setWonBidStatus(highestBid.bid_id, tx)
 
     const acceptedOffers = await tx.sponsorshipOffer.findMany({
       where: {

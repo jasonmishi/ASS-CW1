@@ -171,4 +171,5 @@ describe('Scheduler service', () => {
 
     expect(refreshedBid.status).toBe('won')
   })
+
 })

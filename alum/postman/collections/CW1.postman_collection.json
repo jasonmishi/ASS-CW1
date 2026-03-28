@@ -71,15 +71,11 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{API_BASE_URL}}/http://localhost:3000/api/v1/auth/verify-email/64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25",
-              "protocol": "{{API_BASE_URL}}/http",
+              "raw": "{{API_BASE_URL}}/auth/verify-email/64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25",
               "host": [
-                "localhost"
+                "{{API_BASE_URL}}"
               ],
-              "port": "3000",
               "path": [
-                "api",
-                "v1",
                 "auth",
                 "verify-email",
                 "64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25"
