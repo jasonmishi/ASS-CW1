@@ -121,34 +121,6 @@
         },
         {
           "name": "/auth/sessions (sponsor)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var xsrfCookie = pm.cookies.get(\"csrf_token\");",
-                  "",
-                  "if (xsrfCookie) {",
-                  "    // Set the cookie value as an environment variable named 'csrftoken'",
-                  "    pm.environment.set(\"csrftoken\", xsrfCookie);",
-                  "    console.log(\"CSRF Token stored:\", xsrfCookie);",
-                  "} else {",
-                  "    console.log(\"CSRF Token not found in cookies\");",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "auth": {
               "type": "noauth"

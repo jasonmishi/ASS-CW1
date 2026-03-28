@@ -16,7 +16,7 @@ services:
   app:
     image: node:20
     working_dir: /app
-    command: sh -c "npm install && npx prisma generate && npm run dev"
+    command: sh -c "npm install && npx prisma generate && npm run migrate:deploy && npm run dev"
     volumes:
       - ./:/app
     ports:
@@ -35,7 +35,7 @@ services:
   worker:
     image: node:20
     working_dir: /app
-    command: sh -c "npm install && npx prisma generate && npm run worker"
+    command: sh -c "npm install && npx prisma generate && npm run migrate:deploy && npm run worker"
     volumes:
       - ./:/app
     environment:

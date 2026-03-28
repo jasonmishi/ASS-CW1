@@ -65,13 +65,6 @@ const deleteSponsorOrganization = async (req, res) => {
     })
   }
 
-  if (!result.ok && result.reason === 'in_use') {
-    return res.status(400).json({
-      success: false,
-      message: 'Sponsor organization cannot be deleted while it is associated with users or sponsorship offers.'
-    })
-  }
-
   return res.status(204).send()
 }
 
@@ -99,6 +92,14 @@ const assignSponsorUserToOrganization = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Only users with Sponsor role can be assigned to a sponsor organization.'
+    })
+  }
+
+  if (!result.ok && result.reason === 'user_already_assigned') {
+    return res.status(400).json({
+      success: false,
+      message: 'User is already assigned to a sponsor organization. Delete the user from the existing sponsor organization first.',
+      data: result.existingAssignment
     })
   }
 

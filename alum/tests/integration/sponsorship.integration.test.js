@@ -394,4 +394,162 @@ describe('Sponsorship endpoints', () => {
 
     expect(deleteOrgResponse.status).toBe(204)
   })
+
+  it('rejects assigning a sponsor user to a second organization before removal from the first', async () => {
+    const { token: adminToken } = await createAuthenticatedUser({
+      email: 'reassign.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: sponsorUser } = await createAuthenticatedUser({
+      email: 'reassign.sponsor@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'sponsor'
+    })
+
+    const firstOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'First Sponsor Org',
+        sponsor_email: 'first@sponsor.org'
+      }
+    })
+
+    const secondOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Second Sponsor Org',
+        sponsor_email: 'second@sponsor.org'
+      }
+    })
+
+    const firstAssignResponse = await api()
+      .put(`/api/v1/sponsorships/organizations/${firstOrg.sponsor_org_id}/users/${sponsorUser.user_id}`)
+      .set(authHeader(adminToken))
+
+    expect(firstAssignResponse.status).toBe(200)
+
+    const secondAssignResponse = await api()
+      .put(`/api/v1/sponsorships/organizations/${secondOrg.sponsor_org_id}/users/${sponsorUser.user_id}`)
+      .set(authHeader(adminToken))
+
+    expect(secondAssignResponse.status).toBe(400)
+    expect(secondAssignResponse.body.message).toMatch(/delete the user from the existing sponsor organization first/i)
+    expect(secondAssignResponse.body.data.sponsorOrgId).toBe(firstOrg.sponsor_org_id)
+
+    const persistedAssignment = await prisma.orgUserAssociation.findUnique({
+      where: {
+        user_id: sponsorUser.user_id
+      }
+    })
+
+    expect(persistedAssignment.sponsor_org_id).toBe(firstOrg.sponsor_org_id)
+  })
+
+  it('soft deletes sponsor organizations while preserving historical offers and removing active assignments', async () => {
+    const { token: adminToken } = await createAuthenticatedUser({
+      email: 'soft.delete.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: sponsorUser, token: sponsorToken } = await createAuthenticatedUser({
+      email: 'soft.delete.sponsor@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'sponsor'
+    })
+
+    const { user: alumniUser } = await createAuthenticatedUser({
+      email: 'soft.delete.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const createOrgResponse = await api()
+      .post('/api/v1/sponsorships/organizations')
+      .set(authHeader(adminToken))
+      .send({
+        sponsorName: 'Soft Delete Org',
+        sponsorEmail: 'soft-delete@sponsor.org'
+      })
+
+    expect(createOrgResponse.status).toBe(201)
+    const sponsorOrgId = createOrgResponse.body.data.sponsorOrgId
+
+    const assignResponse = await api()
+      .put(`/api/v1/sponsorships/organizations/${sponsorOrgId}/users/${sponsorUser.user_id}`)
+      .set(authHeader(adminToken))
+
+    expect(assignResponse.status).toBe(200)
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'course',
+        title: 'Soft Delete Credential',
+        provider_name: 'Archive Provider',
+        credential_url: 'https://example.com/soft-delete-credential',
+        completion_date: new Date('2025-12-01T00:00:00.000Z')
+      }
+    })
+
+    const offer = await prisma.sponsorshipOffer.create({
+      data: {
+        sponsor_org_id: sponsorOrgId,
+        alumni_user_id: alumniUser.user_id,
+        credential_id: credential.credential_id,
+        amount_offered: 125,
+        status: 'declined',
+        expires_at: addUtcDays(new Date(), 10)
+      }
+    })
+
+    const deleteResponse = await api()
+      .delete(`/api/v1/sponsorships/organizations/${sponsorOrgId}`)
+      .set(authHeader(adminToken))
+
+    expect(deleteResponse.status).toBe(204)
+
+    const deletedOrg = await prisma.sponsorOrganization.findUnique({
+      where: {
+        sponsor_org_id: sponsorOrgId
+      }
+    })
+
+    expect(deletedOrg.deleted_at).toBeTruthy()
+
+    const removedAssignment = await prisma.orgUserAssociation.findUnique({
+      where: {
+        user_id: sponsorUser.user_id
+      }
+    })
+
+    expect(removedAssignment).toBeNull()
+
+    const preservedOffer = await prisma.sponsorshipOffer.findUnique({
+      where: {
+        offer_id: offer.offer_id
+      }
+    })
+
+    expect(preservedOffer.sponsor_org_id).toBe(sponsorOrgId)
+
+    const listResponse = await api()
+      .get('/api/v1/sponsorships/organizations')
+      .set(authHeader(adminToken))
+
+    expect(listResponse.status).toBe(200)
+    expect(listResponse.body.data.some((org) => org.sponsorOrgId === sponsorOrgId)).toBe(false)
+
+    const getResponse = await api()
+      .get(`/api/v1/sponsorships/organizations/${sponsorOrgId}`)
+      .set(authHeader(adminToken))
+
+    expect(getResponse.status).toBe(404)
+
+    const sponsorMyOrgResponse = await api()
+      .get('/api/v1/sponsorships/organizations/me')
+      .set(authHeader(sponsorToken))
+
+    expect(sponsorMyOrgResponse.status).toBe(404)
+  })
 })

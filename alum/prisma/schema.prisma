@@ -117,6 +117,7 @@ model SponsorOrganization {
   sponsor_name      String
   sponsor_email     String
   created_at        DateTime           @default(now())
+  deleted_at        DateTime?
   user_associations OrgUserAssociation[]
   sponsorship_offers SponsorshipOffer[]
 

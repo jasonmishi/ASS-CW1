@@ -39,7 +39,8 @@ const formatOrganization = (organization) => ({
   sponsorOrgId: organization.sponsor_org_id,
   sponsorName: organization.sponsor_name,
   sponsorEmail: organization.sponsor_email,
-  createdAt: organization.created_at
+  createdAt: organization.created_at,
+  deletedAt: organization.deleted_at || null
 })
 
 const formatOrganizationAssignment = (association) => ({
@@ -75,7 +76,7 @@ const expirePendingSponsorshipOffers = async () => {
 }
 
 const getSponsorOrgAssociation = async (userId) => {
-  return prisma.orgUserAssociation.findUnique({
+  const association = await prisma.orgUserAssociation.findUnique({
     where: {
       user_id: userId
     },
@@ -83,6 +84,12 @@ const getSponsorOrgAssociation = async (userId) => {
       sponsor_org: true
     }
   })
+
+  if (!association || association.sponsor_org.deleted_at) {
+    return null
+  }
+
+  return association
 }
 
 const createSponsorOrganization = async ({ sponsorName, sponsorEmail }) => {
@@ -98,6 +105,9 @@ const createSponsorOrganization = async ({ sponsorName, sponsorEmail }) => {
 
 const listSponsorOrganizations = async () => {
   const organizations = await prisma.sponsorOrganization.findMany({
+    where: {
+      deleted_at: null
+    },
     orderBy: {
       created_at: 'desc'
     }
@@ -113,7 +123,7 @@ const getSponsorOrganizationById = async (sponsorOrgId) => {
     }
   })
 
-  if (!organization) {
+  if (!organization || organization.deleted_at) {
     return null
   }
 
@@ -128,6 +138,13 @@ const updateSponsorOrganization = async ({ sponsorOrgId, sponsorName, sponsorEma
   })
 
   if (!existing) {
+    return {
+      ok: false,
+      reason: 'not_found'
+    }
+  }
+
+  if (existing.deleted_at) {
     return {
       ok: false,
       reason: 'not_found'
@@ -151,38 +168,44 @@ const updateSponsorOrganization = async ({ sponsorOrgId, sponsorName, sponsorEma
 }
 
 const deleteSponsorOrganization = async (sponsorOrgId) => {
-  try {
-    await prisma.sponsorOrganization.delete({
+  return prisma.$transaction(async (tx) => {
+    const organization = await tx.sponsorOrganization.findUnique({
       where: {
         sponsor_org_id: sponsorOrgId
       }
     })
-  } catch (error) {
-    if (error.code === 'P2025') {
+
+    if (!organization || organization.deleted_at) {
       return {
         ok: false,
         reason: 'not_found'
       }
     }
 
-    if (error.code === 'P2003') {
-      return {
-        ok: false,
-        reason: 'in_use'
+    await tx.orgUserAssociation.deleteMany({
+      where: {
+        sponsor_org_id: sponsorOrgId
       }
+    })
+
+    await tx.sponsorOrganization.update({
+      where: {
+        sponsor_org_id: sponsorOrgId
+      },
+      data: {
+        deleted_at: new Date()
+      }
+    })
+
+    return {
+      ok: true
     }
-
-    throw error
-  }
-
-  return {
-    ok: true
-  }
+  })
 }
 
 const assignSponsorUserToOrganization = async ({ userId, sponsorOrgId }) => {
   return prisma.$transaction(async (tx) => {
-    const [user, sponsorOrganization] = await Promise.all([
+    const [user, sponsorOrganization, existingAssociation] = await Promise.all([
       tx.user.findUnique({
         where: {
           user_id: userId
@@ -194,6 +217,14 @@ const assignSponsorUserToOrganization = async ({ userId, sponsorOrgId }) => {
       tx.sponsorOrganization.findUnique({
         where: {
           sponsor_org_id: sponsorOrgId
+        }
+      }),
+      tx.orgUserAssociation.findUnique({
+        where: {
+          user_id: userId
+        },
+        include: {
+          sponsor_org: true
         }
       })
     ])
@@ -212,6 +243,13 @@ const assignSponsorUserToOrganization = async ({ userId, sponsorOrgId }) => {
       }
     }
 
+    if (sponsorOrganization.deleted_at) {
+      return {
+        ok: false,
+        reason: 'sponsor_org_not_found'
+      }
+    }
+
     if (user.role.name !== 'sponsor') {
       return {
         ok: false,
@@ -219,14 +257,16 @@ const assignSponsorUserToOrganization = async ({ userId, sponsorOrgId }) => {
       }
     }
 
-    const association = await tx.orgUserAssociation.upsert({
-      where: {
-        user_id: userId
-      },
-      update: {
-        sponsor_org_id: sponsorOrgId
-      },
-      create: {
+    if (existingAssociation) {
+      return {
+        ok: false,
+        reason: 'user_already_assigned',
+        existingAssignment: formatOrganizationAssignment(existingAssociation)
+      }
+    }
+
+    const association = await tx.orgUserAssociation.create({
+      data: {
         user_id: userId,
         sponsor_org_id: sponsorOrgId
       },
@@ -338,7 +378,7 @@ const listSponsorOrganizationUsers = async ({ actorUserId, actorRole, sponsorOrg
     }
   })
 
-  if (!organization) {
+  if (!organization || organization.deleted_at) {
     return {
       ok: false,
       reason: 'sponsor_org_not_found'
