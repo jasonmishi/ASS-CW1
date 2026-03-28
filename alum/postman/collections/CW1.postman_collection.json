@@ -1476,7 +1476,7 @@
               }
             },
             {
-              "name": "/sponsorships/offers/{offerId} Copy",
+              "name": "/sponsorships/offers/{offerId}",
               "request": {
                 "method": "DELETE",
                 "url": {

@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma')
 
 const ACTIVE_OFFER_STATUSES = ['pending', 'accepted']
+const OFFER_CREATION_BLOCKING_STATUSES = ['pending']
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 
 const toNumber = Number
@@ -320,7 +321,7 @@ const listSponsorableAlumniCredentials = async ({ actorUserId, actorRole, creden
             where: {
               sponsor_org_id: sponsorOrgId,
               status: {
-                in: ACTIVE_OFFER_STATUSES
+                in: OFFER_CREATION_BLOCKING_STATUSES
               }
             }
           }
@@ -544,7 +545,7 @@ const createSponsorshipOffer = async ({
       alumni_user_id: resolvedAlumniId,
       credential_id: credentialId,
       status: {
-        in: ACTIVE_OFFER_STATUSES
+        in: OFFER_CREATION_BLOCKING_STATUSES
       }
     }
   })

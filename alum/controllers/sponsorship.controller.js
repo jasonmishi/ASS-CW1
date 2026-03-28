@@ -233,7 +233,7 @@ const createSponsorshipOffer = async (req, res) => {
   if (!result.ok && result.reason === 'duplicate_active_offer') {
     return res.status(400).json({
       success: false,
-      message: 'An active sponsorship offer already exists for this credential.'
+      message: 'A pending sponsorship offer already exists for this credential from your organization.'
     })
   }
 

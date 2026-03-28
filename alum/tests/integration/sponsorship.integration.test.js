@@ -165,6 +165,183 @@ describe('Sponsorship endpoints', () => {
     expect(response.body.message).toMatch(/organization is not configured/i)
   })
 
+  it('rejects creating another offer when a pending offer already exists for the same org and credential', async () => {
+    const { token: adminToken } = await createAuthenticatedUser({
+      email: 'pending.duplicate.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: sponsorUser, token: sponsorToken } = await createAuthenticatedUser({
+      email: 'pending.duplicate.sponsor@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'sponsor'
+    })
+
+    const { user: alumniUser } = await createAuthenticatedUser({
+      email: 'pending.duplicate.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'course',
+        title: 'Duplicate Pending Credential',
+        provider_name: 'Coursera',
+        credential_url: 'https://example.com/pending-duplicate',
+        completion_date: new Date('2025-11-01T00:00:00.000Z')
+      }
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Pending Duplicate Sponsor',
+        sponsor_email: 'pending-duplicate@sponsor.org'
+      }
+    })
+
+    await api()
+      .put(`/api/v1/sponsorships/organizations/${sponsorOrg.sponsor_org_id}/users/${sponsorUser.user_id}`)
+      .set(authHeader(adminToken))
+
+    await prisma.sponsorshipOffer.create({
+      data: {
+        sponsor_org_id: sponsorOrg.sponsor_org_id,
+        alumni_user_id: alumniUser.user_id,
+        credential_id: credential.credential_id,
+        amount_offered: 200,
+        status: 'pending',
+        expires_at: addUtcDays(new Date(), 10)
+      }
+    })
+
+    const duplicateResponse = await api()
+      .post('/api/v1/sponsorships/offers')
+      .set(authHeader(sponsorToken))
+      .send({
+        credentialType: 'course',
+        credentialId: credential.credential_id,
+        amountOffered: 250,
+        expiresInDays: 7
+      })
+
+    expect(duplicateResponse.status).toBe(400)
+    expect(duplicateResponse.body.message).toMatch(/pending sponsorship offer already exists/i)
+
+    const sponsorableCredentialsResponse = await api()
+      .get('/api/v1/sponsorships/alumni/credentials')
+      .set(authHeader(sponsorToken))
+
+    expect(sponsorableCredentialsResponse.status).toBe(200)
+    const matchingCredential = sponsorableCredentialsResponse.body.data.find((item) => item.credentialId === credential.credential_id)
+    expect(matchingCredential.hasActiveOfferFromMyOrg).toBe(true)
+  })
+
+  it('allows another offer after acceptance and stacks accepted sponsorship balance', async () => {
+    const { token: adminToken } = await createAuthenticatedUser({
+      email: 'accepted.stack.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const { user: sponsorUser, token: sponsorToken } = await createAuthenticatedUser({
+      email: 'accepted.stack.sponsor@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'sponsor'
+    })
+
+    const { user: alumniUser, token: alumniToken } = await createAuthenticatedUser({
+      email: 'accepted.stack.alumni@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const credential = await prisma.credential.create({
+      data: {
+        user_id: alumniUser.user_id,
+        credential_type: 'certification',
+        title: 'Stackable Sponsorship Credential',
+        provider_name: 'Microsoft Learn',
+        credential_url: 'https://example.com/stackable-sponsorship',
+        completion_date: new Date('2025-12-01T00:00:00.000Z')
+      }
+    })
+
+    const sponsorOrg = await prisma.sponsorOrganization.create({
+      data: {
+        sponsor_name: 'Stackable Sponsor',
+        sponsor_email: 'stackable@sponsor.org'
+      }
+    })
+
+    await api()
+      .put(`/api/v1/sponsorships/organizations/${sponsorOrg.sponsor_org_id}/users/${sponsorUser.user_id}`)
+      .set(authHeader(adminToken))
+
+    const firstOfferResponse = await api()
+      .post('/api/v1/sponsorships/offers')
+      .set(authHeader(sponsorToken))
+      .send({
+        credentialType: 'certification',
+        credentialId: credential.credential_id,
+        amountOffered: 300,
+        expiresInDays: 7
+      })
+
+    expect(firstOfferResponse.status).toBe(201)
+
+    const firstAcceptResponse = await api()
+      .put(`/api/v1/sponsorships/offers/${firstOfferResponse.body.data.id}/response`)
+      .set(authHeader(alumniToken))
+      .send({
+        action: 'accept'
+      })
+
+    expect(firstAcceptResponse.status).toBe(200)
+    expect(firstAcceptResponse.body.data.status).toBe('accepted')
+
+    const sponsorableCredentialsResponse = await api()
+      .get('/api/v1/sponsorships/alumni/credentials')
+      .set(authHeader(sponsorToken))
+
+    expect(sponsorableCredentialsResponse.status).toBe(200)
+    const matchingCredential = sponsorableCredentialsResponse.body.data.find((item) => item.credentialId === credential.credential_id)
+    expect(matchingCredential.hasActiveOfferFromMyOrg).toBe(false)
+
+    const secondOfferResponse = await api()
+      .post('/api/v1/sponsorships/offers')
+      .set(authHeader(sponsorToken))
+      .send({
+        credentialType: 'certification',
+        credentialId: credential.credential_id,
+        amountOffered: 150,
+        expiresInDays: 7
+      })
+
+    expect(secondOfferResponse.status).toBe(201)
+
+    const secondAcceptResponse = await api()
+      .put(`/api/v1/sponsorships/offers/${secondOfferResponse.body.data.id}/response`)
+      .set(authHeader(alumniToken))
+      .send({
+        action: 'accept'
+      })
+
+    expect(secondAcceptResponse.status).toBe(200)
+    expect(secondAcceptResponse.body.data.status).toBe('accepted')
+
+    const balanceResponse = await api()
+      .get('/api/v1/sponsorships/balance')
+      .set(authHeader(alumniToken))
+
+    expect(balanceResponse.status).toBe(200)
+    expect(balanceResponse.body.data.totalOffered).toBe(450)
+    expect(balanceResponse.body.data.availableForBidding).toBe(450)
+    expect(balanceResponse.body.data.acceptedOffers).toHaveLength(2)
+  })
+
   it('returns used bid commitments in sponsorship balance', async () => {
     const { user: alumniUser, token: alumniToken } = await createAuthenticatedUser({
       email: 'balance.used.bids@eastminster.ac.uk',
