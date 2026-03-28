@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma')
 
 const CREDENTIAL_TYPES = {
   certification: 'certification',
-  licence: 'license',
+  licence: 'licence',
   course: 'course'
 }
 
