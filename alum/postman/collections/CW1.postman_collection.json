@@ -434,6 +434,24 @@
               ]
             }
           }
+        },
+        {
+          "name": "/clients/{clientId}/tokens/{tokenId}",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/{clientId}/tokens/{tokenId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "{clientId}",
+                "tokens",
+                "{tokenId}"
+              ]
+            }
+          }
         }
       ],
       "auth": {

@@ -4,7 +4,7 @@ const { prisma } = require('../helpers/test-db')
 const { API_CLIENT_SCOPES, DEFAULT_PUBLIC_SCOPES } = require('../../utils/api-client-scopes')
 
 describe('POST /api/v1/clients', () => {
-  it('returns 403 for non-admin user', async () => {
+  it('returns 403 for non-developer user', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'alumni.user@eastminster.ac.uk',
       password: 'Strong!Pass1',
@@ -28,11 +28,30 @@ describe('POST /api/v1/clients', () => {
     expect(client).toBeNull()
   })
 
-  it('returns 201 and stores only token hash for admin', async () => {
-    const { user, token } = await createAuthenticatedUser({
+  it('returns 403 for admin user', async () => {
+    const { token } = await createAuthenticatedUser({
       email: 'admin.user@eastminster.ac.uk',
       password: 'Strong!Pass1',
       roleName: 'admin'
+    })
+
+    const response = await api()
+      .post('/api/v1/clients')
+      .set(authHeader(token))
+      .send({
+        clientName: 'Admin Forbidden Client',
+        description: 'Should be developer only',
+        contactEmail: 'admin-forbidden@campusapp.io'
+      })
+
+    expect(response.status).toBe(403)
+  })
+
+  it('returns 201 and stores only token hash for developer', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'developer.user@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'developer'
     })
 
     const requestBody = {
@@ -60,11 +79,11 @@ describe('POST /api/v1/clients', () => {
 })
 
 describe('GET /api/v1/clients/:clientId/usage', () => {
-  it('returns usage aggregation for admin', async () => {
+  it('returns usage aggregation for developer', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.stats@eastminster.ac.uk',
+      email: 'developer.stats@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client, token: clientToken } = await createApiClientWithToken({
@@ -111,11 +130,11 @@ describe('GET /api/v1/clients/:clientId/usage', () => {
 })
 
 describe('POST /api/v1/clients/:clientId/tokens', () => {
-  it('returns 201 and creates an additional token for admin', async () => {
+  it('returns 201 and creates an additional token for developer', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.multi-token@eastminster.ac.uk',
+      email: 'developer.multi-token@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client } = await createApiClientWithToken({
@@ -141,9 +160,9 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
 
   it('returns 201 and stores provided expiresAt', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.token-expiry@eastminster.ac.uk',
+      email: 'developer.token-expiry@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client } = await createApiClientWithToken({
@@ -170,9 +189,9 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
 
   it('returns 201 and stores provided scopes', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.token-scopes@eastminster.ac.uk',
+      email: 'developer.token-scopes@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client } = await createApiClientWithToken({
@@ -198,11 +217,11 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
 })
 
 describe('GET /api/v1/clients/:clientId/tokens', () => {
-  it('returns all tokens for a client for admin', async () => {
+  it('returns all tokens for a client for developer', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.token-list@eastminster.ac.uk',
+      email: 'developer.token-list@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client } = await createApiClientWithToken({
@@ -231,11 +250,11 @@ describe('GET /api/v1/clients/:clientId/tokens', () => {
 })
 
 describe('DELETE /api/v1/clients/:clientId/tokens/:tokenId', () => {
-  it('returns 204 and revokes a specific token for admin', async () => {
+  it('returns 204 and revokes a specific token for developer', async () => {
     const { user, token } = await createAuthenticatedUser({
-      email: 'admin.token-revoke@eastminster.ac.uk',
+      email: 'developer.token-revoke@eastminster.ac.uk',
       password: 'Strong!Pass1',
-      roleName: 'admin'
+      roleName: 'developer'
     })
 
     const { client } = await createApiClientWithToken({

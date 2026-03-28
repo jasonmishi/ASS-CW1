@@ -72,6 +72,17 @@ const requireAdmin = (req, res, next) => {
   return next()
 }
 
+const requireDeveloper = (req, res, next) => {
+  if (req.user?.role !== 'developer') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden. Developer access is required.'
+    })
+  }
+
+  return next()
+}
+
 const requireSponsorOrAdmin = (req, res, next) => {
   if (req.user?.role !== 'sponsor' && req.user?.role !== 'admin') {
     return res.status(403).json({
@@ -245,6 +256,7 @@ module.exports = {
   recordApiClientUsage,
   requireApiClientScope,
   requireAdmin,
+  requireDeveloper,
   requireAdminOrAlumni,
   requireAlumni,
   requireSponsor,
