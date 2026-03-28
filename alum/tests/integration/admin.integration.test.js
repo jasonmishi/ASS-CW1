@@ -272,7 +272,7 @@ describe('PUT /api/v1/admin/users/:userId/role', () => {
       })
 
     expect(response.status).toBe(400)
-    expect(response.body.message).toMatch(/last remaining Admin/i)
+    expect(response.body.message).toMatch(/non-scheduler Admin must remain/i)
   })
 
   it('returns 400 when promoting a non-eastminster user to alumni', async () => {
@@ -297,5 +297,58 @@ describe('PUT /api/v1/admin/users/:userId/role', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
+  })
+
+  it('returns 400 when trying to demote the scheduler system admin', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'human.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const schedulerAdmin = await createUser({
+      email: 'system.scheduler@eastminster.local',
+      password: 'Strong!Pass1',
+      roleName: 'admin',
+      firstName: 'System',
+      lastName: 'Scheduler'
+    })
+
+    const response = await api()
+      .put(`/api/v1/admin/users/${schedulerAdmin.user_id}/role`)
+      .set(authHeader(token))
+      .send({
+        role: 'Developer'
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.message).toMatch(/scheduler system Admin cannot be demoted/i)
+  })
+
+  it('returns 400 when demotion would leave only the scheduler as admin', async () => {
+    const schedulerAdmin = await createUser({
+      email: 'system.scheduler@eastminster.local',
+      password: 'Strong!Pass1',
+      roleName: 'admin',
+      firstName: 'System',
+      lastName: 'Scheduler'
+    })
+
+    const { token, user: humanAdmin } = await createAuthenticatedUser({
+      email: 'sole.human.admin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'admin'
+    })
+
+    const response = await api()
+      .put(`/api/v1/admin/users/${humanAdmin.user_id}/role`)
+      .set(authHeader(token))
+      .send({
+        role: 'Developer'
+      })
+
+    expect(schedulerAdmin).toBeTruthy()
+    expect(response.status).toBe(400)
+    expect(response.body.message).toMatch(/non-scheduler Admin must remain/i)
   })
 })

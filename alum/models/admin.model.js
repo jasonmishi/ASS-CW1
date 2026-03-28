@@ -7,6 +7,10 @@ const normalizeRole = (role) => role.toLowerCase()
 
 const displayRole = (roleName) => roleName.charAt(0).toUpperCase() + roleName.slice(1)
 
+const getSchedulerSystemEmail = () => {
+  return (process.env.SCHEDULER_SYSTEM_EMAIL || 'system.scheduler@eastminster.local').toLowerCase()
+}
+
 const createEmailVerificationToken = async ({ user_id, token_hash, expires_at }) => {
   await prisma.emailVerificationToken.updateMany({
     where: {
@@ -111,6 +115,7 @@ const createPrivilegedUser = async ({
 
 const updateUserRole = async (userId, role) => {
   const targetRoleName = normalizeRole(role)
+  const schedulerSystemEmail = getSchedulerSystemEmail()
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -152,15 +157,25 @@ const updateUserRole = async (userId, role) => {
     const isDemotingFromAdmin = user.role.name === 'admin' && targetRoleName !== 'admin'
 
     if (isDemotingFromAdmin) {
-      const adminCount = await tx.user.count({
+      if (user.email === schedulerSystemEmail) {
+        return {
+          ok: false,
+          reason: 'scheduler_admin_protected'
+        }
+      }
+
+      const nonSchedulerAdminCount = await tx.user.count({
         where: {
           role: {
             name: 'admin'
+          },
+          email: {
+            not: schedulerSystemEmail
           }
         }
       })
 
-      if (adminCount <= 1) {
+      if (nonSchedulerAdminCount <= 1) {
         return {
           ok: false,
           reason: 'last_admin_demotion'
@@ -208,7 +223,7 @@ const listAdminUsers = async () => {
 }
 
 const getOrCreateSystemSchedulerAdminUserId = async () => {
-  const email = (process.env.SCHEDULER_SYSTEM_EMAIL || 'system.scheduler@eastminster.local').toLowerCase()
+  const email = getSchedulerSystemEmail()
 
   const existing = await prisma.user.findUnique({
     where: {

@@ -77,7 +77,14 @@ const updateUserRole = async (req, res) => {
   if (!result.ok && result.reason === 'last_admin_demotion') {
     return res.status(400).json({
       success: false,
-      message: 'The last remaining Admin cannot be demoted.'
+      message: 'At least one non-scheduler Admin must remain.'
+    })
+  }
+
+  if (!result.ok && result.reason === 'scheduler_admin_protected') {
+    return res.status(400).json({
+      success: false,
+      message: 'The scheduler system Admin cannot be demoted.'
     })
   }
 
