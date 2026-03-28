@@ -1219,11 +1219,8 @@ components:
         orgProfit:
           type: number
           format: double
-          description: totalWinningBidAmount
+          description: Sum of winning bid amounts across the selected payouts.
           example: 2750.00
-        formula:
-          type: string
-          example: orgProfit = totalWinningBidAmount; alumniProfit = totalSponsorshipCharged - totalWinningBidAmount
 
     # ─── Event Attendance ─────────────────
     EventAttendanceRequest:
@@ -3580,8 +3577,8 @@ paths:
       summary: Get organization sponsorship profit summary
       description: |
         Returns aggregate sponsorship accounting over sponsorship payouts.
-        Profit is calculated as:
-        `totalSponsorshipCharged - totalAlumniPayout`.
+        Organization profit is reported as the total winning bid amount
+        across the selected payouts.
 
         Admin access only.
       operationId: getOrgProfitSummary

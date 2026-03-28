@@ -1039,8 +1039,7 @@ const getOrgProfitSummary = async ({ from, to }) => {
     totalSponsorshipCharged,
     totalWinningBidAmount,
     totalAlumniPayout,
-    orgProfit,
-    formula: 'orgProfit = totalWinningBidAmount; alumniProfit = totalSponsorshipCharged - totalWinningBidAmount'
+    orgProfit
   }
 }
 

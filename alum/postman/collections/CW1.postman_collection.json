@@ -1388,6 +1388,23 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "/sponsorships/profit/org",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/profit/org",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "profit",
+                    "org"
+                  ]
+                }
+              }
             }
           ],
           "auth": {
