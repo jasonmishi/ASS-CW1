@@ -48,10 +48,14 @@ app.get('/api-docs.json', (_req, res) => {
   res.json(swaggerDocument)
 })
 
-const port = 3000
+const port = Number(process.env.PORT || 3000)
 
 app.get('/', (req, res) => {
   res.send('Hello World! (nodemon reload check)')
+})
+
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ ok: true })
 })
 
 app.use('/api/v1', apiRateLimiter)
