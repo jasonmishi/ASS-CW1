@@ -50,8 +50,8 @@ app.get('/api-docs.json', (_req, res) => {
 
 const port = Number(process.env.PORT || 3000)
 
-app.get('/', (req, res) => {
-  res.send('Hello World! (nodemon reload check)')
+app.get('/', (_req, res) => {
+  res.redirect('/api-docs/')
 })
 
 app.get('/healthz', (_req, res) => {
