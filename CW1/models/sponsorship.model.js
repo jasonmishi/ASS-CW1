@@ -488,6 +488,7 @@ const removeUserFromSponsorOrganization = async ({ userId, sponsorOrgId }) => {
   }
 }
 
+// Clear expired pending offers first, then check org membership, alumni ownership, and duplicate active offers.
 const createSponsorshipOffer = async ({
   actorUserId,
   actorRole,

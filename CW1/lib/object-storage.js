@@ -43,6 +43,7 @@ const ensureLocalProfilesDir = async () => {
   await fs.mkdir(localProfilesRoot, { recursive: true })
 }
 
+// Make sure bucket exists before upload
 const ensureMinioBucket = async () => {
   if (bucketReadyPromise) {
     return bucketReadyPromise
@@ -100,6 +101,7 @@ const getMinioObjectKeyFromUrl = (imageUrl) => {
   return imageUrl.slice(expectedPrefix.length)
 }
 
+// Conver the db path to local for saving
 const getLocalFilePathFromUrl = (imageUrl) => {
   if (!imageUrl || typeof imageUrl !== 'string') {
     return null

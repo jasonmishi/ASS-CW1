@@ -30,6 +30,7 @@ const authenticateJwt = (req, res, next) => {
     })
   }
 
+  // A valid JWT is not enough, session must still be active in the database.
   return jwt.verify(token, getSecret(), (verificationError, payload) => {
     if (verificationError) {
       return res.status(401).json({
@@ -191,6 +192,7 @@ const requireApiClientScope = (requiredScope) => {
   }
 }
 
+// Save usage for each token, endpoint, method, and day
 const recordApiClientUsage = (req, _res, next) => {
   if (!req.apiClient?.token_id) {
     return next()

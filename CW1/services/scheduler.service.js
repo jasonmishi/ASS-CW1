@@ -14,6 +14,7 @@ const dateKey = (dateInput) => {
   return date.toISOString().slice(0, 10)
 }
 
+// These outcomes are normal for the scheduler and are not treated as failures.
 const runWinnerSelectionForDate = async (dateInput, logger = console) => {
   const date = toUtcDateOnly(dateInput)
   const selectedByUserId = await adminModel.getOrCreateSystemSchedulerAdminUserId()

@@ -39,6 +39,8 @@ const ensureCsrfCookie = (req, res) => {
   return freshToken
 }
 
+// Mutating requests require a CSRF cookie + CSRF in header, login is exempt
+// cookie is set on login and csrf-token endpoint
 const csrfProtection = (req, res, next) => {
   const method = (req.method || '').toUpperCase()
   const routeKey = `${method} ${req.path}`

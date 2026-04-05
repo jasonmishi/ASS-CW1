@@ -1,8 +1,10 @@
 const prisma = require('../lib/prisma')
 
 const toNumber = Number
+// Bid is pending before statuses are calculated
 const ACTIVE_BID_STATUSES = ['pending', 'winning', 'losing']
 const ACTIVE_BID_STATUS_SET = new Set(ACTIVE_BID_STATUSES)
+// Higher bids lead, and if two bids match, the older one stays ahead.
 const BID_LEADER_ORDER_BY = [
   {
     amount: 'desc'
@@ -67,8 +69,8 @@ const getBidLeaderOrderBy = () => BID_LEADER_ORDER_BY
 
 const isActiveBidStatus = (status) => ACTIVE_BID_STATUS_SET.has(status)
 
-// Active bid statuses must only be derived through recomputeBidStatusesForDate so
-// place/update flows and read paths stay aligned on the same leader ordering rule.
+// Active bid statuses should only be derived through recomputeBidStatusesForDate so
+// all code follows the same leader ordering rule.
 const findLeaderBidForDate = async (bidDate, tx = prisma, options = {}) => {
   return tx.bid.findFirst({
     where: {
@@ -101,6 +103,7 @@ const setWonBidStatus = async (leaderBidId, tx = prisma) => {
   })
 }
 
+// Available money is accepted sponsorship money minus active bid ammount
 const getAvailableBalance = async (alumniUserId, tx = prisma, options = {}) => {
   const [offeredResult, usedResult] = await Promise.all([
     tx.sponsorshipOffer.aggregate({
@@ -136,6 +139,7 @@ const getAvailableBalance = async (alumniUserId, tx = prisma, options = {}) => {
   return Math.max(0, totalOffered - totalUsedInBids)
 }
 
+// Alumni can win 3 times per month, or 4 if they attended an event.
 const getWinPolicyForMonth = async (alumniUserId, monthStart, monthEnd, tx = prisma) => {
   const [winsThisMonth, attendedEventRecord] = await Promise.all([
     tx.featuredWinner.count({
@@ -173,6 +177,7 @@ const getWinPolicyForMonth = async (alumniUserId, monthStart, monthEnd, tx = pri
   }
 }
 
+// Winning and losing are recalculated from the current bid order for that day.
 const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
   const bids = await tx.bid.findMany({
     where: {
@@ -223,6 +228,7 @@ const recomputeBidStatusesForDate = async (bidDate, tx = prisma) => {
   }
 }
 
+// Keep the checks, bid creation, and status update together in one transaction.
 const placeBid = async ({ alumniUserId, amount }) => {
   const bidDate = getActiveBidDate()
   const { start, end } = parseMonthToRange(`${bidDate.getUTCFullYear()}-${String(bidDate.getUTCMonth() + 1).padStart(2, '0')}`)

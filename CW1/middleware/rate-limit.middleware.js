@@ -14,6 +14,7 @@ const getWindowStart = (now, windowMs) => {
   return new Date(bucket)
 }
 
+// Store rate-limit counts in the database, grouped into fixed time windows.
 class PrismaRateLimitStore {
   constructor({ windowMs }) {
     this.windowMs = windowMs
@@ -114,6 +115,7 @@ const getSessionKey = (cookieHeader) => {
   return `session:${hashToken(token)}`
 }
 
+// For public routes, try bearer token first, then session cookie, then IP.
 const keyGenerator = (req) => {
   if (req.path.startsWith('/public/')) {
     const apiClientKey = getApiClientKey(req.headers.authorization)
