@@ -109,6 +109,35 @@ describe('bootstrap admin', () => {
     expect(tx.role.findUnique).not.toHaveBeenCalled()
   })
 
+  test('still creates the bootstrap admin when only the scheduler admin exists', async () => {
+    const tx = {
+      user: {
+        count: jest.fn().mockResolvedValue(0),
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({ user_id: 'admin-user-3' })
+      },
+      role: {
+        findUnique: jest.fn().mockResolvedValue({ role_id: 3, name: 'admin' })
+      }
+    }
+
+    prisma.$transaction.mockImplementation(async (callback) => callback(tx))
+
+    const result = await ensureFirstAdmin()
+
+    expect(result).toEqual({ created: true, userId: 'admin-user-3' })
+    expect(tx.user.count).toHaveBeenCalledWith({
+      where: {
+        role: {
+          name: 'admin'
+        },
+        email: {
+          not: 'system.scheduler@eastminster.local'
+        }
+      }
+    })
+  })
+
   test('fails for invalid bootstrap credentials', async () => {
     process.env.BOOTSTRAP_ADMIN_EMAIL = 'admin@gmail.com'
     process.env.BOOTSTRAP_ADMIN_PASSWORD = 'weak'

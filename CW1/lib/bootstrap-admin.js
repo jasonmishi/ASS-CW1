@@ -5,6 +5,7 @@ const DEFAULT_BOOTSTRAP_ADMIN_EMAIL = 'admin@eastminster.ac.uk'
 const DEFAULT_BOOTSTRAP_ADMIN_PASSWORD = 'ChangeMe!123!'
 const DEFAULT_BOOTSTRAP_ADMIN_FIRST_NAME = 'System'
 const DEFAULT_BOOTSTRAP_ADMIN_LAST_NAME = 'Admin'
+const DEFAULT_SCHEDULER_SYSTEM_EMAIL = 'system.scheduler@eastminster.local'
 
 const resolveBootstrapCredentials = () => {
   const emailFromEnv = process.env.BOOTSTRAP_ADMIN_EMAIL || process.env.BOOTSTRAP_ADMIN_USERNAME
@@ -27,8 +28,13 @@ const validateBootstrapCredentials = ({ email, password }) => {
   }
 }
 
+const getSchedulerSystemEmail = () => {
+  return (process.env.SCHEDULER_SYSTEM_EMAIL || DEFAULT_SCHEDULER_SYSTEM_EMAIL).toLowerCase()
+}
+
 const ensureFirstAdmin = async () => {
   const credentials = resolveBootstrapCredentials()
+  const schedulerSystemEmail = getSchedulerSystemEmail()
   validateBootstrapCredentials(credentials)
 
   const result = await prisma.$transaction(async (tx) => {
@@ -36,6 +42,9 @@ const ensureFirstAdmin = async () => {
       where: {
         role: {
           name: 'admin'
+        },
+        email: {
+          not: schedulerSystemEmail
         }
       }
     })
