@@ -16,8 +16,7 @@
               {
                 "key": "X-CSRF-Token",
                 "value": "",
-                "type": "text",
-                "uuid": "846e9679-5743-4fc4-b546-34ccd2a1a0ec"
+                "type": "text"
               }
             ],
             "body": {
@@ -212,7 +211,6 @@
                 "key": "",
                 "value": "",
                 "type": "text",
-                "uuid": "94370f0b-ec5b-458e-936d-0249fbbd6d26",
                 "disabled": true
               },
               {
@@ -314,15 +312,6 @@
           "name": "/auth/csrf-token",
           "request": {
             "method": "GET",
-            "body": {
-              "mode": "raw",
-              "raw": "  {\"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\",\n  \"confirmPassword\": \"S3cure!Pass\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{API_BASE_URL}}/auth/csrf-token",
               "host": [
@@ -1129,7 +1118,9 @@
                       "key": "image",
                       "description": "test",
                       "type": "file",
-                      "src": "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                      "src": [
+                        "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                      ]
                     }
                   ]
                 },
@@ -1156,7 +1147,9 @@
                       "key": "image",
                       "description": "test",
                       "type": "file",
-                      "src": "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                      "src": [
+                        "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                      ]
                     }
                   ]
                 },
