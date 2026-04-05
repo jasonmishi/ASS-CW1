@@ -4265,7 +4265,9 @@ paths:
     get:
       tags: [Admin]
       summary: List current users
-      description: Returns all current users with their roles. Admin only.
+      description: |
+        Returns all current users with their roles and email verification state.
+        Requires an authenticated session for a user whose role is `admin`.
       operationId: listAdminUsers
       security:
         - SessionCookieAuth: []
@@ -4291,11 +4293,11 @@ paths:
 
     post:
       tags: [Admin]
-      summary: Create a new Developer or Sponsor account
+      summary: Create a new privileged user account
       description: |
-        Allows Admins to create new accounts with specific roles (Developer, Sponsor, or Admin).
-        Default role is 'Alumni' if not specified, but this endpoint is intended for privileged account creation.
-        Use this to onboard Admin users when needed.
+        Allows an authenticated `admin` user to create a new account with one of the supported roles:
+        `Alumni`, `Developer`, `Sponsor`, or `Admin`.
+        The `role` field is required; this endpoint does not apply a default role.
         A verification email is sent to the created user, and the account remains unverified until the email link is used.
       operationId: createPrivilegedUser
       security:
@@ -4332,6 +4334,12 @@ paths:
                 $ref: '#/components/schemas/RegisterResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          description: An account with this email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4340,10 +4348,10 @@ paths:
   /admin/users/{userId}/role:
     put:
       tags: [Admin]
-      summary: Promote a user's role
+      summary: Update a user's role
       description: |
-        Allows Admins to set an existing user's role to 'Developer', 'Sponsor', or 'Admin'.
-        Assigning the Admin role is restricted to Admins only.
+        Allows an authenticated `admin` user to set an existing user's role to
+        `Alumni`, `Developer`, `Sponsor`, or `Admin`.
         The last remaining Admin cannot be demoted.
       operationId: updateUserRole
       security:
