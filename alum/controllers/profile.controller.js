@@ -1,35 +1,5 @@
 const profileModel = require('../models/profile.model')
-const fs = require('node:fs/promises')
-const path = require('node:path')
-
-const uploadsRoot = path.resolve(__dirname, '..', 'uploads')
-
-const deleteUploadedFile = async (profileImageUrl) => {
-  if (!profileImageUrl || typeof profileImageUrl !== 'string') {
-    return
-  }
-
-  const normalizedPrefix = '/uploads/'
-
-  if (!profileImageUrl.startsWith(normalizedPrefix)) {
-    return
-  }
-
-  const relativePath = profileImageUrl.slice(normalizedPrefix.length)
-  const absolutePath = path.resolve(uploadsRoot, relativePath)
-
-  if (!absolutePath.startsWith(uploadsRoot)) {
-    return
-  }
-
-  try {
-    await fs.unlink(absolutePath)
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw error
-    }
-  }
-}
+const objectStorage = require('../lib/object-storage')
 
 const getMyProfile = async (req, res) => {
   const profile = await profileModel.getUserProfileById(req.user.user_id)
@@ -62,12 +32,15 @@ const replaceProfileImage = async (req, res) => {
     })
   }
 
-  const nextImageUrl = `/uploads/profiles/${req.file.filename}`
+  const nextImageUrl = await objectStorage.uploadProfileImage({
+    userId: req.user.user_id,
+    file: req.file
+  })
   const currentProfile = await profileModel.getUserProfileById(req.user.user_id)
   const result = await profileModel.replaceProfileImage(req.user.user_id, nextImageUrl)
 
   if (currentProfile?.profileImageUrl && currentProfile.profileImageUrl !== nextImageUrl) {
-    await deleteUploadedFile(currentProfile.profileImageUrl)
+    await objectStorage.deleteProfileImage(currentProfile.profileImageUrl)
   }
 
   return res.status(200).json({
@@ -87,7 +60,7 @@ const deleteProfileImage = async (req, res) => {
     })
   }
 
-  await deleteUploadedFile(deleted.deletedImageUrl)
+  await objectStorage.deleteProfileImage(deleted.deletedImageUrl)
 
   return res.status(204).send()
 }
@@ -96,7 +69,7 @@ const clearProfile = async (req, res) => {
   const cleared = await profileModel.clearProfileFields(req.user.user_id)
 
   if (cleared.deletedImageUrl) {
-    await deleteUploadedFile(cleared.deletedImageUrl)
+    await objectStorage.deleteProfileImage(cleared.deletedImageUrl)
   }
 
   return res.status(204).send()

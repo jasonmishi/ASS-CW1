@@ -1,6 +1,4 @@
 const express = require('express')
-const fs = require('node:fs')
-const path = require('node:path')
 const multer = require('multer')
 const profileController = require('../controllers/profile.controller')
 const { authenticateJwt, requireAlumni } = require('../middleware/auth.middleware')
@@ -20,19 +18,10 @@ const {
 } = require('../schemas/profile.schemas')
 
 const router = express.Router()
-const uploadsDir = path.resolve(__dirname, '..', 'uploads', 'profiles')
 const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
-fs.mkdirSync(uploadsDir, { recursive: true })
-
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadsDir),
-    filename: (req, file, cb) => {
-      const extension = path.extname(file.originalname || '') || '.jpg'
-      cb(null, `${req.user.user_id}-${Date.now()}${extension.toLowerCase()}`)
-    }
-  }),
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024
   },
