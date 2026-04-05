@@ -26,7 +26,19 @@ const TABLES = [
   'roles'
 ]
 
+const assertSafeTestDatabase = () => {
+  const databaseUrl = process.env.DATABASE_URL || prisma.databaseUrl || ''
+
+  if (databaseUrl.includes('/alum_test')) {
+    return
+  }
+
+  throw new Error(`Refusing to reset non-test database: ${databaseUrl || 'DATABASE_URL is not set'}`)
+}
+
 const resetDatabase = async () => {
+  assertSafeTestDatabase()
+
   const quotedTables = TABLES.map((table) => `"${table}"`).join(', ')
   const truncateStatement = `TRUNCATE TABLE ${quotedTables} RESTART IDENTITY CASCADE;`
 
