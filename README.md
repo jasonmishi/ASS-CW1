@@ -78,19 +78,19 @@ Default MinIO credentials in Docker Compose:
 1. Copy the root env file template and adjust secrets and URLs:
 
 ```bash
-cp ../.env.example ../.env
+cp .env.example .env
 ```
 
 2. From the `CW1/` directory, build the production image:
 
 ```bash
-docker compose --env-file ../.env -f docker-compose.prod.yml build
+docker compose --env-file .env -f docker-compose.prod.yml build
 ```
 
 3. Start the full stack:
 
 ```bash
-docker compose --env-file ../.env -f docker-compose.prod.yml up -d
+docker compose --env-file .env -f docker-compose.prod.yml up -d
 ```
 
 4. Check the deployment:
