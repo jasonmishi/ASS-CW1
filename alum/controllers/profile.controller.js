@@ -1,5 +1,5 @@
 const profileModel = require('../models/profile.model')
-const objectStorage = require('../lib/object-storage')
+const profileService = require('../services/profile.service')
 
 const getMyProfile = async (req, res) => {
   const profile = await profileModel.getUserProfileById(req.user.user_id)
@@ -32,16 +32,7 @@ const replaceProfileImage = async (req, res) => {
     })
   }
 
-  const nextImageUrl = await objectStorage.uploadProfileImage({
-    userId: req.user.user_id,
-    file: req.file
-  })
-  const currentProfile = await profileModel.getUserProfileById(req.user.user_id)
-  const result = await profileModel.replaceProfileImage(req.user.user_id, nextImageUrl)
-
-  if (currentProfile?.profileImageUrl && currentProfile.profileImageUrl !== nextImageUrl) {
-    await objectStorage.deleteProfileImage(currentProfile.profileImageUrl)
-  }
+  const result = await profileService.replaceProfileImage(req.user.user_id, req.file)
 
   return res.status(200).json({
     success: true,
@@ -51,7 +42,7 @@ const replaceProfileImage = async (req, res) => {
 }
 
 const deleteProfileImage = async (req, res) => {
-  const deleted = await profileModel.deleteProfileImage(req.user.user_id)
+  const deleted = await profileService.deleteProfileImage(req.user.user_id)
 
   if (!deleted) {
     return res.status(404).json({
@@ -60,17 +51,11 @@ const deleteProfileImage = async (req, res) => {
     })
   }
 
-  await objectStorage.deleteProfileImage(deleted.deletedImageUrl)
-
   return res.status(204).send()
 }
 
 const clearProfile = async (req, res) => {
-  const cleared = await profileModel.clearProfileFields(req.user.user_id)
-
-  if (cleared.deletedImageUrl) {
-    await objectStorage.deleteProfileImage(cleared.deletedImageUrl)
-  }
+  await profileService.clearProfile(req.user.user_id)
 
   return res.status(204).send()
 }
