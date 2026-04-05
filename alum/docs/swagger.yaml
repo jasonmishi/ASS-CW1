@@ -3802,7 +3802,7 @@ paths:
         a **Bearer token** for accessing public API endpoints. The token is shown **once**
         and must be stored securely by the client.
 
-        This endpoint is restricted to administrators.
+        This endpoint is restricted to developers.
       operationId: createApiClient
       security:
         - SessionCookieAuth: []
@@ -3835,7 +3835,7 @@ paths:
     get:
       tags: [API Client Management]
       summary: List all API clients
-      description: Returns a list of all registered API clients and their basic information. Admin only.
+      description: Returns a list of all registered API clients and their basic information. Developer only.
       operationId: listApiClients
       security:
         - SessionCookieAuth: []
@@ -3908,6 +3908,8 @@ paths:
         - Token history (`api_client_tokens`)
         - Endpoint usage rows (`api_client_endpoint_usage`)
         - Aggregate totals
+
+        Developer only.
       operationId: getClientUsageStats
       security:
         - SessionCookieAuth: []
@@ -3958,6 +3960,8 @@ paths:
       description: |
         Creates a new token for the specified API client without revoking existing tokens.
         This supports multiple active tokens per client.
+
+        Developer only.
       operationId: createClientToken
       security:
         - SessionCookieAuth: []
@@ -4036,7 +4040,7 @@ paths:
     get:
       tags: [API Client Management]
       summary: List API client tokens
-      description: Returns all tokens (active and revoked) for a specific API client.
+      description: Returns all tokens (active and revoked) for a specific API client. Developer only.
       operationId: listClientTokens
       security:
         - SessionCookieAuth: []
@@ -4094,7 +4098,7 @@ paths:
     delete:
       tags: [API Client Management]
       summary: Revoke a specific API client token
-      description: Revokes only the specified token for the given API client.
+      description: Revokes only the specified token for the given API client. Developer only.
       operationId: revokeClientTokenByTokenId
       security:
         - SessionCookieAuth: []
