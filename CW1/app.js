@@ -20,7 +20,7 @@ const publicRoutes = require('./routes/public.routes')
 const swaggerFilePath = path.resolve(__dirname, 'docs', 'swagger.yaml')
 
 if (!fs.existsSync(swaggerFilePath)) {
-  throw new Error('swagger.yaml not found at alum/docs/swagger.yaml')
+  throw new Error('swagger.yaml not found at CW1/docs/swagger.yaml')
 }
 
 const swaggerDocument = YAML.load(swaggerFilePath)

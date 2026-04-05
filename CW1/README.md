@@ -31,7 +31,7 @@ Key variables used by the app and worker:
 From the project root:
 
 ```bash
-cd alum
+cd CW1
 docker compose up --build
 ```
 
@@ -44,14 +44,14 @@ This starts:
 To stop:
 
 ```bash
-cd alum
+cd CW1
 docker compose down
 ```
 
 To stop and remove DB volume:
 
 ```bash
-cd alum
+cd CW1
 docker compose down -v
 ```
 
@@ -81,7 +81,7 @@ Default MinIO credentials in Docker Compose:
 cp ../.env.example ../.env
 ```
 
-2. From the `alum/` directory, build the production image:
+2. From the `CW1/` directory, build the production image:
 
 ```bash
 docker compose --env-file ../.env -f docker-compose.prod.yml build
@@ -123,14 +123,14 @@ Use strong env values before first startup in non-local environments.
 
 ## Postman collection
 
-Postman collection is stored in the file system at `/alum/postman/` and `/alum/.postman`.
+Postman collection is stored in the file system at `/CW1/postman/` and `/CW1/.postman`.
 
 ## Run Tests
 
 From the project root:
 
 ```bash
-cd alum
+cd CW1
 ```
 
 Run unit tests only:
@@ -156,7 +156,7 @@ npm run test:integration:ci
 From the project root:
 
 ```bash
-cd alum
+cd CW1
 npm run worker
 ```
 
@@ -187,7 +187,7 @@ For other mutating requests, include matching cookie + `X-CSRF-Token` header.
 From the project root:
 
 ```bash
-cd alum
+cd CW1
 ```
 
 Apply existing migrations to the current database:
@@ -197,7 +197,7 @@ npx prisma migrate deploy
 ```
 for docker:
 ```bash
-cd alum
+cd CW1
 docker compose exec app npx prisma migrate deploy
 ```
 
