@@ -1140,19 +1140,6 @@
               "name": "/profile/image",
               "request": {
                 "method": "DELETE",
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "image",
-                      "description": "test",
-                      "type": "file",
-                      "src": [
-                        "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
-                      ]
-                    }
-                  ]
-                },
                 "url": {
                   "raw": "{{API_BASE_URL}}/profile/image",
                   "host": [
