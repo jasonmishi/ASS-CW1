@@ -13,7 +13,17 @@ const MINIO_USE_SSL = process.env.MINIO_USE_SSL === 'true'
 const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || 'minioadmin'
 const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY || 'minioadmin'
 const MINIO_BUCKET = process.env.MINIO_BUCKET || 'profile-images'
-const MINIO_PUBLIC_URL = (process.env.MINIO_PUBLIC_URL || 'http://localhost:9000').replace(/\/+$/, '')
+const trimTrailingSlashes = (value) => {
+  let end = value.length
+
+  while (end > 0 && value[end - 1] === '/') {
+    end -= 1
+  }
+
+  return value.slice(0, end)
+}
+
+const MINIO_PUBLIC_URL = trimTrailingSlashes(process.env.MINIO_PUBLIC_URL || 'http://localhost:9000')
 
 if (NODE_ENV === 'production' && STORAGE_PROVIDER === 'local') {
   throw new Error('STORAGE_PROVIDER=local is not supported when NODE_ENV=production. Use STORAGE_PROVIDER=minio.')

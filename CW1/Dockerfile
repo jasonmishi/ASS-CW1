@@ -12,10 +12,25 @@ RUN npm ci
 COPY prisma ./prisma
 RUN npx prisma generate
 
-COPY . .
+COPY app.js ./
+COPY controllers ./controllers
+COPY docs/swagger.yaml ./docs/swagger.yaml
+COPY lib ./lib
+COPY middleware ./middleware
+COPY models ./models
+COPY public ./public
+COPY routes ./routes
+COPY schemas ./schemas
+COPY services ./services
+COPY utils ./utils
+COPY workers ./workers
+
+RUN chown -R node:node /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+USER node
 
 EXPOSE 3000
 
