@@ -174,7 +174,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@eastminster.ac.uk\",\n  \"password\": \"ChangeMe!123!\"\n}",
+              "raw": "{\n  \"email\": \"dev@eastminster.com\",\n  \"password\": \"ChangeMe!123!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -405,13 +405,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
+              "raw": "{{API_BASE_URL}}/clients/cmnalpsph000cl1wbqvh493yp/tokens",
               "host": [
                 "{{API_BASE_URL}}"
               ],
               "path": [
                 "clients",
-                "cmmaxhnny0003nusj470o9p3j",
+                "cmnalpsph000cl1wbqvh493yp",
                 "tokens"
               ]
             }
@@ -431,30 +431,13 @@
               }
             },
             "url": {
-              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
+              "raw": "{{API_BASE_URL}}/clients/cmnalpsph000cl1wbqvh493yp/tokens",
               "host": [
                 "{{API_BASE_URL}}"
               ],
               "path": [
                 "clients",
-                "cmmaxhnny0003nusj470o9p3j",
-                "tokens"
-              ]
-            }
-          }
-        },
-        {
-          "name": "/clients/{clientId}/tokens/{tokenId}",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/tokens",
-              "host": [
-                "{{API_BASE_URL}}"
-              ],
-              "path": [
-                "clients",
-                "cmmaxhnny0003nusj470o9p3j",
+                "cmnalpsph000cl1wbqvh493yp",
                 "tokens"
               ]
             }
@@ -1584,14 +1567,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq/response",
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmnlqv48w001bp4iv7p8q2bby/response",
                   "host": [
                     "{{API_BASE_URL}}"
                   ],
                   "path": [
                     "sponsorships",
                     "offers",
-                    "cmmf7asgs0003nuxx15c54urq",
+                    "cmnlqv48w001bp4iv7p8q2bby",
                     "response"
                   ]
                 }
@@ -1910,7 +1893,7 @@
         "bearer": [
           {
             "key": "token",
-            "value": "e81464bdc673513a1ba4754a5279b3a50e1bfdf03820060ea91e404b529cde4039e4ab20f6397feb",
+            "value": "b42b2149081c7ba99bfa2d7a56fcc7336e343c01cc5c003078bcce8599a36d0206c6e3731dd96356",
             "type": "string"
           }
         ]
