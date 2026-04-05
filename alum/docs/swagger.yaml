@@ -2805,7 +2805,7 @@ paths:
     post:
       tags: [Sponsorship]
       summary: Create sponsor organization
-      description: Creates a sponsor organization that can issue sponsorship offers.
+      description: Creates a sponsor organization that can issue sponsorship offers. Admin only.
       operationId: createSponsorOrganization
       security:
         - SessionCookieAuth: []
@@ -2918,6 +2918,7 @@ paths:
     get:
       tags: [Sponsorship]
       summary: Get sponsor organization
+      description: Returns a sponsor organization by ID. Admin only.
       operationId: getSponsorOrganization
       security:
         - SessionCookieAuth: []
@@ -2951,6 +2952,7 @@ paths:
     put:
       tags: [Sponsorship]
       summary: Update sponsor organization
+      description: Updates an existing sponsor organization. Admin only.
       operationId: updateSponsorOrganization
       security:
         - SessionCookieAuth: []
@@ -2997,6 +2999,7 @@ paths:
     delete:
       tags: [Sponsorship]
       summary: Delete sponsor organization
+      description: Deletes a sponsor organization. Admin only.
       operationId: deleteSponsorOrganization
       security:
         - SessionCookieAuth: []
@@ -3026,7 +3029,7 @@ paths:
     put:
       tags: [Sponsorship]
       summary: Assign sponsor user to organization
-      description: Assigns a Sponsor-role user to an existing sponsor organization. A user can belong to only one sponsor organization.
+      description: Assigns a Sponsor-role user to an existing sponsor organization. A user can belong to only one sponsor organization. Admin only.
       operationId: assignSponsorUserToOrganization
       security:
         - SessionCookieAuth: []
@@ -3076,7 +3079,7 @@ paths:
     delete:
       tags: [Sponsorship]
       summary: Remove sponsor user from organization
-      description: Removes a user's association to the specified sponsor organization.
+      description: Removes a user's association to the specified sponsor organization. Admin only.
       operationId: removeUserFromSponsorOrganization
       security:
         - SessionCookieAuth: []
