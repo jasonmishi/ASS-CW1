@@ -1,0 +1,1965 @@
+{
+  "info": {
+    "_postman_id": "93d9340c-b9bb-44cc-b642-dca46948b5d4",
+    "name": "CW1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "/auth/users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\",\n  \"confirmPassword\": \"S3cure!Pass\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/verify-email",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"jane.doe@eastminster.ac.uk\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/verify-email",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/verify-email/",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/verify-email/64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email",
+                "64d9f51ff4b3e14ba71fbd23ac795021d1e20a03797d5613faec0970dafeef25"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrftoken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.doe@eastminster.ac.uk\",\n  \"password\": \"S3cure!Pass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions (sponsor)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@sponsor.com\",\n  \"password\": \"Pa$$word123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions (admin account)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@eastminster.ac.uk\",\n  \"password\": \"ChangeMe!123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions (dev account)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dev@eastminster.com\",\n  \"password\": \"ChangeMe!123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI1NTk5NjIsImV4cCI6MTc3MjU2MzU2MiwianRpIjoiY2Y0ZjRlZGFiNmQzMDJlZmU2NjcyZDYxIn0.KeabdYFdqzP-Q_bSRlFUOjChq4YfAsqrkf04EZ11psU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "",
+                "value": "",
+                "type": "text",
+                "disabled": true
+              },
+              {
+                "key": "X-CSRF-TOKEN",
+                "value": "{{csrftoken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/sessions/summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI1NTk5NjIsImV4cCI6MTc3MjU2MzU2MiwianRpIjoiY2Y0ZjRlZGFiNmQzMDJlZmU2NjcyZDYxIn0.KeabdYFdqzP-Q_bSRlFUOjChq4YfAsqrkf04EZ11psU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/sessions/summary",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "sessions",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/password-resets",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.doe@eastminster.ac.uk\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/password-resets",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password-resets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/password-resets/",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"3533e1bdb92e31c498733ffd00d70584f69ab21da884d6bb0c5584e2b1d67b72\",\n  \"newPassword\": \"S3cure!Pass\",\n  \"confirmNewPassword\": \"S3cure!Pass\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/password-resets/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "password-resets",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "/auth/csrf-token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/auth/csrf-token",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "auth",
+                "csrf-token"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "clients",
+      "item": [
+        {
+          "name": "/clients",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"AR Campus App\",\n  \"description\": \"Augmented reality mobile application for campus tours.\",\n  \"contactEmail\": \"dev@arcampus.io\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/clients",
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/clients/{clientId}/usage",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmmaxhnny0003nusj470o9p3j/usage",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmmaxhnny0003nusj470o9p3j",
+                "usage"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/clients/{clientId}/tokens",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmnalpsph000cl1wbqvh493yp/tokens",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmnalpsph000cl1wbqvh493yp",
+                "tokens"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/clients/{clientId}/tokens",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/cmnalpsph000cl1wbqvh493yp/tokens",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "cmnalpsph000cl1wbqvh493yp",
+                "tokens"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/clients/{clientId}/tokens/{tokenId}",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{API_BASE_URL}}/clients/{clientId}/tokens/{tokenId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "clients",
+                "{clientId}",
+                "tokens",
+                "{tokenId}"
+              ]
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3Mjg2MTExNSwiZXhwIjoxNzcyODY0NzE1LCJqdGkiOiI0OGY2ZWI3NDc3YmEzMDJlYmMwM2VmMTcifQ.mtxUm9IH7OkRwev56Q8I9Hl8b9JNSBC0vNKw_2xMEK4",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "/admin/users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/admin/users",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@sponsor.com\",\n  \"password\": \"Pa$$word123\",\n  \"firstName\": \"Sponsor\",\n  \"role\": \"Sponsor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/admin/users/{userID}/role",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Sponsor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/users/cmmbsfua10001nuhjbas4gcb8/role",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "cmmbsfua10001nuhjbas4gcb8",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/admin/event-attendances",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"eventName\": \"Eastminster Spring Alumni Networking 2026\",\n  \"eventDate\": \"2026-02-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/event-attendances",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "event-attendances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/admin/winners",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/winners",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "winners"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/admin/winners",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/admin/winners",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "admin",
+                "winners"
+              ]
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3Mjg2MTU2MSwiZXhwIjoxNzcyODY1MTYxLCJqdGkiOiI2YWRkMmM4NjEzZmM2YTIzNmM3NzBlZGEifQ.KbcO-KmQBbTRhJexLGPOvOOs-WAkn_dLcHJkMZHpAyU",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "profile",
+      "item": [
+        {
+          "name": "degrees",
+          "item": [
+            {
+              "name": "/profile/degrees",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/degrees",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"BSc Computer Science\",\n  \"university\": \"University of Eastminster\",\n  \"degreeUrl\": \"https://www.eastminster.ac.uk/degrees/bsc-cs\",\n  \"completionDate\": \"2018-07-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/degrees/{degreeId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"BEng Computer Science\",\n  \"university\": \"University of Eastminster\",\n  \"degreeUrl\": \"https://www.eastminster.ac.uk/degrees/bsc-cs\",\n  \"completionDate\": \"2018-07-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees/cmmbzdcq80001nu2vyzojxxmj",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees",
+                    "cmmbzdcq80001nu2vyzojxxmj"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/degrees/{degreeId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/degrees/cmmbzdcq80001nu2vyzojxxmj",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "degrees",
+                    "cmmbzdcq80001nu2vyzojxxmj"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "certifications",
+          "item": [
+            {
+              "name": "/profile/certifications",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/certifications",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/certifications/{certificationId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect \",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications/cmmbt8t3x0003nu2vrxjoyyfh",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications",
+                    "cmmbt8t3x0003nu2vrxjoyyfh"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/certifications/{certificationId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/certifications/cmmbt8t3x0003nu2vrxjoyyfh",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "certifications",
+                    "cmmbt8t3x0003nu2vrxjoyyfh"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "licences",
+          "item": [
+            {
+              "name": "/profile/licences",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/licences",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"awardingBody\": \"Amazon Web Services\",\n  \"licenceUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/licences/{licenceId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associated\",\n  \"awardingBody\": \"Amazon Web Services\",\n  \"licenceUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences/cmmbtifsa0005nu2v0fwj6959",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences",
+                    "cmmbtifsa0005nu2v0fwj6959"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/licences/{licenceId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/licences/cmmbtifsa0005nu2v0fwj6959",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "licences",
+                    "cmmbtifsa0005nu2v0fwj6959"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "courses",
+          "item": [
+            {
+              "name": "/profile/courses",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/courses",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Machine Learning Specialisation\",\n  \"provider\": \"Coursera / Stanford\",\n  \"courseUrl\": \"https://www.coursera.org/specializations/machine-learning\",\n  \"completionDate\": \"2022-01-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/courses/{courseId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Machine Learning Specialisationz\",\n  \"provider\": \"Coursera / Stanford\",\n  \"courseUrl\": \"https://www.coursera.org/specializations/machine-learning\",\n  \"completionDate\": \"2022-01-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses/cmmbtoupu0009nu2v53wjxbtv",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses",
+                    "cmmbtoupu0009nu2v53wjxbtv"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/courses/{courseId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/courses/cmmbtoupu0009nu2v53wjxbtv",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "courses",
+                    "cmmbtoupu0009nu2v53wjxbtv"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "employment",
+          "item": [
+            {
+              "name": "/profile/employment",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"AWS Solutions Architect Associate\",\n  \"issuingOrganisation\": \"Amazon Web Services\",\n  \"certificationUrl\": \"https://aws.amazon.com/certification/solutions-architect-associate\",\n  \"completionDate\": \"2021-03-20\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/employment",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jobTitle\": \"Senior Software Engineer\",\n  \"company\": \"Google\",\n  \"startDate\": \"2019-06-01\",\n  \"endDate\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/employment/{employmentId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n        \"jobTitle\": \"Software Engineer\",\n        \"company\": \"Google\",\n        \"startDate\": \"2019-06-01T00:00:00.000Z\",\n        \"endDate\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment/cmmbuvbft0001nu2vc1bq5d81",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment",
+                    "cmmbuvbft0001nu2vc1bq5d81"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/employment/{employmentId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/employment/cmmbuvbft0001nu2vc1bq5d81",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "employment",
+                    "cmmbuvbft0001nu2vc1bq5d81"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "image",
+          "item": [
+            {
+              "name": "/profile/image",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "image",
+                      "description": "test",
+                      "type": "file",
+                      "src": [
+                        "postman-cloud:///1f118631-dfdd-4780-aba1-748578b09efd"
+                      ]
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/image",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "image"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/profile/image",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/profile/image",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "profile",
+                    "image"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "/profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "/profile",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"biography\": \"Software engineer with 10 years of experience in EdTech.\",\n  \"linkedinUrl\": \"https://www.linkedin.com/in/janedoe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "/profile",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{API_BASE_URL}}/profile/",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "profile",
+                ""
+              ]
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4MTk2MjQsImV4cCI6MTc3MjgyMzIyNCwianRpIjoiMDRiNzQ3Zjg4NDQwZTc3ZTNlZDViMmRlIn0.SQg1REjwva7pMgWq4AC0R5_sAPuZBFcadB1zzDsp3SU",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "sponsorship",
+      "item": [
+        {
+          "name": "organizations (admin)",
+          "item": [
+            {
+              "name": "/sponsorships/organizations",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sponsorName\": \"Amazon Web Services\",\n  \"sponsorEmail\": \"partnerships@aws.amazon.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5j0ag0004nuliflfet8l6",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5j0ag0004nuliflfet8l6"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users/{userId}",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users/cmmbsfua10001nuhjbas4gcb8",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users",
+                    "cmmbsfua10001nuhjbas4gcb8"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/organizations/{sponsorOrgId}/users/{userId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/organizations/cmmf5s78k0000nuo8d5qwm2r2/users/cmmbsfua10001nuhjbas4gcb8",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "organizations",
+                    "cmmf5s78k0000nuo8d5qwm2r2",
+                    "users",
+                    "cmmbsfua10001nuhjbas4gcb8"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/profit/org",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/profit/org",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "profit",
+                    "org"
+                  ]
+                }
+              }
+            }
+          ],
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1heDRkNWswMDAxbnVtamFuc2lwNXBsIiwiZW1haWwiOiJhZG1pbkBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3MjgxNzA1MiwiZXhwIjoxNzcyODIwNjUyLCJqdGkiOiJiZjM4YzRmYWNlODM4N2I1Mzk4MzAzOGMifQ.3pT4LBe3STPtzOs52rdDDbMjCV_oUGdt1iHP5UAPEzM",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        {
+          "name": "offers (sponsors)",
+          "item": [
+            {
+              "name": "/sponsorships/offers",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/offers",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/offers/{offerId}",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmmf7asgs0003nuxx15c54urq"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/offers/{offerId}",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmmf7asgs0003nuxx15c54urq",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmmf7asgs0003nuxx15c54urq"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/alumni/credentials",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/alumni/credentials",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "alumni",
+                    "credentials"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "offers (alumni)",
+          "item": [
+            {
+              "name": "/sponsorships/offers/{offerId}/response",
+              "request": {
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"accept\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/cmnlqv48w001bp4iv7p8q2bby/response",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "cmnlqv48w001bp4iv7p8q2bby",
+                    "response"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/offers/me",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/offers/me",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "offers",
+                    "me"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/balance",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/balance",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "balance"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/payouts",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/payouts",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "payouts"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "/sponsorships/payouts/{payoutId}",
+              "request": {
+                "method": "GET",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"alumniId\": \"665a1b2c3d4e5f6a7b8c9d0e\",\n  \"credentialType\": \"certification\",\n  \"credentialId\": \"c1a2b3c4d5e6f7a8b9c0d1e2\",\n  \"amountOffered\": 300,\n  \"message\": \"We'd love for you to showcase your AWS certification on the platform!\",\n  \"expiresInDays\": 7\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{API_BASE_URL}}/sponsorships/payouts",
+                  "host": [
+                    "{{API_BASE_URL}}"
+                  ],
+                  "path": [
+                    "sponsorships",
+                    "payouts"
+                  ]
+                }
+              }
+            }
+          ],
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4MjEwNTYsImV4cCI6MTc3MjgyNDY1NiwianRpIjoiMWM1YzE5YjkxMjllMGQ1MGZiODIyMTc2In0.0ogCV3N8JXRZNTL4djmAVi9vuk2my53yTjjkvn64GnU",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1ic2Z1YTEwMDAxbnVoamJhczRnY2I4IiwiZW1haWwiOiJ1c2VyQHNwb25zb3IuY29tIiwicm9sZSI6InNwb25zb3IiLCJpYXQiOjE3NzI4MTgxNjgsImV4cCI6MTc3MjgyMTc2OCwianRpIjoiNjk5MGFhOTQwMGYyMWE4YTcxZjQzYWUxIn0.8m1UM_yewjchVfXpEmBxVTL0hyFETftMXe8TQRCpCPI",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bidding",
+      "item": [
+        {
+          "name": "/bids",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/bids",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/bids/{bidId}",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/{bidId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "{bidId}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/bids/{bidId}",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 250\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/{bidId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "{bidId}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/bids/summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/summary",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/bids/current",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/bids/current",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "bids",
+                "current"
+              ]
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW1hdzc4ZWYwMDAxbnVkc3pwMm9lNGxpIiwiZW1haWwiOiJqYW5lLmRvZUBlYXN0bWluc3Rlci5hYy51ayIsInJvbGUiOiJhbHVtbmkiLCJpYXQiOjE3NzI4NjAwOTUsImV4cCI6MTc3Mjg2MzY5NSwianRpIjoiNmI1ZmVlMTMyMGZjM2YzY2ViOTZhNjVhIn0.T93mZ-NZLOAO3aOl1O-aO9Xi0bGbNUHLVAaF6lEI5cs",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "/public/alumni/featured",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/featured",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "featured"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/public/alumni/featured/history",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/featured/history",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "featured",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "/public/alumni/{alumniId}",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{API_BASE_URL}}/public/alumni/{alumniId}",
+              "host": [
+                "{{API_BASE_URL}}"
+              ],
+              "path": [
+                "public",
+                "alumni",
+                "{alumniId}"
+              ]
+            }
+          }
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "b42b2149081c7ba99bfa2d7a56fcc7336e343c01cc5c003078bcce8599a36d0206c6e3731dd96356",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "  const baseUrl = pm.environment.get('API_BASE_URL') || pm.collectionVariables.get('API_BASE_URL')",
+          "  const csrfCookieName = 'csrf_token'",
+          "  const csrfHeaderName = 'X-CSRF-Token'",
+          "",
+          "  if (!baseUrl) {",
+          "    throw new Error('API_BASE_URL is not set')",
+          "  }",
+          "",
+          "  const setCsrfHeaderFromCookie = () => {",
+          "    const token = pm.cookies.get(csrfCookieName)",
+          "",
+          "    if (token) {",
+          "      pm.environment.set('csrftoken', token)",
+          "      pm.request.headers.upsert({",
+          "        key: csrfHeaderName,",
+          "        value: token",
+          "      })",
+          "      return true",
+          "    }",
+          "",
+          "    return false",
+          "  }",
+          "",
+          "  // If the cookie already exists for this domain, use it.",
+          "  if (!setCsrfHeaderFromCookie()) {",
+          "    pm.sendRequest({",
+          "      url: `${baseUrl}/auth/csrf-token`,",
+          "      method: 'GET',",
+          "      header: {",
+          "        Accept: 'application/json'",
+          "      }",
+          "    }, (err, res) => {",
+          "      if (err) {",
+          "        console.error('Failed to fetch CSRF token', err)",
+          "        throw err",
+          "      }",
+          "",
+          "      const tokenFromCookie = pm.cookies.get(csrfCookieName)",
+          "      const tokenFromBody = res.json()?.data?.csrfToken",
+          "",
+          "      const token = tokenFromCookie || tokenFromBody",
+          "",
+          "      if (!token) {",
+          "        throw new Error('CSRF token was not returned by /auth/csrf-token')",
+          "      }",
+          "",
+          "      pm.environment.set('csrftoken', token)",
+          "      pm.request.headers.upsert({",
+          "        key: csrfHeaderName,",
+          "        value: token",
+          "      })",
+          "    })",
+          "  }"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "API_BASE_URL",
+      "value": ""
+    },
+    {
+      "key": "62572628-0090-4fa6-80c4-81a852733074",
+      "value": ""
+    }
+  ]
+}

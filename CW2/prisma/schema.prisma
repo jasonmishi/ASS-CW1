@@ -1,0 +1,352 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  role_id     Int      @id @default(autoincrement())
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  user_id                  String                   @id @default(cuid())
+  email                    String                   @unique
+  password_hash            String
+  role_id                  Int
+  first_name               String
+  last_name                String
+  email_verified_at        DateTime?
+  created_at               DateTime                 @default(now())
+  updated_at               DateTime                 @updatedAt
+  role                     Role                     @relation(fields: [role_id], references: [role_id])
+  email_verification_tokens EmailVerificationToken[]
+  password_reset_tokens    PasswordResetToken[]
+  auth_sessions            AuthSession[]
+  revoked_jwt_tokens       RevokedJwtToken[]
+  created_api_clients      ApiClient[]              @relation("ApiClientCreatedBy")
+  profile                  Profile?
+  degrees                  Degree[]
+  credentials              Credential[]
+  employments              Employment[]
+  org_user_association     OrgUserAssociation?
+  sponsorship_offers       SponsorshipOffer[]       @relation("SponsorshipOfferAlumni")
+  sponsorship_payouts      SponsorshipPayout[]
+  bids                     Bid[]
+  featured_wins            FeaturedWinner[]         @relation("FeaturedWinnerAlumni")
+  winner_selections        FeaturedWinner[]         @relation("FeaturedWinnerSelectedBy")
+  recorded_event_attendances EventAttendance[]      @relation("EventAttendanceRecordedBy")
+  attended_events          EventAttendance[]         @relation("EventAttendanceAlumni")
+
+  @@index([role_id])
+  @@map("users")
+}
+
+model Profile {
+  profile_id         String   @id @default(cuid())
+  user_id            String   @unique
+  biography          String?
+  linkedin_url       String?
+  profile_image_url  String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  user               User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("profiles")
+}
+
+model Employment {
+  employment_id String    @id @default(cuid())
+  user_id       String
+  job_title     String
+  company       String
+  start_date    DateTime
+  end_date      DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  user          User      @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("employments")
+}
+
+model Degree {
+  degree_id        String   @id @default(cuid())
+  user_id          String
+  title            String
+  university       String
+  degree_url       String
+  completion_date  DateTime
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  user             User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("degrees")
+}
+
+model Credential {
+  credential_id   String   @id @default(cuid())
+  user_id         String
+  credential_type String
+  title           String
+  provider_name   String
+  credential_url  String
+  completion_date DateTime
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  user            User     @relation(fields: [user_id], references: [user_id])
+  sponsorship_offers SponsorshipOffer[]
+
+  @@index([user_id])
+  @@index([user_id, credential_type])
+  @@map("credentials")
+}
+
+model SponsorOrganization {
+  sponsor_org_id    String             @id @default(cuid())
+  sponsor_name      String
+  sponsor_email     String
+  created_at        DateTime           @default(now())
+  deleted_at        DateTime?
+  user_associations OrgUserAssociation[]
+  sponsorship_offers SponsorshipOffer[]
+
+  @@map("SPONSOR_ORGANIZATION")
+}
+
+model OrgUserAssociation {
+  user_id        String               @id
+  sponsor_org_id String
+  user           User                 @relation(fields: [user_id], references: [user_id])
+  sponsor_org    SponsorOrganization  @relation(fields: [sponsor_org_id], references: [sponsor_org_id])
+
+  @@index([sponsor_org_id])
+  @@map("ORG_USER_ASSOCIATION")
+}
+
+model SponsorshipOffer {
+  offer_id        String                 @id @default(cuid())
+  sponsor_org_id  String
+  alumni_user_id  String
+  credential_id   String
+  amount_offered  Decimal                @db.Decimal(12, 2)
+  status          String
+  message         String?
+  expires_at      DateTime
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+  sponsor_org     SponsorOrganization    @relation(fields: [sponsor_org_id], references: [sponsor_org_id])
+  alumni          User                   @relation("SponsorshipOfferAlumni", fields: [alumni_user_id], references: [user_id])
+  credential      Credential             @relation(fields: [credential_id], references: [credential_id])
+  payout_lines    SponsorshipPayoutLine[]
+
+  @@index([sponsor_org_id])
+  @@index([alumni_user_id])
+  @@index([credential_id])
+  @@map("SPONSORSHIP_OFFERS")
+}
+
+model SponsorshipPayoutLine {
+  payout_line_id String            @id @default(cuid())
+  payout_id      String
+  offer_id       String
+  amount_charged Decimal           @db.Decimal(12, 2)
+  payout         SponsorshipPayout @relation(fields: [payout_id], references: [payout_id])
+  offer          SponsorshipOffer  @relation(fields: [offer_id], references: [offer_id])
+
+  @@index([payout_id])
+  @@index([offer_id])
+  @@map("SPONSORSHIP_PAYOUT_LINES")
+}
+
+model SponsorshipPayout {
+  payout_id          String                @id @default(cuid())
+  winner_id          String
+  alumni_user_id     String
+  winning_bid_amount Decimal               @db.Decimal(12, 2)
+  alumni_payout      Decimal               @db.Decimal(12, 2)
+  status             String
+  created_at         DateTime              @default(now())
+  alumni             User                  @relation(fields: [alumni_user_id], references: [user_id])
+  winner             FeaturedWinner        @relation(fields: [winner_id], references: [winner_id])
+  payout_lines       SponsorshipPayoutLine[]
+
+  @@index([winner_id])
+  @@index([alumni_user_id])
+  @@map("SPONSORSHIP_PAYOUTS")
+}
+
+model Bid {
+  bid_id          String    @id @default(cuid())
+  alumni_user_id  String
+  amount          Decimal   @db.Decimal(12, 2)
+  status          String
+  bid_date        DateTime  @db.Date
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  alumni          User      @relation(fields: [alumni_user_id], references: [user_id])
+  featured_winner FeaturedWinner?
+
+  @@index([alumni_user_id])
+  @@index([bid_date])
+  @@index([alumni_user_id, bid_date])
+  @@map("BIDS")
+}
+
+model FeaturedWinner {
+  winner_id             String             @id @default(cuid())
+  featured_date         DateTime           @unique @db.Date
+  alumni_user_id        String
+  winning_bid_id        String             @unique
+  winning_bid_amount    Decimal            @db.Decimal(12, 2) @map("winning_bid_ammount")
+  selected_by_user_id   String
+  selected_at           DateTime           @default(now())
+  alumni                User               @relation("FeaturedWinnerAlumni", fields: [alumni_user_id], references: [user_id])
+  winning_bid           Bid                @relation(fields: [winning_bid_id], references: [bid_id])
+  selected_by           User               @relation("FeaturedWinnerSelectedBy", fields: [selected_by_user_id], references: [user_id])
+  sponsorship_payouts   SponsorshipPayout[]
+
+  @@index([featured_date])
+  @@index([alumni_user_id])
+  @@index([selected_by_user_id])
+  @@map("FEATURED_WINNERS")
+}
+
+model EventAttendance {
+  attendance_id         String    @id @default(cuid())
+  alumni_user_id        String
+  event_name            String
+  event_date            DateTime  @db.Date
+  recorded_by_user_id   String
+  created_at            DateTime  @default(now())
+  alumni                User      @relation("EventAttendanceAlumni", fields: [alumni_user_id], references: [user_id])
+  recorded_by           User      @relation("EventAttendanceRecordedBy", fields: [recorded_by_user_id], references: [user_id])
+
+  @@index([alumni_user_id])
+  @@index([event_date])
+  @@index([recorded_by_user_id])
+  @@map("EVENT_ATTENDANCES")
+}
+
+model EmailVerificationToken {
+  token_id        String   @id @default(cuid())
+  user_id         String
+  token_hash      String   @unique
+  expires_at      DateTime
+  used_at         DateTime?
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  reset_id     String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  expires_at   DateTime
+  used_at      DateTime?
+  created_at   DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
+}
+
+model AuthSession {
+  session_id   String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  issued_at    DateTime @default(now())
+  expired_at   DateTime
+  revoked_at   DateTime?
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@index([expired_at])
+  @@map("auth_sessions")
+}
+
+model RevokedJwtToken {
+  revoked_id   String   @id @default(cuid())
+  user_id      String
+  token_hash   String   @unique
+  expires_at   DateTime
+  revoked_at   DateTime @default(now())
+  reason       String?
+  user         User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+  @@map("revoked_jwt_tokens")
+}
+
+model ApiClient {
+  client_id           String           @id @default(cuid())
+  client_name         String           @unique
+  description         String
+  contact_email       String
+  is_revoked          Boolean          @default(false)
+  created_by_user_id  String
+  created_at          DateTime         @default(now())
+  created_by_user     User             @relation("ApiClientCreatedBy", fields: [created_by_user_id], references: [user_id])
+  tokens              ApiClientToken[]
+
+  @@index([created_by_user_id])
+  @@map("api_clients")
+}
+
+model ApiClientToken {
+  token_id            String                    @id @default(cuid())
+  client_id           String
+  token_hash          String                    @unique
+  scopes              String[]                  @default([])
+  issued_at           DateTime                  @default(now())
+  expires_at          DateTime?
+  revoked_at          DateTime?
+  client              ApiClient                 @relation(fields: [client_id], references: [client_id])
+  endpoint_usage      ApiClientEndpointUsage[]
+
+  @@index([client_id])
+  @@index([revoked_at])
+  @@map("api_client_tokens")
+}
+
+model ApiClientEndpointUsage {
+  usage_id            String         @id @default(cuid())
+  token_id            String
+  endpoint            String
+  http_method         String
+  usage_date          DateTime       @default(now())
+  request_count       Int            @default(0)
+  last_accessed_at    DateTime       @default(now())
+  token               ApiClientToken @relation(fields: [token_id], references: [token_id])
+
+  @@index([token_id])
+  @@index([token_id, usage_date])
+  @@map("api_client_endpoint_usage")
+}
+
+model RateLimitCounter {
+  id            String   @id @default(cuid())
+  key           String
+  window_start  DateTime
+  request_count Int      @default(0)
+  expires_at    DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@unique([key, window_start])
+  @@index([expires_at])
+  @@map("rate_limit_counters")
+}
