@@ -10,12 +10,14 @@ const { applyRateLimitTrustProxy, buildApiRateLimiter } = require('./middleware/
 const { ensureFirstAdmin } = require('./lib/bootstrap-admin')
 const roleModel = require('./models/role.model')
 const authRoutes = require('./routes/auth.routes')
+const analyticsRoutes = require('./routes/analytics.routes')
 const clientRoutes = require('./routes/client.routes')
 const adminRoutes = require('./routes/admin.routes')
 const profileRoutes = require('./routes/profile.routes')
 const sponsorshipRoutes = require('./routes/sponsorship.routes')
 const biddingRoutes = require('./routes/bidding.routes')
 const publicRoutes = require('./routes/public.routes')
+const webRoutes = require('./routes/web.routes')
 
 const swaggerFilePath = path.resolve(__dirname, 'docs', 'swagger.yaml')
 
@@ -32,9 +34,15 @@ applyRateLimitTrustProxy(app)
 app.use(helmet())
 app.use(buildCorsMiddleware())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.set('views', path.join(__dirname, 'views'))
+app.set('view engine', 'ejs')
 app.use(csrfProtection)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 app.use('/assets', express.static(path.join(__dirname, 'public')))
+app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist')))
+app.use('/vendor/chart.js', express.static(path.join(__dirname, 'node_modules', 'chart.js', 'dist')))
+app.use('/vendor/jspdf', express.static(path.join(__dirname, 'node_modules', 'jspdf', 'dist')))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
   customJs: '/assets/swagger-custom.js',
   customJsStr: `window.__CSRF_COOKIE_NAME__ = ${JSON.stringify(csrfCookieName)};`,
@@ -58,8 +66,10 @@ app.get('/healthz', (_req, res) => {
   res.status(200).json({ ok: true })
 })
 
+app.use(webRoutes)
 app.use('/api/v1', apiRateLimiter)
 app.use('/api/v1', authRoutes)
+app.use('/api/v1', analyticsRoutes)
 app.use('/api/v1', clientRoutes)
 app.use('/api/v1', adminRoutes)
 app.use('/api/v1', profileRoutes)

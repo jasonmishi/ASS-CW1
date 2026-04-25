@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+  </head>
+  <body
+    class="<%= bodyClass %>"
+    data-analytics-endpoint="<%= analyticsEndpoint %>"
+    data-current-user-email="<%= currentUser.email %>"
+  >
+    <div class="container-fluid py-4 px-3 px-lg-4">
+      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+        <div>
+          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Dashboard</p>
+          <h1 class="h2 mb-2">Alumni Analytics</h1>
+          <p class="text-secondary mb-0">Qualification growth, career pathways, and post-graduation development across the alumni database.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
+          <a href="/login" class="btn btn-outline-secondary">Switch account</a>
+        </div>
+      </header>
+
+      <section class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">From</label>
+              <input class="form-control" type="date" id="filter-from">
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">To</label>
+              <input class="form-control" type="date" id="filter-to">
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">Degree title</label>
+              <select class="form-select" id="filter-degree">
+                <option value="">All degree titles</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">Credential domain</label>
+              <select class="form-select" id="filter-domain">
+                <option value="">All domains</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">Career pathway</label>
+              <select class="form-select" id="filter-career">
+                <option value="">All pathways</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <label class="form-label">Search</label>
+              <input class="form-control" type="search" id="filter-search" placeholder="AWS, Scrum, Data Analyst...">
+            </div>
+          </div>
+
+          <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" id="clear-filters" class="btn btn-dark">Clear filters</button>
+              <button type="button" id="refresh-data" class="btn btn-outline-secondary">Refresh</button>
+              <button type="button" id="export-csv" class="btn btn-outline-secondary">Export CSV</button>
+              <button type="button" id="generate-report" class="btn btn-primary">Generate PDF report</button>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <input class="form-control w-auto" type="text" id="preset-name" placeholder="Preset name">
+              <button type="button" id="save-preset" class="btn btn-outline-secondary">Save preset</button>
+              <select class="form-select w-auto" id="preset-select">
+                <option value="">Saved presets</option>
+              </select>
+              <button type="button" id="load-preset" class="btn btn-outline-secondary">Load</button>
+              <button type="button" id="delete-preset" class="btn btn-outline-danger">Delete</button>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2" id="report-selectors"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="row g-3 mb-4" id="summary-grid"></section>
+      <section class="row g-3 mb-4" id="insights-panel"></section>
+
+      <main class="row g-4">
+        <section class="col-12 col-xl-9">
+          <div class="row g-4">
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="degreeTitles">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Top Degree Titles</h2>
+                      <p class="text-secondary small mb-0">Most common academic backgrounds across alumni.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="degreeTitles">Download image</button>
+                  </div>
+                  <canvas id="chart-degreeTitles"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="qualificationMix">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Qualification Mix</h2>
+                      <p class="text-secondary small mb-0">Formal education compared with post-graduation upskilling.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="qualificationMix">Download image</button>
+                  </div>
+                  <canvas id="chart-qualificationMix"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="learningTimeline">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Learning Completions Over Time</h2>
+                      <p class="text-secondary small mb-0">Credentials and courses completed after graduation.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="learningTimeline">Download image</button>
+                  </div>
+                  <canvas id="chart-learningTimeline"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="topCertifications">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Top Certifications</h2>
+                      <p class="text-secondary small mb-0">Most frequently completed certifications.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="topCertifications">Download image</button>
+                  </div>
+                  <canvas id="chart-topCertifications"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="topCourses">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Top Courses</h2>
+                      <p class="text-secondary small mb-0">Most completed short professional courses.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="topCourses">Download image</button>
+                  </div>
+                  <canvas id="chart-topCourses"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="certificationCoverage">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Certification Coverage</h2>
+                      <p class="text-secondary small mb-0">Alumni with certifications compared with those without.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="certificationCoverage">Download image</button>
+                  </div>
+                  <canvas id="chart-certificationCoverage"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="careerPathways">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Current Career Pathways</h2>
+                      <p class="text-secondary small mb-0">Active roles grouped into derived pathway categories.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="careerPathways">Download image</button>
+                  </div>
+                  <canvas id="chart-careerPathways"></canvas>
+                </div>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-6">
+              <article class="card shadow-sm border-0 h-100" data-chart-id="developmentRadar">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                      <h2 class="h5 mb-1">Development Profile</h2>
+                      <p class="text-secondary small mb-0">Average profile depth for the active alumni cohort.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm chart-download" data-chart-download="developmentRadar">Download image</button>
+                  </div>
+                  <canvas id="chart-developmentRadar"></canvas>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <aside class="col-12 col-xl-3">
+          <div class="card shadow-sm border-0 detail-panel" id="detail-panel">
+            <div class="card-body">
+              <h2 class="h5">Detail Panel</h2>
+              <p class="text-secondary mb-0">Select a chart element to inspect the underlying insight.</p>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/vendor/chart.js/chart.umd.js"></script>
+    <script src="/vendor/jspdf/jspdf.umd.min.js"></script>
+    <script src="/assets/dashboard.js"></script>
+  </body>
+</html>

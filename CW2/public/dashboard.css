@@ -1,0 +1,55 @@
+body {
+  background-color: #f8f9fa;
+}
+
+#summary-grid .summary-card,
+#insights-panel .insight-card {
+  height: 100%;
+}
+
+.chart-download {
+  white-space: nowrap;
+}
+
+[id^="chart-"] {
+  width: 100% !important;
+  height: 320px !important;
+}
+
+.detail-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.detail-kicker {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bs-primary);
+}
+
+.detail-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.severity-critical {
+  border-left: 4px solid var(--bs-danger);
+}
+
+.severity-significant {
+  border-left: 4px solid var(--bs-warning);
+}
+
+.severity-emerging {
+  border-left: 4px solid var(--bs-success);
+}
+
+@media (max-width: 1199.98px) {
+  .detail-panel {
+    position: static;
+  }
+}

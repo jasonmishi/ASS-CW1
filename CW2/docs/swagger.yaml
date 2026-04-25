@@ -52,6 +52,8 @@ tags:
     description: Sponsorship offers from course providers, licensing bodies, and certification organisations to alumni
   - name: Bidding
     description: Blind bidding system for "Alumni of the Day" featured slots
+  - name: Analytics
+    description: Authenticated alumni analytics dashboard data aggregated from alumni profiles, credentials, and employment history
   - name: Public API
     description: Public developer endpoints (requires bearer token) – client-agnostic data access
   - name: API Client Management
@@ -1221,6 +1223,254 @@ components:
           format: double
           description: Sum of winning bid amounts across the selected payouts.
           example: 2750.00
+
+    AnalyticsOption:
+      type: object
+      properties:
+        key:
+          type: string
+          example: cloud
+        label:
+          type: string
+          example: Cloud
+
+    AnalyticsDateBounds:
+      type: object
+      properties:
+        min:
+          type: string
+          format: date
+          nullable: true
+          example: "2017-07-10"
+        max:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-04-02"
+
+    AnalyticsAppliedFilters:
+      type: object
+      properties:
+        from:
+          type: string
+          example: ""
+        to:
+          type: string
+          example: ""
+        degreeTitle:
+          type: string
+          example: ""
+        credentialDomain:
+          type: string
+          example: ""
+        careerCategory:
+          type: string
+          example: ""
+        search:
+          type: string
+          example: ""
+
+    AnalyticsSummaryCard:
+      type: object
+      properties:
+        label:
+          type: string
+          example: Filtered alumni
+        value:
+          oneOf:
+            - type: integer
+            - type: string
+          example: 5
+        tone:
+          type: string
+          example: neutral
+
+    AnalyticsInsight:
+      type: object
+      properties:
+        severity:
+          type: string
+          enum: [critical, significant, emerging]
+          example: emerging
+        title:
+          type: string
+          example: Data analytics remains an active pathway
+        description:
+          type: string
+          example: 2 current roles in the filtered cohort are classified into data and analytics pathways.
+        metric:
+          type: string
+          example: Data analytics roles
+        currentValue:
+          oneOf:
+            - type: integer
+            - type: number
+          example: 2
+        comparisonValue:
+          oneOf:
+            - type: integer
+            - type: number
+          nullable: true
+          example: 1
+
+    AnalyticsChartItem:
+      type: object
+      properties:
+        label:
+          type: string
+          example: BSc Computer Science
+        value:
+          oneOf:
+            - type: integer
+            - type: number
+          example: 2
+        details:
+          type: array
+          items:
+            type: string
+          example: [Alex Turner, Sara Khan]
+
+    AnalyticsChartDataset:
+      type: object
+      properties:
+        label:
+          type: string
+          example: Degree count
+        data:
+          type: array
+          items:
+            oneOf:
+              - type: integer
+              - type: number
+          example: [2, 2, 1]
+        backgroundColor:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          example: "#5eead4"
+        borderColor:
+          type: string
+          nullable: true
+          example: "#0f766e"
+        borderWidth:
+          type: integer
+          nullable: true
+          example: 1
+        tension:
+          type: number
+          nullable: true
+          example: 0.35
+        fill:
+          type: boolean
+          nullable: true
+          example: true
+        pointBackgroundColor:
+          type: string
+          nullable: true
+          example: "#0f766e"
+
+    AnalyticsAxisLabels:
+      type: object
+      properties:
+        x:
+          type: string
+          nullable: true
+          example: Degree title
+        y:
+          type: string
+          nullable: true
+          example: Count
+
+    AnalyticsChart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: degreeTitles
+        type:
+          type: string
+          example: bar
+        title:
+          type: string
+          example: Top Degree Titles
+        subtitle:
+          type: string
+          example: Most common academic backgrounds.
+        labels:
+          type: array
+          items:
+            type: string
+          example: [BSc Computer Science, Business Management, BSc Information Systems]
+        datasets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsChartDataset'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsChartItem'
+        axisLabels:
+          $ref: '#/components/schemas/AnalyticsAxisLabels'
+
+    AnalyticsFilterOptions:
+      type: object
+      properties:
+        degreeTitles:
+          type: array
+          items:
+            type: string
+          example: [BSc Computer Science, BSc Information Systems, Business Management]
+        credentialDomains:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsOption'
+        careerCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsOption'
+        dateBounds:
+          $ref: '#/components/schemas/AnalyticsDateBounds'
+
+    AlumniDashboardAnalyticsResponse:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-25T17:45:45.662Z"
+        appliedFilters:
+          $ref: '#/components/schemas/AnalyticsAppliedFilters'
+        filterOptions:
+          $ref: '#/components/schemas/AnalyticsFilterOptions'
+        summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsSummaryCard'
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsInsight'
+        charts:
+          type: object
+          properties:
+            degreeTitles:
+              $ref: '#/components/schemas/AnalyticsChart'
+            qualificationMix:
+              $ref: '#/components/schemas/AnalyticsChart'
+            learningTimeline:
+              $ref: '#/components/schemas/AnalyticsChart'
+            topCertifications:
+              $ref: '#/components/schemas/AnalyticsChart'
+            topCourses:
+              $ref: '#/components/schemas/AnalyticsChart'
+            certificationCoverage:
+              $ref: '#/components/schemas/AnalyticsChart'
+            careerPathways:
+              $ref: '#/components/schemas/AnalyticsChart'
+            developmentRadar:
+              $ref: '#/components/schemas/AnalyticsChart'
 
     # ─── Event Attendance ─────────────────
     EventAttendanceRequest:
@@ -3651,6 +3901,77 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /analytics/alumni-dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get alumni analytics dashboard data
+      description: |
+        Returns aggregated, chart-ready alumni analytics data for the authenticated dashboard.
+        The response summarizes alumni degrees, credentials, licences, courses, and current
+        employment into reusable chart datasets, summary cards, filter metadata, and insight callouts.
+
+        This endpoint is intended for the CW2 server-rendered analytics dashboard and is available
+        to authenticated users with a valid session cookie.
+      operationId: getAlumniDashboardAnalytics
+      security:
+        - SessionCookieAuth: []
+      parameters:
+        - name: from
+          in: query
+          description: Optional start date filter (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Optional end date filter (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: degreeTitle
+          in: query
+          description: Filter alumni to those holding a specific degree title.
+          schema:
+            type: string
+            example: BSc Computer Science
+        - name: credentialDomain
+          in: query
+          description: Filter alumni by derived credential domain such as cloud, agile-scrum, or data.
+          schema:
+            type: string
+            example: cloud
+        - name: careerCategory
+          in: query
+          description: Filter alumni by derived current career pathway category.
+          schema:
+            type: string
+            example: data-analytics
+        - name: search
+          in: query
+          description: Free-text search across alumni names, emails, degree titles, credentials, and employment records.
+          schema:
+            type: string
+            example: AWS
+      responses:
+        '200':
+          description: Alumni analytics dashboard data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AlumniDashboardAnalyticsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
