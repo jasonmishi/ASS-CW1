@@ -1294,13 +1294,13 @@ components:
           example: emerging
         title:
           type: string
-          example: Data analytics remains an active pathway
+          example: Software Engineering remains an active pathway
         description:
           type: string
-          example: 2 current roles in the filtered cohort are classified into data and analytics pathways.
+          example: 2 current roles in the filtered cohort are classified into Software Engineering pathways.
         metric:
           type: string
-          example: Data analytics roles
+          example: Software Engineering roles
         currentValue:
           oneOf:
             - type: integer

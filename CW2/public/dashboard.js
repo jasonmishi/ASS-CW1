@@ -271,7 +271,7 @@
     elements.reportSelectors.innerHTML = ''
     chartConfigOrder.forEach((chartId) => {
       const label = document.createElement('label')
-      label.className = 'form-check form-check-inline border rounded-pill px-3 py-2 bg-white'
+      label.className = 'report-choice form-check form-check-inline border rounded-pill px-3 py-2 bg-white'
       const chartTitle = document.querySelector(`[data-chart-id="${chartId}"] h2`)?.textContent || chartId
       label.innerHTML = `<input class="form-check-input me-2" type="checkbox" value="${chartId}" checked> <span class="form-check-label">${chartTitle}</span>`
       elements.reportSelectors.appendChild(label)
@@ -366,7 +366,9 @@
       return
     }
 
-    const selectedChartIds = Array.from(document.querySelectorAll('.report-choice input:checked')).map((input) => input.value)
+    const selectedChartIds = Array.from(elements.reportSelectors.querySelectorAll('input:checked'))
+      .map((input) => input.value)
+      .filter((chartId) => chartInstances.has(chartId) && state.payload.charts[chartId])
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' })
     let y = 40
 
