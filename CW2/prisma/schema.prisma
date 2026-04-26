@@ -296,6 +296,7 @@ model ApiClient {
   client_name         String           @unique
   description         String
   contact_email       String
+  allowed_scopes      String[]         @default([])
   is_revoked          Boolean          @default(false)
   created_by_user_id  String
   created_at          DateTime         @default(now())

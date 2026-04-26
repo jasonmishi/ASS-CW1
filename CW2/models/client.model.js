@@ -1,6 +1,6 @@
 const prisma = require('../lib/prisma')
 const { generateSecureToken, hashToken } = require('../utils/security')
-const { normalizeScopes } = require('../utils/api-client-scopes')
+const { DEFAULT_PUBLIC_SCOPES, areScopesSubset, areValidScopes, normalizeScopes } = require('../utils/api-client-scopes')
 
 const createClient = async (data) => {
   return prisma.apiClient.create({
@@ -31,16 +31,18 @@ const findClientById = async (client_id) => {
 }
 
 const createClientToken = async ({ client_id, token_hash, scopes, expires_at = null }) => {
-  const normalizedScopes = normalizeScopes(scopes)
-
   return prisma.apiClientToken.create({
     data: {
       client_id,
       token_hash,
-      scopes: normalizedScopes,
+      scopes,
       expires_at
     }
   })
+}
+
+const getClientAllowedScopes = (client) => {
+  return normalizeScopes(client?.allowed_scopes, DEFAULT_PUBLIC_SCOPES)
 }
 
 const getActiveTokenForClient = async (client_id) => {
@@ -154,11 +156,11 @@ const getClientUsageStats = async (client_id, from, to) => {
   }
 }
 
-const registerClientWithToken = async ({
+const registerClient = async ({
   clientName,
   description,
   contactEmail,
-  scopes,
+  allowedScopes,
   createdByUserId
 }) => {
   const existingClient = await findClientByName(clientName)
@@ -170,28 +172,28 @@ const registerClientWithToken = async ({
     }
   }
 
+  const normalizedAllowedScopes = normalizeScopes(allowedScopes)
+
+  if (!areValidScopes(normalizedAllowedScopes)) {
+    return {
+      ok: false,
+      reason: 'invalid_scopes',
+      message: 'allowedScopes contains one or more invalid scopes.'
+    }
+  }
+
   const client = await createClient({
     client_name: clientName,
     description,
     contact_email: contactEmail,
+    allowed_scopes: normalizedAllowedScopes,
     created_by_user_id: createdByUserId
-  })
-
-  const plainToken = generateSecureToken(40)
-  const tokenHash = hashToken(plainToken)
-  const normalizedScopes = normalizeScopes(scopes)
-
-  await createClientToken({
-    client_id: client.client_id,
-    token_hash: tokenHash,
-    scopes: normalizedScopes
   })
 
   return {
     ok: true,
     client,
-    token: plainToken,
-    scopes: normalizedScopes
+    allowed_scopes: normalizedAllowedScopes
   }
 }
 
@@ -203,6 +205,7 @@ const listClientsSummary = async () => {
     client_name: client.client_name,
     description: client.description,
     contact_email: client.contact_email,
+    allowed_scopes: getClientAllowedScopes(client),
     is_revoked: client.is_revoked,
     created_by_user_id: client.created_by_user_id,
     created_at: client.created_at
@@ -223,6 +226,7 @@ const getClientUsageSummary = async (clientId, fromDate, toDate) => {
     client_name: usageStats.client.client_name,
     description: usageStats.client.description,
     contact_email: usageStats.client.contact_email,
+    allowed_scopes: getClientAllowedScopes(usageStats.client),
     is_revoked: usageStats.client.is_revoked,
     created_by_user_id: usageStats.client.created_by_user_id,
     created_at: usageStats.client.created_at,
@@ -262,12 +266,24 @@ const createAdditionalTokenForClient = async (clientId, scopes, expiresAt = null
   const client = await findClientById(clientId)
 
   if (!client) {
-    return null
+    return {
+      ok: false,
+      reason: 'client_not_found'
+    }
   }
 
+  const allowedScopes = getClientAllowedScopes(client)
   const plainToken = generateSecureToken(40)
   const tokenHash = hashToken(plainToken)
-  const normalizedScopes = normalizeScopes(scopes)
+  const normalizedScopes = normalizeScopes(scopes, allowedScopes)
+
+  if (!areValidScopes(normalizedScopes) || !areScopesSubset(normalizedScopes, allowedScopes)) {
+    return {
+      ok: false,
+      reason: 'invalid_scopes',
+      message: 'Token scopes must be a subset of the client allowed_scopes.'
+    }
+  }
 
   const newToken = await createClientToken({
     client_id: clientId,
@@ -279,13 +295,16 @@ const createAdditionalTokenForClient = async (clientId, scopes, expiresAt = null
   await activateClient(clientId)
 
   return {
-    client_id: clientId,
-    token: plainToken,
-    token_id: newToken.token_id,
-    scopes: newToken.scopes || [],
-    issued_at: newToken.issued_at,
-    expires_at: newToken.expires_at,
-    revoked_at: newToken.revoked_at
+    ok: true,
+    data: {
+      client_id: clientId,
+      token: plainToken,
+      token_id: newToken.token_id,
+      scopes: newToken.scopes || [],
+      issued_at: newToken.issued_at,
+      expires_at: newToken.expires_at,
+      revoked_at: newToken.revoked_at
+    }
   }
 }
 
@@ -364,7 +383,7 @@ module.exports = {
   listClients,
   listClientsSummary,
   listTokensByClientId,
-  registerClientWithToken,
+  registerClient,
   revokeClientTokenByTokenId,
   revokeClientToken
 }

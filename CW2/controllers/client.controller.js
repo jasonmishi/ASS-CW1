@@ -1,13 +1,13 @@
 const clientModel = require('../models/client.model')
 
 const createClient = async (req, res) => {
-  const { clientName, description, contactEmail, scopes } = req.body
+  const { clientName, description, contactEmail, allowedScopes } = req.body
 
-  const result = await clientModel.registerClientWithToken({
+  const result = await clientModel.registerClient({
     clientName,
     description,
     contactEmail,
-    scopes,
+    allowedScopes,
     createdByUserId: req.user.user_id
   })
 
@@ -18,11 +18,18 @@ const createClient = async (req, res) => {
     })
   }
 
-  const { client, token } = result
+  if (!result.ok && result.reason === 'invalid_scopes') {
+    return res.status(400).json({
+      success: false,
+      message: result.message
+    })
+  }
+
+  const { client } = result
 
   return res.status(201).json({
     success: true,
-    message: 'API client registered successfully. Store your token securely; it will not be shown again.',
+    message: 'API client registered successfully. Create a token separately when needed.',
     data: {
       client_id: client.client_id,
       client_name: client.client_name,
@@ -31,8 +38,7 @@ const createClient = async (req, res) => {
       is_revoked: client.is_revoked,
       created_by_user_id: client.created_by_user_id,
       created_at: client.created_at,
-      scopes: result.scopes,
-      token
+      allowed_scopes: result.allowed_scopes
     }
   })
 }
@@ -71,19 +77,26 @@ const getClientUsageStats = async (req, res) => {
 const createClientToken = async (req, res) => {
   const { clientId } = req.params
   const { expiresAt, scopes } = req.body
-  const tokenData = await clientModel.createAdditionalTokenForClient(clientId, scopes, expiresAt || null)
+  const result = await clientModel.createAdditionalTokenForClient(clientId, scopes, expiresAt || null)
 
-  if (!tokenData) {
+  if (!result.ok && result.reason === 'client_not_found') {
     return res.status(404).json({
       success: false,
       message: 'API client not found.'
     })
   }
 
+  if (!result.ok && result.reason === 'invalid_scopes') {
+    return res.status(400).json({
+      success: false,
+      message: result.message
+    })
+  }
+
   return res.status(201).json({
     success: true,
     message: 'Client token created successfully. Store it securely; it will not be shown again.',
-    data: tokenData
+    data: result.data
   })
 }
 

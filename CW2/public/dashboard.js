@@ -21,10 +21,16 @@
       careerCategory: '',
       search: ''
     },
+    error: null,
     payload: null
   }
 
   const elements = {
+    dashboardControls: document.querySelector('#dashboard-controls'),
+    dashboardMain: document.querySelector('#dashboard-main'),
+    errorContainer: document.querySelector('#dashboard-error'),
+    errorMessage: document.querySelector('#dashboard-error-message'),
+    errorTitle: document.querySelector('#dashboard-error-title'),
     from: document.querySelector('#filter-from'),
     to: document.querySelector('#filter-to'),
     degree: document.querySelector('#filter-degree'),
@@ -36,8 +42,14 @@
     detail: document.querySelector('#detail-panel'),
     presetName: document.querySelector('#preset-name'),
     presetSelect: document.querySelector('#preset-select'),
-    reportSelectors: document.querySelector('#report-selectors')
+    reportSelectors: document.querySelector('#report-selectors'),
+    retryButton: document.querySelector('#retry-dashboard-load')
   }
+
+  const actionButtons = [
+    document.querySelector('#export-csv'),
+    document.querySelector('#generate-report')
+  ].filter(Boolean)
 
   const getPresetKey = () => 'cw2-alumni-analytics-presets'
 
@@ -301,7 +313,9 @@
   }
 
   const renderDashboard = (payload) => {
+    state.error = null
     state.payload = payload
+    toggleErrorState(false)
     renderSummary(payload.summary)
     renderInsights(payload.insights)
     renderFilterOptions(payload.filterOptions)
@@ -309,19 +323,60 @@
     renderDetailPanel('degreeTitles', payload.charts.degreeTitles.items[0] || { label: 'No data', value: 0, details: [] }, payload.charts.degreeTitles)
   }
 
-  const loadDashboard = async () => {
-    const queryString = buildQueryString()
-    const response = await fetch(`${endpoint}${queryString ? `?${queryString}` : ''}`, {
-      credentials: 'same-origin'
+  const setActionsDisabled = (disabled) => {
+    actionButtons.forEach((button) => {
+      button.disabled = disabled
     })
+  }
 
-    if (response.status === 401) {
-      window.location.assign('/login')
-      return
+  const toggleErrorState = (visible) => {
+    elements.errorContainer.hidden = !visible
+    elements.summary.classList.toggle('dashboard-content-hidden', visible)
+    elements.insights.classList.toggle('dashboard-content-hidden', visible)
+    elements.dashboardMain.classList.toggle('dashboard-content-hidden', visible)
+    setActionsDisabled(visible)
+  }
+
+  const renderErrorState = (message) => {
+    state.payload = null
+    state.error = message
+    elements.errorTitle.textContent = 'Analytics dashboard unavailable'
+    elements.errorMessage.textContent = message || 'We could not load analytics data right now. Please try again later or contact an administrator.'
+    toggleErrorState(true)
+  }
+
+  const readErrorMessage = async (response) => {
+    try {
+      const body = await response.json()
+      return body?.message || null
+    } catch (_error) {
+      return null
     }
+  }
 
-    const body = await response.json()
-    renderDashboard(body.data)
+  const loadDashboard = async () => {
+    try {
+      const queryString = buildQueryString()
+      const response = await fetch(`${endpoint}${queryString ? `?${queryString}` : ''}`, {
+        credentials: 'same-origin'
+      })
+
+      if (response.status === 401) {
+        window.location.assign('/login')
+        return
+      }
+
+      if (!response.ok) {
+        const message = await readErrorMessage(response)
+        renderErrorState(message || 'We could not load analytics data right now. Please try again later or contact an administrator.')
+        return
+      }
+
+      const body = await response.json()
+      renderDashboard(body.data)
+    } catch (_error) {
+      renderErrorState('We could not load analytics data right now. Please try again later or contact an administrator.')
+    }
   }
 
   const exportCsv = () => {
@@ -458,6 +513,9 @@
 
     document.querySelector('#export-csv').addEventListener('click', exportCsv)
     document.querySelector('#generate-report').addEventListener('click', generatePdfReport)
+    elements.retryButton.addEventListener('click', () => {
+      void loadDashboard()
+    })
 
     document.querySelectorAll('.chart-download').forEach((button) => {
       button.addEventListener('click', () => {

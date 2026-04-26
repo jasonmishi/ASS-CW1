@@ -2,6 +2,19 @@ body {
   background-color: #f8f9fa;
 }
 
+.dashboard-error {
+  border-left: 4px solid var(--bs-danger);
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.dashboard-error[hidden] {
+  display: none !important;
+}
+
+.dashboard-content-hidden {
+  display: none !important;
+}
+
 #summary-grid .summary-card,
 #insights-panel .insight-card {
   height: 100%;

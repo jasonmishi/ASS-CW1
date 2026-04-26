@@ -69,6 +69,7 @@ const createAuthenticatedUser = async ({
 const createApiClientWithToken = async ({
   clientName = 'AR Campus App',
   createdByUserId,
+  allowedScopes = DEFAULT_PUBLIC_SCOPES,
   scopes = DEFAULT_PUBLIC_SCOPES
 }) => {
   const client = await prisma.apiClient.create({
@@ -76,6 +77,7 @@ const createApiClientWithToken = async ({
       client_name: clientName,
       description: 'Integration test client',
       contact_email: 'api@example.com',
+      allowed_scopes: allowedScopes,
       created_by_user_id: createdByUserId
     }
   })

@@ -36,6 +36,7 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: profile-images
       MINIO_PUBLIC_URL: http://localhost:9000
+      ANALYTICS_DASHBOARD_API_TOKEN: 767f0c597cc74d639c968125cbae72fa372ab75eaf18b1c316633fc68c26ef4d1c8bacbc632c45c3
     depends_on:
       - db
       - mailhog
@@ -45,7 +46,7 @@ services:
   worker:
     image: node:20
     working_dir: /app
-    command: sh -c "npm install && npx prisma generate && npm run migrate:deploy && npm run worker"
+    command: sh -c "npm install && npx prisma generate && npm run worker"
     volumes:
       - ./:/app
     environment:

@@ -14,7 +14,8 @@ describe('POST /api/v1/clients', () => {
     const requestBody = {
       clientName: 'Campus Mobile App',
       description: 'Mobile app for students',
-      contactEmail: 'team@campusapp.io'
+      contactEmail: 'team@campusapp.io',
+      allowedScopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
     }
 
     const response = await api()
@@ -41,13 +42,14 @@ describe('POST /api/v1/clients', () => {
       .send({
         clientName: 'Admin Forbidden Client',
         description: 'Should be developer only',
-        contactEmail: 'admin-forbidden@campusapp.io'
+        contactEmail: 'admin-forbidden@campusapp.io',
+        allowedScopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
       })
 
     expect(response.status).toBe(403)
   })
 
-  it('returns 201 and stores only token hash for developer', async () => {
+  it('returns 201 and creates the client without issuing a token', async () => {
     const { user, token } = await createAuthenticatedUser({
       email: 'developer.user@eastminster.ac.uk',
       password: 'Strong!Pass1',
@@ -57,7 +59,8 @@ describe('POST /api/v1/clients', () => {
     const requestBody = {
       clientName: 'Campus Mobile App',
       description: 'Mobile app for students',
-      contactEmail: 'team@campusapp.io'
+      contactEmail: 'team@campusapp.io',
+      allowedScopes: DEFAULT_PUBLIC_SCOPES
     }
 
     const response = await api()
@@ -66,15 +69,37 @@ describe('POST /api/v1/clients', () => {
       .send(requestBody)
 
     expect(response.status).toBe(201)
-    expect(response.body.data).toHaveProperty('token')
-    expect(response.body.data.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
+    expect(response.body.data.allowed_scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
+    expect(response.body.data).not.toHaveProperty('token')
+    expect(response.body.data).not.toHaveProperty('scopes')
 
     const client = await prisma.apiClient.findUnique({ where: { client_name: requestBody.clientName } })
     expect(client.created_by_user_id).toBe(user.user_id)
+    expect(client.allowed_scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
 
     const tokenRecord = await prisma.apiClientToken.findFirst({ where: { client_id: client.client_id } })
-    expect(tokenRecord.token_hash).not.toBe(response.body.data.token)
-    expect(tokenRecord.scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
+    expect(tokenRecord).toBeNull()
+  })
+
+  it('returns 400 when scopes are sent in the client creation body', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'developer.invalid-create-scope@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'developer'
+    })
+
+    const response = await api()
+      .post('/api/v1/clients')
+      .set(authHeader(token))
+      .send({
+        clientName: 'Invalid Create Scope Client',
+        description: 'Should reject scopes on initial client creation',
+        contactEmail: 'invalid-scope@campusapp.io',
+        allowedScopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ],
+        scopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
+      })
+
+    expect(response.status).toBe(400)
   })
 })
 
@@ -120,6 +145,7 @@ describe('GET /api/v1/clients/:clientId/usage', () => {
       .send(requestBody)
 
     expect(response.status).toBe(200)
+    expect(response.body.data.allowed_scopes).toEqual(DEFAULT_PUBLIC_SCOPES)
     expect(response.body.data.total_request_count).toBe(7)
     expect(response.body.data.endpoint_usage).toHaveLength(2)
     expect(response.body.data.latest_token).toBeTruthy()
@@ -213,6 +239,30 @@ describe('POST /api/v1/clients/:clientId/tokens', () => {
       where: { token_id: response.body.data.token_id }
     })
     expect(createdToken.scopes).toEqual([API_CLIENT_SCOPES.PUBLIC_FEATURED_READ])
+  })
+
+  it('returns 400 when provided scopes exceed the client allowlist', async () => {
+    const { user, token } = await createAuthenticatedUser({
+      email: 'developer.token-allowlist@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'developer'
+    })
+
+    const { client } = await createApiClientWithToken({
+      clientName: 'Allowlist Token Client',
+      createdByUserId: user.user_id,
+      allowedScopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ],
+      scopes: [API_CLIENT_SCOPES.PUBLIC_FEATURED_READ]
+    })
+
+    const response = await api()
+      .post(`/api/v1/clients/${client.client_id}/tokens`)
+      .set(authHeader(token))
+      .send({
+        scopes: [API_CLIENT_SCOPES.PUBLIC_PROFILE_READ]
+      })
+
+    expect(response.status).toBe(400)
   })
 })
 

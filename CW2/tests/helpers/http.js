@@ -33,7 +33,21 @@ const authHeader = (token) => {
   }
 }
 
+const combinedAuthHeader = (sessionToken, apiClientToken) => {
+  const csrfToken = generateCsrfToken()
+
+  return {
+    Authorization: `Bearer ${apiClientToken}`,
+    Cookie: [
+      `${ACCESS_TOKEN_COOKIE_NAME}=${encodeURIComponent(sessionToken)}`,
+      `${CSRF_COOKIE_NAME}=${encodeURIComponent(csrfToken)}`
+    ],
+    'X-CSRF-Token': csrfToken
+  }
+}
+
 module.exports = {
   api,
-  authHeader
+  authHeader,
+  combinedAuthHeader
 }
