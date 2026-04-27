@@ -22,6 +22,7 @@ Key variables used by the app and worker:
 - `EMAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `EMAIL_FROM`: Outbound email configuration.
 - `APP_BASE_URL`: Used to build links in emails.
 - `ANALYTICS_DASHBOARD_API_TOKEN`: Server-side bearer token used when the logged-in dashboard proxies to `/api/v1/analytics/alumni-dashboard`.
+- `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN`: Server-side bearer token used when the logged-in alumni directory page proxies to `/api/v1/analytics/alumni-directory`.
 - `INTERNAL_API_BASE_URL`: Base URL the dashboard proxy uses for internal calls to the protected analytics API. Defaults to `APP_BASE_URL`, then `http://127.0.0.1:$PORT`.
 - `STORAGE_PROVIDER`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_PUBLIC_URL`: Profile image storage configuration. Use `minio` for Docker and production. `local` is only allowed outside production.
 - `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_USERNAME`, `BOOTSTRAP_ADMIN_PASSWORD`: First-admin bootstrap credentials.

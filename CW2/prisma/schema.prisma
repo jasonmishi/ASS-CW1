@@ -69,6 +69,7 @@ model Employment {
   user_id       String
   job_title     String
   company       String
+  industry_sector String?
   start_date    DateTime
   end_date      DateTime?
   created_at    DateTime  @default(now())

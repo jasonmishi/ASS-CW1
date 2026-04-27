@@ -178,6 +178,7 @@ const mapEmployment = (employment) => {
     employmentId: employment.employment_id,
     jobTitle: employment.job_title,
     company: employment.company,
+    industrySector: employment.industry_sector,
     startDate: employment.start_date,
     endDate: employment.end_date
   }
@@ -277,6 +278,7 @@ const createEmployment = async (userId, payload) => {
       user_id: userId,
       job_title: payload.jobTitle,
       company: payload.company,
+      industry_sector: payload.industrySector,
       start_date: payload.startDate,
       end_date: payload.endDate || null
     }
@@ -306,6 +308,7 @@ const updateEmployment = async (userId, employmentId, payload) => {
     data: {
       job_title: payload.jobTitle,
       company: payload.company,
+      industry_sector: payload.industrySector,
       start_date: payload.startDate,
       end_date: payload.endDate || null
     }

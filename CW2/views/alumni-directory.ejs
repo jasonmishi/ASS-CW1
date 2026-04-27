@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+  </head>
+  <body
+    class="<%= bodyClass %>"
+    data-analytics-endpoint="<%= analyticsEndpoint %>"
+    data-current-user-email="<%= currentUser.email %>"
+  >
+    <div class="container-fluid py-4 px-3 px-lg-4">
+      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+        <div>
+          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Analytics</p>
+          <h1 class="h2 mb-2">Alumni By Programme</h1>
+          <p class="text-secondary mb-0">Filter alumni by programme, graduation window, and the industry sector of their latest employment record.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
+          <a href="/dashboard/alumni-analytics" class="btn btn-outline-secondary">Open chart dashboard</a>
+          <a href="/login" class="btn btn-outline-secondary">Switch account</a>
+        </div>
+      </header>
+
+      <section id="dashboard-error" class="card shadow-sm border-0 mb-4 dashboard-error" hidden>
+        <div class="card-body">
+          <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div>
+              <p class="text-uppercase small fw-semibold text-danger mb-2">Directory Status</p>
+              <h2 id="dashboard-error-title" class="h4 mb-2">Alumni directory unavailable</h2>
+              <p id="dashboard-error-message" class="text-secondary mb-0">We could not load alumni directory data right now. Please try again later or contact an administrator.</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" id="retry-directory-load" class="btn btn-danger">Retry</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directory-controls" class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-6 col-xl-3">
+              <label class="form-label">Programme</label>
+              <select class="form-select" id="filter-programme">
+                <option value="">All programmes</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <label class="form-label">Graduation from</label>
+              <input class="form-control" type="date" id="filter-graduation-from">
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <label class="form-label">Graduation to</label>
+              <input class="form-control" type="date" id="filter-graduation-to">
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <label class="form-label">Industry sector</label>
+              <select class="form-select" id="filter-industry-sector">
+                <option value="">All industry sectors</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" id="clear-filters" class="btn btn-dark">Clear filters</button>
+            <button type="button" id="refresh-data" class="btn btn-outline-secondary">Refresh</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="directory-content">
+        <section class="row g-3 mb-4">
+          <div class="col-12 col-lg-4">
+            <article class="card shadow-sm border-0 summary-card">
+              <div class="card-body">
+                <div class="text-secondary small mb-2">Matching alumni</div>
+                <div class="fs-3 fw-bold text-dark" id="directory-total-count">0</div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Programme</th>
+                    <th>Graduation date</th>
+                    <th>Latest job</th>
+                    <th>Company</th>
+                    <th>Industry sector</th>
+                  </tr>
+                </thead>
+                <tbody id="directory-results-body">
+                  <tr>
+                    <td colspan="7" class="text-secondary text-center py-4">Loading alumni data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <script src="/assets/alumni-directory.js"></script>
+  </body>
+</html>

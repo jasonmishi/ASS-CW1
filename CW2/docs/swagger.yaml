@@ -544,7 +544,7 @@ components:
 
     Employment:
       type: object
-      required: [jobTitle, company, startDate]
+      required: [jobTitle, company, industrySector, startDate]
       properties:
         employmentId:
           type: string
@@ -555,6 +555,9 @@ components:
         company:
           type: string
           example: Google
+        industrySector:
+          type: string
+          example: Technology
         startDate:
           type: string
           format: date
@@ -568,7 +571,7 @@ components:
 
     EmploymentRequest:
       type: object
-      required: [jobTitle, company, startDate]
+      required: [jobTitle, company, industrySector, startDate]
       properties:
         jobTitle:
           type: string
@@ -576,6 +579,9 @@ components:
         company:
           type: string
           example: Google
+        industrySector:
+          type: string
+          example: Technology
         startDate:
           type: string
           format: date
@@ -763,6 +769,7 @@ components:
         - public:history:read
         - public:profile:read
         - analytics:dashboard:read
+        - analytics:alumni-directory:read
 
     ApiClientRegisterRequest:
       type: object
@@ -3974,6 +3981,133 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/AlumniDashboardAnalyticsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /analytics/alumni-directory:
+    get:
+      tags: [Analytics]
+      summary: List alumni by programme, graduation date, and industry sector
+      description: |
+        Returns alumni records filtered by programme (degree title), graduation date range,
+        and the industry sector of the alumnus's latest employment record.
+
+        This endpoint is protected by both:
+        - a valid authenticated session cookie
+        - a valid API client bearer token with scope `analytics:alumni-directory:read`
+
+        The browser page should not call this endpoint directly. First-party UI should use
+        the session-protected web directory data route.
+      operationId: getAlumniDirectoryAnalytics
+      security:
+        - SessionCookieAuth: []
+          APIKeyAuth: []
+      parameters:
+        - name: programme
+          in: query
+          description: Filter alumni to those with a matching degree title.
+          schema:
+            type: string
+            example: BSc Computer Science
+        - name: graduationFrom
+          in: query
+          description: Optional start date for graduation date filtering (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: graduationTo
+          in: query
+          description: Optional end date for graduation date filtering (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: industrySector
+          in: query
+          description: Filter alumni by the industry sector on their latest employment record.
+          schema:
+            type: string
+            example: Technology
+      responses:
+        '200':
+          description: Alumni directory data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      generatedAt:
+                        type: string
+                        format: date-time
+                      appliedFilters:
+                        type: object
+                        properties:
+                          programme:
+                            type: string
+                          graduationFrom:
+                            type: string
+                          graduationTo:
+                            type: string
+                          industrySector:
+                            type: string
+                      filterOptions:
+                        type: object
+                        properties:
+                          programmes:
+                            type: array
+                            items:
+                              type: string
+                          industrySectors:
+                            type: array
+                            items:
+                              type: string
+                      totalCount:
+                        type: integer
+                      alumni:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            userId:
+                              type: string
+                            name:
+                              type: string
+                            email:
+                              type: string
+                              format: email
+                            programme:
+                              type: string
+                            graduationDate:
+                              type: string
+                              format: date
+                            latestEmployment:
+                              type: object
+                              nullable: true
+                              properties:
+                                jobTitle:
+                                  type: string
+                                company:
+                                  type: string
+                                industrySector:
+                                  type: string
+                                startDate:
+                                  type: string
+                                  format: date
+                                endDate:
+                                  type: string
+                                  format: date
+                                  nullable: true
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

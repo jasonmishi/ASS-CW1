@@ -2,7 +2,8 @@ const API_CLIENT_SCOPES = Object.freeze({
   PUBLIC_FEATURED_READ: 'public:featured:read',
   PUBLIC_HISTORY_READ: 'public:history:read',
   PUBLIC_PROFILE_READ: 'public:profile:read',
-  ANALYTICS_DASHBOARD_READ: 'analytics:dashboard:read'
+  ANALYTICS_DASHBOARD_READ: 'analytics:dashboard:read',
+  ANALYTICS_ALUMNI_DIRECTORY_READ: 'analytics:alumni-directory:read'
 })
 
 const DEFAULT_PUBLIC_SCOPES = Object.freeze([
@@ -13,7 +14,8 @@ const DEFAULT_PUBLIC_SCOPES = Object.freeze([
 
 const ALL_API_CLIENT_SCOPES = Object.freeze([
   ...DEFAULT_PUBLIC_SCOPES,
-  API_CLIENT_SCOPES.ANALYTICS_DASHBOARD_READ
+  API_CLIENT_SCOPES.ANALYTICS_DASHBOARD_READ,
+  API_CLIENT_SCOPES.ANALYTICS_ALUMNI_DIRECTORY_READ
 ])
 
 const normalizeScopes = (scopes, fallbackScopes = DEFAULT_PUBLIC_SCOPES) => {

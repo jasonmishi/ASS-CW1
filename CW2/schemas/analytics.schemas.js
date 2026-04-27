@@ -11,6 +11,14 @@ const analyticsDashboardQuerySchema = z.object({
   search: z.string().trim().min(1).optional()
 })
 
+const alumniDirectoryQuerySchema = z.object({
+  programme: z.string().trim().min(1).optional(),
+  graduationFrom: optionalDate,
+  graduationTo: optionalDate,
+  industrySector: z.string().trim().min(1).optional()
+})
+
 module.exports = {
+  alumniDirectoryQuerySchema,
   analyticsDashboardQuerySchema
 }

@@ -209,12 +209,14 @@ describe('Profile credentials endpoints', () => {
       .send({
         jobTitle: 'Software Engineer',
         company: 'Acme Inc',
+        industrySector: 'Technology',
         startDate: '2024-01-01',
         endDate: null
       })
 
     expect(createResponse.status).toBe(201)
     expect(createResponse.body.data.jobTitle).toBe('Software Engineer')
+    expect(createResponse.body.data.industrySector).toBe('Technology')
 
     const employmentId = createResponse.body.data.employmentId
 
@@ -231,12 +233,14 @@ describe('Profile credentials endpoints', () => {
       .send({
         jobTitle: 'Senior Software Engineer',
         company: 'Acme Inc',
+        industrySector: 'Cloud Infrastructure',
         startDate: '2024-01-01',
         endDate: '2025-12-31'
       })
 
     expect(updateResponse.status).toBe(200)
     expect(updateResponse.body.data.jobTitle).toBe('Senior Software Engineer')
+    expect(updateResponse.body.data.industrySector).toBe('Cloud Infrastructure')
 
     const deleteResponse = await api()
       .delete(`/api/v1/profile/employment/${employmentId}`)

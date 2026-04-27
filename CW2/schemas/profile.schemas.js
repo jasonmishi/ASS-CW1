@@ -47,6 +47,7 @@ const degreeParamsSchema = z.object({
 const employmentBodySchema = z.object({
   jobTitle: z.string().min(1),
   company: z.string().min(1),
+  industrySector: z.string().trim().min(1),
   startDate: z.coerce.date(),
   endDate: z.coerce.date().nullable().optional()
 }).superRefine((value, ctx) => {

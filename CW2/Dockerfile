@@ -23,6 +23,7 @@ COPY routes ./routes
 COPY schemas ./schemas
 COPY services ./services
 COPY utils ./utils
+COPY views ./views
 COPY workers ./workers
 
 RUN chown -R node:node /app

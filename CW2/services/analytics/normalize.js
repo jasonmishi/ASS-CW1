@@ -46,6 +46,7 @@ const normalizeEmployment = (employment) => ({
   id: employment.employment_id,
   jobTitle: employment.job_title,
   company: employment.company,
+  industrySector: employment.industry_sector,
   startDate: toIsoDate(employment.start_date),
   endDate: toIsoDate(employment.end_date),
   isCurrent: !employment.end_date,
