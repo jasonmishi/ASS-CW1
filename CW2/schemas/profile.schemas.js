@@ -1,4 +1,31 @@
 const { z } = require('zod')
+const { UNIVERSITY_DOMAIN } = require('../utils/security')
+
+const parseHostname = (value) => {
+  try {
+    return new URL(value).hostname.toLowerCase()
+  } catch (_error) {
+    return null
+  }
+}
+
+const matchesDomain = (hostname, domain) => {
+  return hostname === domain || hostname.endsWith(`.${domain}`)
+}
+
+const universityUrlSchema = z.string().url().refine((value) => {
+  const hostname = parseHostname(value)
+  return Boolean(hostname) && matchesDomain(hostname, UNIVERSITY_DOMAIN)
+}, {
+  message: `URL must use the ${UNIVERSITY_DOMAIN} domain.`
+})
+
+const linkedinUrlSchema = z.string().url().refine((value) => {
+  const hostname = parseHostname(value)
+  return Boolean(hostname) && matchesDomain(hostname, 'linkedin.com')
+}, {
+  message: 'LinkedIn URL must use the linkedin.com domain.'
+})
 
 const certificationBodySchema = z.object({
   title: z.string().min(1),
@@ -36,7 +63,7 @@ const courseParamsSchema = z.object({
 const degreeBodySchema = z.object({
   title: z.string().min(1),
   university: z.string().min(1),
-  degreeUrl: z.string().url(),
+  degreeUrl: universityUrlSchema,
   completionDate: z.coerce.date()
 })
 
@@ -68,7 +95,7 @@ const profileUpdateBodySchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   biography: z.string().min(1).optional(),
-  linkedinUrl: z.string().url().optional()
+  linkedinUrl: linkedinUrlSchema.optional()
 }).refine((value) => Object.keys(value).length > 0, {
   message: 'At least one field must be provided.'
 })

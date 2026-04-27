@@ -51,6 +51,35 @@ describe('Profile credentials endpoints', () => {
     expect(deleteResponse.status).toBe(204)
   })
 
+  it('rejects degree URLs outside UNIVERSITY_DOMAIN', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'degree.invalid-domain@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const response = await api()
+      .post('/api/v1/profile/degrees')
+      .set(authHeader(token))
+      .send({
+        title: 'BSc Computer Science',
+        university: 'University of Eastminster',
+        degreeUrl: 'https://example.com/degrees/bsc-cs',
+        completionDate: '2020-07-01'
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.message).toBe('URL must use the eastminster.ac.uk domain.')
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'degreeUrl',
+          message: 'URL must use the eastminster.ac.uk domain.'
+        })
+      ])
+    )
+  })
+
   it('supports certification CRUD', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'cred.cert@eastminster.ac.uk',

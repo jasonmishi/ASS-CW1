@@ -50,6 +50,32 @@ describe('Profile basic endpoints', () => {
     expect(updateResponse.body.data.updatedAt).toBeTruthy()
   })
 
+  it('rejects linkedin URLs that are not on linkedin.com', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'profile.invalid-linkedin@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const response = await api()
+      .put('/api/v1/profile')
+      .set(authHeader(token))
+      .send({
+        linkedinUrl: 'https://example.com/in/janet-dane'
+      })
+
+    expect(response.status).toBe(400)
+    expect(response.body.message).toBe('LinkedIn URL must use the linkedin.com domain.')
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'linkedinUrl',
+          message: 'LinkedIn URL must use the linkedin.com domain.'
+        })
+      ])
+    )
+  })
+
   it('supports profile image upload and delete', async () => {
     const { token } = await createAuthenticatedUser({
       email: 'profile.image@eastminster.ac.uk',
