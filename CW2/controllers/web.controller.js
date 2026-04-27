@@ -80,6 +80,14 @@ const renderLoginPage = (_req, res) => {
   })
 }
 
+const renderRegisterPage = (_req, res) => {
+  return res.status(200).render('register', {
+    pageTitle: 'Register',
+    bodyClass: 'login-page',
+    csrfCookieName: process.env.CSRF_COOKIE_NAME || 'csrf_token'
+  })
+}
+
 const renderAnalyticsDashboard = (req, res) => {
   return res.status(200).render('alumni-analytics', {
     pageTitle: 'Alumni Analytics Dashboard',
@@ -121,5 +129,6 @@ module.exports = {
   proxyAnalyticsDashboard,
   renderAlumniDirectory,
   renderAnalyticsDashboard,
-  renderLoginPage
+  renderLoginPage,
+  renderRegisterPage
 }

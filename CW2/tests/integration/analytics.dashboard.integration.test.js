@@ -62,6 +62,15 @@ describe('analytics dashboard web routes', () => {
 
     expect(response.status).toBe(200)
     expect(response.text).toContain('Sign in to the analytics dashboard')
+    expect(response.text).toContain('href="/register"')
+  })
+
+  it('renders the register page', async () => {
+    const response = await request(app).get('/register')
+
+    expect(response.status).toBe(200)
+    expect(response.text).toContain('Create your Eastminster alumni account')
+    expect(response.text).toContain('form id="register-form"')
   })
 
   it('redirects unauthenticated users away from the dashboard page', async () => {

@@ -3,13 +3,15 @@ const validate = (schema, target = 'body') => {
     const parsed = schema.safeParse(req[target])
 
     if (!parsed.success) {
+      const errors = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || target,
+        message: issue.message
+      }))
+
       return res.status(400).json({
         success: false,
-        message: 'Validation error.',
-        errors: parsed.error.issues.map((issue) => ({
-          field: issue.path.join('.') || target,
-          message: issue.message
-        }))
+        message: errors[0]?.message || 'Validation error.',
+        errors
       })
     }
 

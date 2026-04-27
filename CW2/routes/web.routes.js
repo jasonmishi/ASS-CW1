@@ -8,6 +8,7 @@ const { authenticateViewSession } = require('../middleware/web-auth.middleware')
 const router = express.Router()
 
 router.get('/login', webController.renderLoginPage)
+router.get('/register', webController.renderRegisterPage)
 router.get('/dashboard/alumni-analytics', authenticateViewSession, webController.renderAnalyticsDashboard)
 router.get('/dashboard/alumni-analytics/data', authenticateJwt, validate(analyticsDashboardQuerySchema, 'query'), webController.proxyAnalyticsDashboard)
 router.get('/dashboard/alumni-directory', authenticateViewSession, webController.renderAlumniDirectory)
