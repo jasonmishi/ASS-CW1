@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+  </head>
+  <body class="<%= bodyClass %>" data-current-user-email="<%= currentUser.email %>">
+    <div class="container py-4">
+      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+        <div>
+          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Bidding</p>
+          <h1 class="h2 mb-2">Blind Bidding</h1>
+          <p class="text-secondary mb-0">Place a blind bid for tomorrow's alumni feature. Highest amount is never shown.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
+          <a href="/dashboard/alumni-analytics" class="btn btn-outline-secondary">Analytics</a>
+          <a href="/dashboard/alumni-directory" class="btn btn-outline-secondary">Directory</a>
+          <a href="/login" class="btn btn-outline-secondary">Switch account</a>
+        </div>
+      </header>
+
+      <section class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <div class="text-secondary small">Current round status</div>
+              <div id="bid-status" class="fs-4 fw-bold text-dark">Loading...</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="text-secondary small">Your current bid</div>
+              <div id="current-bid-amount" class="fs-4 fw-bold text-dark">—</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="text-secondary small">Bidding closes (UTC)</div>
+              <div id="bidding-closes-at" class="fs-5 fw-semibold text-dark">—</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="text-secondary small">Available balance</div>
+              <div id="available-balance" class="fs-4 fw-bold text-dark">—</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Your monthly limit</h2>
+          <div class="row g-3">
+            <div class="col-6 col-lg-3">
+              <div class="text-secondary small">Wins this month</div>
+              <div id="wins-this-month" class="fs-5 fw-semibold text-dark">—</div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="text-secondary small">Max allowed</div>
+              <div id="max-wins-allowed" class="fs-5 fw-semibold text-dark">—</div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="text-secondary small">Remaining slots</div>
+              <div id="remaining-slots" class="fs-5 fw-semibold text-dark">—</div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="text-secondary small">Event bonus</div>
+              <div id="event-bonus" class="fs-6 fw-semibold text-dark">—</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Place or update your bid</h2>
+          <p class="text-secondary mb-3">If you already have a bid, updates must be strictly higher than your current amount.</p>
+
+          <form id="bidding-form" class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="bid-amount">Amount (£)</label>
+              <input id="bid-amount" name="amount" class="form-control" type="number" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-12 col-md-8 d-flex gap-2">
+              <button id="place-bid-btn" class="btn btn-dark" type="submit">Place bid</button>
+              <button id="update-bid-btn" class="btn btn-outline-secondary" type="button">Increase bid</button>
+              <button id="refresh-bid-btn" class="btn btn-outline-secondary" type="button">Refresh</button>
+            </div>
+          </form>
+          <p id="bidding-message" class="small mt-3 mb-0 text-secondary"></p>
+        </div>
+      </section>
+    </div>
+
+    <script src="/assets/runtime-config.js"></script>
+    <script src="/assets/bidding.js"></script>
+  </body>
+</html>
