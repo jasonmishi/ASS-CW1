@@ -1,19 +1,14 @@
 {
-  "name": "alum",
+  "name": "alum-web",
   "version": "1.0.0",
   "description": "",
+  "main": "app.js",
   "scripts": {
-    "test": "npm run test:unit",
-    "test:unit": "npm --prefix api run test:unit",
-    "test:integration": "npm --prefix api run test:integration && npm --prefix web run test:integration",
-    "test:integration:ci": "npm --prefix api run test:integration:ci && npm --prefix web run test:integration:ci",
-    "migrate:deploy": "npm --prefix api run migrate:deploy",
-    "prisma": "sh -c 'npx prisma \"$@\" --schema ./api/prisma/schema.prisma' --",
-    "dev": "docker compose up --build",
-    "dev:api": "npm --prefix api run dev",
-    "dev:web": "npm --prefix web run dev",
-    "worker": "npm --prefix api run worker",
-    "seed:analytics-demo": "npm --prefix api run seed:analytics-demo"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "npm run test:integration",
+    "test:integration": "npx jest --runInBand --setupFilesAfterEnv ./tests/setup.integration.js --testPathPattern=tests/integration",
+    "test:integration:ci": "npm run test:integration"
   },
   "author": "",
   "license": "ISC",

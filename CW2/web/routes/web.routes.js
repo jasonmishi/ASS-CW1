@@ -1,9 +1,9 @@
 const express = require('express')
 const webController = require('../controllers/web.controller')
-const { authenticateJwt } = require('../middleware/auth.middleware')
-const { validate } = require('../middleware/validate.middleware')
-const { alumniDirectoryQuerySchema, analyticsDashboardQuerySchema } = require('../schemas/analytics.schemas')
-const { authenticateViewSession } = require('../middleware/web-auth.middleware')
+const { authenticateJwt } = require('../../api/middleware/auth.middleware')
+const { validate } = require('../../api/middleware/validate.middleware')
+const { alumniDirectoryQuerySchema, analyticsDashboardQuerySchema } = require('../../api/schemas/analytics.schemas')
+const { authenticateViewSession } = require('../../api/middleware/web-auth.middleware')
 
 const router = express.Router()
 

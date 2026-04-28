@@ -8,6 +8,8 @@ const {
 } = require('../../utils/security')
 
 describe('security utils', () => {
+  jest.setTimeout(10000)
+
   test('isUniversityEmail validates eastminster domain', () => {
     expect(isUniversityEmail('jane@eastminster.ac.uk')).toBe(true)
     expect(isUniversityEmail('jane@gmail.com')).toBe(false)

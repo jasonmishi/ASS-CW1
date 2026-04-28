@@ -17,34 +17,30 @@ const profileRoutes = require('./routes/profile.routes')
 const sponsorshipRoutes = require('./routes/sponsorship.routes')
 const biddingRoutes = require('./routes/bidding.routes')
 const publicRoutes = require('./routes/public.routes')
-const webRoutes = require('./routes/web.routes')
 
 const swaggerFilePath = path.resolve(__dirname, 'docs', 'swagger.yaml')
 
 if (!fs.existsSync(swaggerFilePath)) {
-  throw new Error('swagger.yaml not found at CW1/docs/swagger.yaml')
+  throw new Error('swagger.yaml not found at CW2/api/docs/swagger.yaml')
 }
 
 const swaggerDocument = YAML.load(swaggerFilePath)
 const csrfCookieName = process.env.CSRF_COOKIE_NAME || 'csrf_token'
 const apiRateLimiter = buildApiRateLimiter()
+const port = Number(process.env.PORT || 3000)
 
 const app = express()
+
 applyRateLimitTrustProxy(app)
 app.use(helmet())
 app.use(buildCorsMiddleware())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.set('views', path.join(__dirname, 'views'))
-app.set('view engine', 'ejs')
 app.use(csrfProtection)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
-app.use('/assets', express.static(path.join(__dirname, 'public')))
-app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist')))
-app.use('/vendor/chart.js', express.static(path.join(__dirname, 'node_modules', 'chart.js', 'dist')))
-app.use('/vendor/jspdf', express.static(path.join(__dirname, 'node_modules', 'jspdf', 'dist')))
+app.use('/swagger-assets', express.static(path.join(__dirname, 'public')))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-  customJs: '/assets/swagger-custom.js',
+  customJs: '/swagger-assets/swagger-custom.js',
   customJsStr: `window.__CSRF_COOKIE_NAME__ = ${JSON.stringify(csrfCookieName)};`,
   swaggerOptions: {
     persistAuthorization: true,
@@ -56,8 +52,6 @@ app.get('/api-docs.json', (_req, res) => {
   res.json(swaggerDocument)
 })
 
-const port = Number(process.env.PORT || 3000)
-
 app.get('/', (_req, res) => {
   res.redirect('/api-docs/')
 })
@@ -66,7 +60,6 @@ app.get('/healthz', (_req, res) => {
   res.status(200).json({ ok: true })
 })
 
-app.use(webRoutes)
 app.use('/api/v1', apiRateLimiter)
 app.use('/api/v1', authRoutes)
 app.use('/api/v1', analyticsRoutes)
@@ -82,12 +75,12 @@ const bootstrap = async () => {
   await ensureFirstAdmin()
 
   return app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+    console.log(`API app listening on port ${port}`)
   })
 }
 
 if (require.main === module) {
-  bootstrap()
+  void bootstrap()
 }
 
 module.exports = app

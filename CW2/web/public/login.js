@@ -1,5 +1,7 @@
 const form = document.querySelector('#login-form')
 const errorMessage = document.querySelector('#login-error')
+const apiBaseUrl = (window.__CW2_CONFIG__?.apiBaseUrl || '').replace(/\/$/, '')
+const apiUrl = (path) => `${apiBaseUrl}${path}`
 
 if (form) {
   form.addEventListener('submit', async (event) => {
@@ -13,13 +15,13 @@ if (form) {
       password: formData.get('password')
     }
 
-    const response = await fetch('/api/v1/auth/sessions', {
+    const response = await fetch(apiUrl('/api/v1/auth/sessions'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
-      credentials: 'same-origin'
+      credentials: 'include'
     })
 
     const body = await response.json().catch(() => null)

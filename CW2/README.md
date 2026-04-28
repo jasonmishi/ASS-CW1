@@ -1,4 +1,10 @@
-# Alumni Platform API (CW1)
+# Alumni Platform (CW2)
+
+Current app layout:
+- `api/`: API routes, auth, Prisma, worker, storage, and Swagger assets
+- `api/tests/`: API unit and integration tests
+- `web/`: UI routes, EJS views, and browser assets
+- `web/tests/`: web integration tests
 
 ## Environment Variables
 
@@ -8,7 +14,7 @@ A template is provided at the repository root:
 cp .env.example .env
 ```
 
-Key variables used by the app and worker:
+Key variables used by the API app, web app, and worker:
 
 - `DATABASE_URL`: PostgreSQL connection string.
 - `NODE_ENV`, `PORT`: Runtime mode and HTTP port. Set `NODE_ENV=production` to enable secure cookies.
@@ -20,10 +26,10 @@ Key variables used by the app and worker:
 - `BCRYPT_SALT_ROUNDS`: Password hashing cost.
 - `EMAIL_VERIFICATION_TTL_HOURS`, `PASSWORD_RESET_TTL_HOURS`: Auth token expiry windows.
 - `EMAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `EMAIL_FROM`: Outbound email configuration.
-- `APP_BASE_URL`: Used to build links in emails.
+- `APP_BASE_URL`: Used to build links in emails and for the proxied browser-facing stack.
 - `ANALYTICS_DASHBOARD_API_TOKEN`: Server-side bearer token used when the logged-in dashboard proxies to `/api/v1/analytics/alumni-dashboard`.
 - `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN`: Server-side bearer token used when the logged-in alumni directory page proxies to `/api/v1/analytics/alumni-directory`.
-- `INTERNAL_API_BASE_URL`: Base URL the dashboard proxy uses for internal calls to the protected analytics API. Defaults to `APP_BASE_URL`, then `http://127.0.0.1:$PORT`.
+- `INTERNAL_API_BASE_URL`: Base URL the web app uses for internal calls to the protected analytics API. Defaults to `APP_BASE_URL`, then `http://127.0.0.1:$PORT`.
 - `STORAGE_PROVIDER`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_PUBLIC_URL`: Profile image storage configuration. Use `minio` for Docker and production. `local` is only allowed outside production.
 - `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_USERNAME`, `BOOTSTRAP_ADMIN_PASSWORD`: First-admin bootstrap credentials.
 - `SCHEDULER_SYSTEM_EMAIL`, `SCHEDULER_TICK_MS`, `SPONSORSHIP_EXPIRY_INTERVAL_MS`, `RATE_LIMIT_CLEANUP_INTERVAL_MS`: Worker/scheduler settings.
@@ -34,27 +40,30 @@ Key variables used by the app and worker:
 From the project root:
 
 ```bash
-cd CW1
+cd CW2
 docker compose up --build
 ```
 
 This starts:
 - `db` (PostgreSQL on `localhost:5432`)
-- `app` (Node/Express on `localhost:3000`)
+- `api` (Express API service)
+- `web` (Express UI service)
+- `worker` (scheduler/background jobs)
+- `nginx` (entrypoint on `localhost:8080`)
 - `mailhog` (SMTP on `localhost:1025`, inbox UI on `localhost:8025`)
 - `minio` (object storage on `localhost:9000`, console on `localhost:9001`)
 
 To stop:
 
 ```bash
-cd CW1
+cd CW2
 docker compose down
 ```
 
 To stop and remove DB volume:
 
 ```bash
-cd CW1
+cd CW2
 docker compose down -v
 ```
 
@@ -84,7 +93,7 @@ Default MinIO credentials in Docker Compose:
 cp ../.env.example ../.env
 ```
 
-2. From the `CW1/` directory, build the production image:
+2. From the `CW2/` directory, build the production image:
 
 ```bash
 docker compose --env-file ../.env -f docker-compose.prod.yml build
@@ -126,14 +135,14 @@ Use strong env values before first startup in non-local environments.
 
 ## Postman collection
 
-Postman collection is stored in the file system at `/CW1/postman/` and `/CW1/.postman`.
+Postman collection is stored in the file system at `/CW2/postman/`.
 
 ## Run Tests
 
 From the project root:
 
 ```bash
-cd CW1
+cd CW2
 ```
 
 Run unit tests only:
@@ -159,7 +168,7 @@ npm run test:integration:ci
 From the project root:
 
 ```bash
-cd CW1
+cd CW2
 npm run worker
 ```
 
@@ -190,22 +199,22 @@ For other mutating requests, include matching cookie + `X-CSRF-Token` header.
 From the project root:
 
 ```bash
-cd CW1
+cd CW2
 ```
 
 Apply existing migrations to the current database:
 
 ```bash
-npx prisma migrate deploy
+npm run migrate:deploy
 ```
 for docker:
 ```bash
-cd CW1
-docker compose exec app npx prisma migrate deploy
+cd CW2
+docker compose exec api npm run migrate:deploy
 ```
 
 Create and apply a new migration during development:
 
 ```bash
-npx prisma migrate dev --name <migration_name>
+npm run prisma -- migrate dev --name <migration_name>
 ```

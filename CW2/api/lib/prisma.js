@@ -8,7 +8,7 @@ const ensureJestDatabaseUrl = () => {
     return
   }
 
-  const envTestPath = path.resolve(__dirname, '..', '.env.test')
+  const envTestPath = path.resolve(__dirname, '..', '..', '.env.test')
 
   if (typeof process.loadEnvFile === 'function') {
     process.loadEnvFile(envTestPath)

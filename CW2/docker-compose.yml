@@ -1,3 +1,43 @@
+x-shared-env: &shared-env
+  NODE_ENV: development
+  PORT: 3000
+  DATABASE_URL: postgres://postgres:postgres@db:5432/alum
+  JWT_SECRET: change-me-jwt-secret
+  JWT_EXPIRES_IN: 1h
+  ACCESS_TOKEN_COOKIE_NAME: access_token
+  ACCESS_TOKEN_COOKIE_SAMESITE: lax
+  CSRF_SECRET: change-me-csrf-secret
+  CSRF_COOKIE_NAME: csrf_token
+  CSRF_COOKIE_SAMESITE: lax
+  ALLOWED_ORIGINS: http://localhost:3001
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX: "100"
+  RATE_LIMIT_TRUST_PROXY: "true"
+  BCRYPT_SALT_ROUNDS: "12"
+  EMAIL_VERIFICATION_TTL_HOURS: "24"
+  PASSWORD_RESET_TTL_HOURS: "1"
+  EMAIL_TRANSPORT: smtp
+  SMTP_HOST: mailhog
+  SMTP_PORT: "1025"
+  SMTP_SECURE: "false"
+  EMAIL_FROM: noreply@eastminster.local
+  APP_BASE_URL: http://localhost:3001
+  STORAGE_PROVIDER: minio
+  MINIO_ENDPOINT: minio
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin
+  MINIO_BUCKET: profile-images
+  MINIO_PUBLIC_URL: http://localhost:9000
+  BOOTSTRAP_ADMIN_EMAIL: admin@eastminster.ac.uk
+  BOOTSTRAP_ADMIN_USERNAME: admin@eastminster.ac.uk
+  BOOTSTRAP_ADMIN_PASSWORD: ChangeMe!123!
+  SCHEDULER_SYSTEM_EMAIL: system.scheduler@eastminster.local
+  SCHEDULER_TICK_MS: "30000"
+  SPONSORSHIP_EXPIRY_INTERVAL_MS: "300000"
+
 services:
   db:
     image: postgres:15
@@ -11,60 +51,60 @@ services:
     volumes:
       - alum_db_data:/var/lib/postgresql/data
 
-  app:
+  api:
     build:
       context: .
+      dockerfile: Dockerfile
+      target: api
+    working_dir: /app/api
     command: sh -c "npm run migrate:deploy && npm run dev"
     volumes:
       - ./:/app
-      - alum_node_modules:/app/node_modules
-    ports:
-      - "3000:3000"
+      - alum_api_node_modules:/app/api/node_modules
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/alum
-      EMAIL_TRANSPORT: smtp
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
-      EMAIL_FROM: noreply@eastminster.local
-      APP_BASE_URL: http://localhost:3000
-      STORAGE_PROVIDER: minio
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: profile-images
-      MINIO_PUBLIC_URL: http://localhost:9000
-      ANALYTICS_DASHBOARD_API_TOKEN: "edc4c0f1554f20cbb23af2711e64923ab2c1768ed29f1c46c00dafa12785a792f76d295fc722d635"
-      ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN: edc4c0f1554f20cbb23af2711e64923ab2c1768ed29f1c46c00dafa12785a792f76d295fc722d635
+      <<: *shared-env
     depends_on:
       - db
       - mailhog
       - minio
       - minio-init
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    working_dir: /app/web
+    command: npm run dev
+    volumes:
+      - ./:/app
+      - alum_web_node_modules:/app/web/node_modules
+    environment:
+      <<: *shared-env
+      INTERNAL_API_BASE_URL: http://api:3000
+      PUBLIC_API_BASE_URL: http://localhost:3000
+      ANALYTICS_DASHBOARD_API_TOKEN: "edc4c0f1554f20cbb23af2711e64923ab2c1768ed29f1c46c00dafa12785a792f76d295fc722d635"
+      ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN: "edc4c0f1554f20cbb23af2711e64923ab2c1768ed29f1c46c00dafa12785a792f76d295fc722d635"
+    depends_on:
+      - db
+      - api
+    ports:
+      - "3001:3000"
 
   worker:
     build:
       context: .
+      dockerfile: Dockerfile
+      target: worker
+    working_dir: /app/api
     command: npm run worker
     volumes:
       - ./:/app
-      - alum_node_modules:/app/node_modules
+      - alum_worker_node_modules:/app/api/node_modules
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/alum
-      EMAIL_TRANSPORT: smtp
-      SMTP_HOST: mailhog
-      SMTP_PORT: 1025
-      EMAIL_FROM: noreply@eastminster.local
-      APP_BASE_URL: http://localhost:3000
-      STORAGE_PROVIDER: minio
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: profile-images
-      MINIO_PUBLIC_URL: http://localhost:9000
+      <<: *shared-env
     depends_on:
       - db
       - mailhog
@@ -105,4 +145,6 @@ services:
 volumes:
   alum_db_data:
   alum_minio_data:
-  alum_node_modules:
+  alum_api_node_modules:
+  alum_web_node_modules:
+  alum_worker_node_modules:

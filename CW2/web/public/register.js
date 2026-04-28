@@ -3,6 +3,8 @@
   const errorMessage = document.querySelector('#register-error')
   const successMessage = document.querySelector('#register-success')
   const csrfCookieName = document.body?.dataset?.csrfCookieName || 'csrf_token'
+  const apiBaseUrl = (window.__CW2_CONFIG__?.apiBaseUrl || '').replace(/\/$/, '')
+  const apiUrl = (path) => `${apiBaseUrl}${path}`
 
   const getCookieValue = (name) => {
     return document.cookie
@@ -37,8 +39,8 @@
       return existingToken
     }
 
-    const response = await fetch('/api/v1/auth/csrf-token', {
-      credentials: 'same-origin'
+    const response = await fetch(apiUrl('/api/v1/auth/csrf-token'), {
+      credentials: 'include'
     })
     const body = await response.json().catch(() => null)
 
@@ -73,14 +75,14 @@
     }
     const csrfToken = await ensureCsrfToken()
 
-    const response = await fetch('/api/v1/auth/users', {
+    const response = await fetch(apiUrl('/api/v1/auth/users'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken
       },
       body: JSON.stringify(payload),
-      credentials: 'same-origin'
+      credentials: 'include'
     })
 
     const body = await response.json().catch(() => null)

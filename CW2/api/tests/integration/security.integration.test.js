@@ -1,8 +1,21 @@
 const request = require('supertest')
+const originalRateLimitEnabled = process.env.RATE_LIMIT_ENABLED
+
+process.env.RATE_LIMIT_ENABLED = 'false'
+
 const app = require('../../app')
 const { generateCsrfToken } = require('../../utils/csrf')
 
 describe('Security middleware', () => {
+  afterAll(() => {
+    if (originalRateLimitEnabled === undefined) {
+      delete process.env.RATE_LIMIT_ENABLED
+      return
+    }
+
+    process.env.RATE_LIMIT_ENABLED = originalRateLimitEnabled
+  })
+
   describe('CORS', () => {
     it('returns CORS headers for an allowed origin', async () => {
       const response = await request(app)
