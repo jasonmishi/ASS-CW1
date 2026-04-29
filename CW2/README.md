@@ -94,25 +94,31 @@ Default MinIO credentials in Docker Compose:
 1. Copy the env file template in `CW2/` and adjust secrets and URLs:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.production
 ```
 
 2. From the `CW2/` directory, build the production image:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml build
+docker compose --env-file .env.production -f docker-compose.prod.yml build
 ```
 
 3. Start the full stack:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml up -d
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
 
 4. Check the deployment:
 
 ```bash
 curl http://localhost:8080/healthz
+```
+
+To view logs on prod:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml logs -f api api2 api3
 ```
 
 Profile image storage in production:
@@ -123,7 +129,11 @@ Profile image storage in production:
 Production notes:
 - `PUBLIC_API_BASE_URL` can usually be left blank when nginx serves both `web` and `/api/v1/*` on the same origin.
 - Set `ANALYTICS_DASHBOARD_API_TOKEN` and `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN` if you want the protected analytics pages to function.
-- `INTERNAL_API_BASE_URL` should remain `http://api:3000` in the production compose stack.
+- `INTERNAL_API_BASE_URL` is set to `http://nginx` in the production compose stack so server-rendered analytics calls also travel through the load balancer.
+- the production stack now runs a horizontally scaled app tier behind nginx:
+  - `api`, `api2`, `api3`
+  - `web`, `web2`
+- keep `worker` as a singleton; the scheduler uses in-process guards only and is not safe to run more than once.
 
 ## First Admin Bootstrap
 
