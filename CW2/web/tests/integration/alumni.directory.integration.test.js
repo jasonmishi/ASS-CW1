@@ -1,10 +1,9 @@
 const request = require('supertest')
 
 let mockIsViewAuthenticated = false
-let mockIsJwtAuthenticated = false
-const mockGetAlumniDirectoryAnalytics = jest.fn()
+let mockIsApiAuthenticated = false
 
-jest.mock('../../../api/middleware/web-auth.middleware', () => ({
+jest.mock('../../middleware/session-auth.middleware', () => ({
   authenticateViewSession: (req, res, next) => {
     if (!mockIsViewAuthenticated) {
       return res.redirect('/login')
@@ -17,12 +16,9 @@ jest.mock('../../../api/middleware/web-auth.middleware', () => ({
     }
 
     return next()
-  }
-}))
-
-jest.mock('../../../api/middleware/auth.middleware', () => ({
-  authenticateJwt: (req, res, next) => {
-    if (!mockIsJwtAuthenticated) {
+  },
+  authenticateSessionApi: (req, res, next) => {
+    if (!mockIsApiAuthenticated) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized'
@@ -39,40 +35,50 @@ jest.mock('../../../api/middleware/auth.middleware', () => ({
   }
 }))
 
-jest.mock('../../../api/models/analytics.model', () => ({
-  getAlumniDashboardAnalytics: jest.fn(),
-  getAlumniDirectoryAnalytics: (...args) => mockGetAlumniDirectoryAnalytics(...args)
-}))
-
 const app = require('../../app')
 
 const originalDirectoryToken = process.env.ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN
+const directoryPayload = {
+  filterOptions: {
+    programmes: ['BSc Computer Science'],
+    industrySectors: ['Technology']
+  },
+  totalCount: 1,
+  alumni: [
+    {
+      userId: 'alumni-1',
+      name: 'Alice Ng',
+      email: 'alice.ng@eastminster.ac.uk',
+      programme: 'BSc Computer Science',
+      graduationDate: '2024-07-10',
+      latestEmployment: {
+        jobTitle: 'Software Engineer',
+        company: 'Northwind Labs',
+        industrySector: 'Technology'
+      }
+    }
+  ]
+}
 
 beforeEach(() => {
   mockIsViewAuthenticated = false
-  mockIsJwtAuthenticated = false
+  mockIsApiAuthenticated = false
   process.env.ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN = 'test-directory-token'
   global.fetch = jest.fn()
-  mockGetAlumniDirectoryAnalytics.mockResolvedValue({
-    filterOptions: {
-      programmes: ['BSc Computer Science'],
-      industrySectors: ['Technology']
+  global.fetch.mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: {
+      get: () => 'application/json; charset=utf-8'
     },
-    totalCount: 1,
-    alumni: [
-      {
-        userId: 'alumni-1',
-        name: 'Alice Ng',
-        email: 'alice.ng@eastminster.ac.uk',
-        programme: 'BSc Computer Science',
-        graduationDate: '2024-07-10',
-        latestEmployment: {
-          jobTitle: 'Software Engineer',
-          company: 'Northwind Labs',
-          industrySector: 'Technology'
-        }
-      }
-    ]
+    json: async () => ({
+      success: true,
+      data: directoryPayload
+    }),
+    text: async () => JSON.stringify({
+      success: true,
+      data: directoryPayload
+    })
   })
 })
 
@@ -134,23 +140,7 @@ describe('GET /dashboard/alumni-directory/data', () => {
   })
 
   it('returns proxied directory data for authenticated users', async () => {
-    mockIsJwtAuthenticated = true
-
-    global.fetch.mockResolvedValue({
-      status: 200,
-      headers: {
-        get: () => 'application/json; charset=utf-8'
-      },
-      text: async () => JSON.stringify({
-        success: true,
-        data: {
-          totalCount: 1,
-          alumni: [
-            { name: 'Alice Ng' }
-          ]
-        }
-      })
-    })
+    mockIsApiAuthenticated = true
 
     const response = await request(app)
       .get('/dashboard/alumni-directory/data')
@@ -163,7 +153,7 @@ describe('GET /dashboard/alumni-directory/data', () => {
   })
 
   it('returns 503 when directory proxy token is not configured', async () => {
-    mockIsJwtAuthenticated = true
+    mockIsApiAuthenticated = true
     delete process.env.ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN
 
     const response = await request(app).get('/dashboard/alumni-directory/data')
@@ -173,13 +163,15 @@ describe('GET /dashboard/alumni-directory/data', () => {
   })
 
   it('returns 503 when upstream auth fails', async () => {
-    mockIsJwtAuthenticated = true
+    mockIsApiAuthenticated = true
 
     global.fetch.mockResolvedValue({
+      ok: false,
       status: 401,
       headers: {
         get: () => 'application/json; charset=utf-8'
       },
+      json: async () => ({ success: false }),
       text: async () => JSON.stringify({ success: false })
     })
 

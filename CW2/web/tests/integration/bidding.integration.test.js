@@ -2,7 +2,8 @@ const request = require('supertest')
 
 let mockIsViewAuthenticated = false
 
-jest.mock('../../../api/middleware/web-auth.middleware', () => ({
+jest.mock('../../middleware/session-auth.middleware', () => ({
+  authenticateSessionApi: (_req, _res, next) => next(),
   authenticateViewSession: (req, res, next) => {
     if (!mockIsViewAuthenticated) {
       return res.redirect('/login')
@@ -40,6 +41,7 @@ describe('bidding page web routes', () => {
     expect(response.status).toBe(200)
     expect(response.text).toContain('Blind Bidding')
     expect(response.text).toContain('Place or update your bid')
+    expect(response.text).toContain('Incoming sponsorship offers')
     expect(response.text).toContain('/assets/bidding.js')
   })
 })

@@ -1,10 +1,9 @@
 const request = require('supertest')
 
 let mockIsViewAuthenticated = false
-let mockIsJwtAuthenticated = false
-const mockGetAlumniDashboardAnalytics = jest.fn()
+let mockIsApiAuthenticated = false
 
-jest.mock('../../../api/middleware/web-auth.middleware', () => ({
+jest.mock('../../middleware/session-auth.middleware', () => ({
   authenticateViewSession: (req, res, next) => {
     if (!mockIsViewAuthenticated) {
       return res.redirect('/login')
@@ -17,12 +16,9 @@ jest.mock('../../../api/middleware/web-auth.middleware', () => ({
     }
 
     return next()
-  }
-}))
-
-jest.mock('../../../api/middleware/auth.middleware', () => ({
-  authenticateJwt: (req, res, next) => {
-    if (!mockIsJwtAuthenticated) {
+  },
+  authenticateSessionApi: (req, res, next) => {
+    if (!mockIsApiAuthenticated) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized'
@@ -39,49 +35,59 @@ jest.mock('../../../api/middleware/auth.middleware', () => ({
   }
 }))
 
-jest.mock('../../../api/models/analytics.model', () => ({
-  getAlumniDashboardAnalytics: (...args) => mockGetAlumniDashboardAnalytics(...args),
-  getAlumniDirectoryAnalytics: jest.fn()
-}))
-
 const app = require('../../app')
 
 const originalDashboardToken = process.env.ANALYTICS_DASHBOARD_API_TOKEN
+const dashboardPayload = {
+  appliedFilters: {
+    from: '',
+    to: '',
+    degreeTitle: '',
+    credentialDomain: '',
+    careerCategory: '',
+    search: ''
+  },
+  filterOptions: {
+    degreeTitles: ['BSc Computer Science'],
+    credentialDomains: [{ key: 'cloud', label: 'Cloud' }],
+    careerCategories: [{ key: 'software-engineering', label: 'Software Engineering' }],
+    dateBounds: { min: '2020-01-01', max: '2024-12-31' }
+  },
+  summary: [{ label: 'Filtered alumni', value: 3, tone: 'neutral' }],
+  insights: [],
+  charts: {
+    degreeTitles: {
+      id: 'degreeTitles',
+      type: 'bar',
+      title: 'Top Degree Titles',
+      subtitle: 'Most common academic backgrounds.',
+      labels: ['BSc Computer Science'],
+      items: [{ label: 'BSc Computer Science', value: 3 }],
+      datasets: [{ label: 'Degree count', data: [3] }],
+      axisLabels: { x: 'Degree title', y: 'Count' }
+    }
+  }
+}
 
 beforeEach(() => {
   mockIsViewAuthenticated = false
-  mockIsJwtAuthenticated = false
+  mockIsApiAuthenticated = false
   process.env.ANALYTICS_DASHBOARD_API_TOKEN = 'test-dashboard-token'
   global.fetch = jest.fn()
-  mockGetAlumniDashboardAnalytics.mockResolvedValue({
-    appliedFilters: {
-      from: '',
-      to: '',
-      degreeTitle: '',
-      credentialDomain: '',
-      careerCategory: '',
-      search: ''
+  global.fetch.mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: {
+      get: () => 'application/json; charset=utf-8'
     },
-    filterOptions: {
-      degreeTitles: ['BSc Computer Science'],
-      credentialDomains: [{ key: 'cloud', label: 'Cloud' }],
-      careerCategories: [{ key: 'software-engineering', label: 'Software Engineering' }],
-      dateBounds: { min: '2020-01-01', max: '2024-12-31' }
-    },
-    summary: [{ label: 'Filtered alumni', value: 3, tone: 'neutral' }],
-    insights: [],
-    charts: {
-      degreeTitles: {
-        id: 'degreeTitles',
-        type: 'bar',
-        title: 'Top Degree Titles',
-        subtitle: 'Most common academic backgrounds.',
-        labels: ['BSc Computer Science'],
-        items: [{ label: 'BSc Computer Science', value: 3 }],
-        datasets: [{ label: 'Degree count', data: [3] }],
-        axisLabels: { x: 'Degree title', y: 'Count' }
-      }
-    }
+    json: async () => ({
+      success: true,
+      data: dashboardPayload
+    }),
+    text: async () => JSON.stringify({
+      success: true,
+      data: dashboardPayload
+    })
   })
 })
 
@@ -159,20 +165,7 @@ describe('GET /dashboard/alumni-analytics/data', () => {
   })
 
   it('returns proxied dashboard data for authenticated users', async () => {
-    mockIsJwtAuthenticated = true
-
-    global.fetch.mockResolvedValue({
-      status: 200,
-      headers: {
-        get: () => 'application/json; charset=utf-8'
-      },
-      text: async () => JSON.stringify({
-        success: true,
-        data: {
-          summary: []
-        }
-      })
-    })
+    mockIsApiAuthenticated = true
 
     const response = await request(app).get('/dashboard/alumni-analytics/data')
 
@@ -182,7 +175,7 @@ describe('GET /dashboard/alumni-analytics/data', () => {
   })
 
   it('returns 503 when dashboard proxy token is not configured', async () => {
-    mockIsJwtAuthenticated = true
+    mockIsApiAuthenticated = true
     delete process.env.ANALYTICS_DASHBOARD_API_TOKEN
 
     const response = await request(app).get('/dashboard/alumni-analytics/data')
@@ -192,13 +185,15 @@ describe('GET /dashboard/alumni-analytics/data', () => {
   })
 
   it('returns 503 when upstream auth fails', async () => {
-    mockIsJwtAuthenticated = true
+    mockIsApiAuthenticated = true
 
     global.fetch.mockResolvedValue({
+      ok: false,
       status: 403,
       headers: {
         get: () => 'application/json; charset=utf-8'
       },
+      json: async () => ({ success: false }),
       text: async () => JSON.stringify({ success: false })
     })
 
@@ -209,7 +204,7 @@ describe('GET /dashboard/alumni-analytics/data', () => {
   })
 
   it('returns 502 when upstream is unreachable', async () => {
-    mockIsJwtAuthenticated = true
+    mockIsApiAuthenticated = true
     global.fetch.mockRejectedValue(new Error('ECONNREFUSED'))
 
     const response = await request(app).get('/dashboard/alumni-analytics/data')

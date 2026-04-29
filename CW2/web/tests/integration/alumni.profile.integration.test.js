@@ -1,9 +1,9 @@
 const request = require('supertest')
 
 let mockIsViewAuthenticated = false
-const mockGetUserProfileById = jest.fn()
 
-jest.mock('../../../api/middleware/web-auth.middleware', () => ({
+jest.mock('../../middleware/session-auth.middleware', () => ({
+  authenticateSessionApi: (_req, _res, next) => next(),
   authenticateViewSession: (req, res, next) => {
     if (!mockIsViewAuthenticated) {
       return res.redirect('/login')
@@ -19,16 +19,17 @@ jest.mock('../../../api/middleware/web-auth.middleware', () => ({
   }
 }))
 
-jest.mock('../../../api/models/profile.model', () => ({
-  getUserProfileById: (...args) => mockGetUserProfileById(...args)
-}))
-
 const app = require('../../app')
 
 describe('alumni profile page route', () => {
   beforeEach(() => {
     mockIsViewAuthenticated = false
-    mockGetUserProfileById.mockReset()
+    global.fetch = jest.fn()
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+    delete global.fetch
   })
 
   it('redirects unauthenticated users', async () => {
@@ -40,17 +41,25 @@ describe('alumni profile page route', () => {
 
   it('renders a simple full profile page', async () => {
     mockIsViewAuthenticated = true
-    mockGetUserProfileById.mockResolvedValue({
-      userId: 'alumni-123',
-      firstName: 'Alice',
-      lastName: 'Ng',
-      biography: 'Short bio',
-      linkedinUrl: 'https://linkedin.com/in/alice',
-      degrees: [{ title: 'BSc Computer Science', university: 'UE' }],
-      certifications: [{ title: 'AWS Solutions Architect Associate' }],
-      licences: [{ title: 'Cisco CCNA' }],
-      courses: [{ title: 'Data Analytics Essentials' }],
-      employmentHistory: [{ jobTitle: 'Engineer', company: 'Northwind Labs' }]
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          userId: 'alumni-123',
+          firstName: 'Alice',
+          lastName: 'Ng',
+          biography: 'Short bio',
+          linkedinUrl: 'https://linkedin.com/in/alice',
+          degrees: [{ title: 'BSc Computer Science', university: 'UE' }],
+          certifications: [{ title: 'AWS Solutions Architect Associate' }],
+          licences: [{ title: 'Cisco CCNA' }],
+          courses: [{ title: 'Data Analytics Essentials' }],
+          employmentHistory: [{ jobTitle: 'Engineer', company: 'Northwind Labs' }]
+        }
+      })
     })
 
     const response = await request(app).get('/alumni/alumni-123')
@@ -63,7 +72,13 @@ describe('alumni profile page route', () => {
 
   it('renders not-found state when profile does not exist', async () => {
     mockIsViewAuthenticated = true
-    mockGetUserProfileById.mockResolvedValue(null)
+    global.fetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({
+        success: false
+      })
+    })
 
     const response = await request(app).get('/alumni/missing-id')
 

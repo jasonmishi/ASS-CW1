@@ -125,15 +125,19 @@
           </form>
 
           <% if (analyticsData) { %>
-            <div class="d-flex flex-wrap gap-2 mt-3" id="report-selectors">
-              <% chartOrder.forEach((chartId) => { %>
-                <% if (charts[chartId]) { %>
-                  <label class="report-choice form-check form-check-inline border rounded-pill px-3 py-2 bg-white">
-                    <input class="form-check-input me-2" type="checkbox" value="<%= chartId %>" checked>
-                    <span class="form-check-label"><%= charts[chartId].title %></span>
-                  </label>
-                <% } %>
-              <% }) %>
+            <div class="report-selection mt-3">
+              <div class="small fw-semibold text-dark mb-1">PDF contents</div>
+              <p class="text-secondary small mb-2">Choose which charts to include when you generate the PDF report.</p>
+              <div class="d-flex flex-wrap gap-2" id="report-selectors">
+                <% chartOrder.forEach((chartId) => { %>
+                  <% if (charts[chartId]) { %>
+                    <label class="report-choice form-check form-check-inline border rounded-pill px-3 py-2 bg-white">
+                      <input class="form-check-input me-2" type="checkbox" value="<%= chartId %>" checked>
+                      <span class="form-check-label"><%= charts[chartId].title %></span>
+                    </label>
+                  <% } %>
+                <% }) %>
+              </div>
             </div>
           <% } %>
         </div>

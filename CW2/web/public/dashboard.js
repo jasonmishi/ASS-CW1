@@ -23,6 +23,9 @@
     'topCourses'
   ])
 
+  // The server embeds the current analytics payload into the page so the client
+  // only mounts charts and handles interactions instead of refetching and
+  // rebuilding the whole dashboard UI.
   const state = JSON.parse(stateElement.textContent || '{}')
   const charts = state.charts || {}
   const filterOptions = state.filterOptions || {}
@@ -47,6 +50,8 @@
   const buildNextFilters = (chartId, item) => {
     const nextFilters = { ...appliedFilters }
 
+    // Clicks behave like toggle filters: clicking the active item clears that
+    // specific filter, while clicking a different item drills into it.
     if (chartId === 'degreeTitles') {
       nextFilters.degreeTitle = nextFilters.degreeTitle === item.label ? '' : item.label
       return nextFilters
@@ -103,6 +108,8 @@
       }
     },
     onClick: (_event, activeElements) => {
+      // Only selected charts participate in drill-in navigation. The rest stay
+      // read-only so informational charts do not imply hidden filter behavior.
       if (!isChartSelectable(chartId) || !activeElements.length) {
         return
       }
@@ -164,6 +171,8 @@
   }
 
   const exportCsv = () => {
+    // Exports reuse the same embedded state the charts were rendered from, so
+    // downloads always match the current filter URL and visible dashboard.
     const rows = [['Chart', 'Label', 'Value', 'Applied filters']]
 
     Object.values(charts).forEach((chart) => {
@@ -195,6 +204,21 @@
     link.href = chart.toBase64Image()
     link.download = `${chartId}.png`
     link.click()
+  }
+
+  const getPdfChartPlacement = (chartId, chart) => {
+    const maxWidth = 515
+    const maxHeight = chartId === 'qualificationMix' || chartId === 'certificationCoverage' ? 300 : 360
+    const canvasWidth = chart.canvas?.width || maxWidth
+    const canvasHeight = chart.canvas?.height || maxHeight
+    const widthRatio = maxWidth / canvasWidth
+    const heightRatio = maxHeight / canvasHeight
+    const scale = Math.min(widthRatio, heightRatio, 1)
+
+    return {
+      width: Math.round(canvasWidth * scale),
+      height: Math.round(canvasHeight * scale)
+    }
   }
 
   const generatePdfReport = () => {
@@ -238,13 +262,23 @@
         y = 40
       }
 
+      const imagePlacement = getPdfChartPlacement(chartId, chart)
+      const chartX = 40 + ((515 - imagePlacement.width) / 2)
+
       doc.setFontSize(14)
       doc.text(chartMeta.title, 40, y)
       y += 14
       doc.setFontSize(10)
       doc.text(chartMeta.subtitle, 40, y, { maxWidth: 515 })
       y += 16
-      doc.addImage(chart.toBase64Image(), 'PNG', 40, y, 515, 260)
+      doc.addImage(
+        chart.canvas.toDataURL('image/png'),
+        'PNG',
+        chartX,
+        y,
+        imagePlacement.width,
+        imagePlacement.height
+      )
     })
 
     doc.save('alumni-analytics-report.pdf')
