@@ -9,6 +9,8 @@ const router = express.Router()
 
 router.get('/login', webController.renderLoginPage)
 router.get('/register', webController.renderRegisterPage)
+router.get('/bidding', authenticateViewSession, webController.renderBiddingPage)
+router.get('/alumni/:alumniId', authenticateViewSession, webController.renderAlumniProfilePage)
 router.get('/dashboard/alumni-analytics', authenticateViewSession, webController.renderAnalyticsDashboard)
 router.get('/dashboard/alumni-analytics/data', authenticateJwt, validate(analyticsDashboardQuerySchema, 'query'), webController.proxyAnalyticsDashboard)
 router.get('/dashboard/alumni-directory', authenticateViewSession, webController.renderAlumniDirectory)

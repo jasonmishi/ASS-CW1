@@ -98,7 +98,7 @@
 
     elements.resultsBody.innerHTML = alumni.map((person) => `
       <tr>
-        <td>${person.name}</td>
+        <td><a href="/alumni/${encodeURIComponent(person.userId)}">${person.name}</a></td>
         <td>${person.email}</td>
         <td>${person.programme}</td>
         <td>${person.graduationDate}</td>

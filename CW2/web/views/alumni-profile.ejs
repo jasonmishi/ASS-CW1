@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/dashboard.css">
+  </head>
+  <body class="<%= bodyClass %>">
+    <div class="container py-4">
+      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+        <div>
+          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Alumni</p>
+          <h1 class="h2 mb-2">Alumni Profile</h1>
+          <p class="text-secondary mb-0">Simple full profile view.</p>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
+          <a href="/dashboard/alumni-analytics" class="btn btn-outline-secondary">Analytics</a>
+          <a href="/dashboard/alumni-directory" class="btn btn-outline-secondary">Directory</a>
+        </div>
+      </header>
+
+      <% if (!profile) { %>
+        <section class="card shadow-sm border-0">
+          <div class="card-body">
+            <h2 class="h5 mb-2">Profile not found</h2>
+            <p class="text-secondary mb-3">No alumni profile exists for this user.</p>
+            <a href="/dashboard/alumni-directory" class="btn btn-dark">Back to directory</a>
+          </div>
+        </section>
+      <% } else { %>
+        <section class="card shadow-sm border-0 mb-4">
+          <div class="card-body">
+            <h2 class="h4 mb-1"><%= `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Unnamed alumni' %></h2>
+            <p class="text-secondary mb-2">
+              <% if (profile.linkedinUrl) { %>
+                <a href="<%= profile.linkedinUrl %>" target="_blank" rel="noopener noreferrer"><%= profile.linkedinUrl %></a>
+              <% } else { %>
+                No LinkedIn URL provided
+              <% } %>
+            </p>
+            <p class="mb-0"><%= profile.biography || 'No biography provided.' %></p>
+          </div>
+        </section>
+
+        <section class="row g-3">
+          <div class="col-12 col-lg-6">
+            <article class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <h3 class="h6 mb-3">Degrees</h3>
+                <ul class="mb-0">
+                  <% if (!profile.degrees.length) { %><li class="text-secondary">None</li><% } %>
+                  <% profile.degrees.forEach((item) => { %>
+                    <li>
+                      <% if (item.degreeUrl) { %>
+                        <a href="<%= item.degreeUrl %>" target="_blank" rel="noopener noreferrer"><%= `${item.title} (${item.university})` %></a>
+                      <% } else { %>
+                        <%= `${item.title} (${item.university})` %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </article>
+          </div>
+          <div class="col-12 col-lg-6">
+            <article class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <h3 class="h6 mb-3">Employment</h3>
+                <ul class="mb-0">
+                  <% if (!profile.employmentHistory.length) { %><li class="text-secondary">None</li><% } %>
+                  <% profile.employmentHistory.forEach((item) => { %>
+                    <li><%= `${item.jobTitle} @ ${item.company}` %></li>
+                  <% }) %>
+                </ul>
+              </div>
+            </article>
+          </div>
+          <div class="col-12 col-lg-4">
+            <article class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <h3 class="h6 mb-3">Certifications</h3>
+                <ul class="mb-0">
+                  <% if (!profile.certifications.length) { %><li class="text-secondary">None</li><% } %>
+                  <% profile.certifications.forEach((item) => { %>
+                    <li>
+                      <% if (item.certificationUrl) { %>
+                        <a href="<%= item.certificationUrl %>" target="_blank" rel="noopener noreferrer"><%= item.title %></a>
+                      <% } else { %>
+                        <%= item.title %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </article>
+          </div>
+          <div class="col-12 col-lg-4">
+            <article class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <h3 class="h6 mb-3">Licences</h3>
+                <ul class="mb-0">
+                  <% if (!profile.licences.length) { %><li class="text-secondary">None</li><% } %>
+                  <% profile.licences.forEach((item) => { %>
+                    <li>
+                      <% if (item.licenceUrl) { %>
+                        <a href="<%= item.licenceUrl %>" target="_blank" rel="noopener noreferrer"><%= item.title %></a>
+                      <% } else { %>
+                        <%= item.title %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </article>
+          </div>
+          <div class="col-12 col-lg-4">
+            <article class="card shadow-sm border-0 h-100">
+              <div class="card-body">
+                <h3 class="h6 mb-3">Courses</h3>
+                <ul class="mb-0">
+                  <% if (!profile.courses.length) { %><li class="text-secondary">None</li><% } %>
+                  <% profile.courses.forEach((item) => { %>
+                    <li>
+                      <% if (item.courseUrl) { %>
+                        <a href="<%= item.courseUrl %>" target="_blank" rel="noopener noreferrer"><%= item.title %></a>
+                      <% } else { %>
+                        <%= item.title %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </article>
+          </div>
+        </section>
+      <% } %>
+    </div>
+  </body>
+</html>

@@ -206,6 +206,11 @@ const buildAppliedFilters = (filters) => ({
 const buildAnalyticsResponse = ({ filters, normalized, aggregates }) => ({
   generatedAt: new Date().toISOString(),
   appliedFilters: buildAppliedFilters(filters),
+  alumni: aggregates.filteredAlumni.map((alumni) => ({
+    userId: alumni.userId,
+    name: alumni.name,
+    email: alumni.email
+  })),
   filterOptions: buildFilterOptions(normalized, aggregates.dateBounds),
   summary: buildSummary(aggregates.counts),
   insights: buildInsights(aggregates),

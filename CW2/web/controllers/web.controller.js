@@ -106,6 +106,34 @@ const renderAlumniDirectory = (req, res) => {
   })
 }
 
+const renderBiddingPage = (req, res) => {
+  return res.status(200).render('bidding', {
+    pageTitle: 'Blind Bidding',
+    bodyClass: 'dashboard-page',
+    currentUser: req.user
+  })
+}
+
+const renderAlumniProfilePage = async (req, res) => {
+  const profile = await profileModel.getUserProfileById(req.params.alumniId)
+
+  if (!profile) {
+    return res.status(404).render('alumni-profile', {
+      pageTitle: 'Alumni Profile',
+      bodyClass: 'dashboard-page',
+      currentUser: req.user,
+      profile: null
+    })
+  }
+
+  return res.status(200).render('alumni-profile', {
+    pageTitle: 'Alumni Profile',
+    bodyClass: 'dashboard-page',
+    currentUser: req.user,
+    profile
+  })
+}
+
 const proxyAnalyticsDashboard = async (req, res) => {
   return proxyAnalyticsRequest(req, res, {
     logLabel: 'Analytics dashboard',
@@ -128,7 +156,10 @@ module.exports = {
   proxyAlumniDirectory,
   proxyAnalyticsDashboard,
   renderAlumniDirectory,
+  renderAlumniProfilePage,
   renderAnalyticsDashboard,
+  renderBiddingPage,
   renderLoginPage,
   renderRegisterPage
 }
+const profileModel = require('../../api/models/profile.model')

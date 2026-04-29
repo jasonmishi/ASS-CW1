@@ -233,16 +233,11 @@
   }
 
   const renderDetailPanel = (chartId, item, chartData) => {
-    const details = Array.isArray(item.details) && item.details.length
-      ? `<ul>${item.details.map((detail) => `<li>${detail}</li>`).join('')}</ul>`
-      : '<p>No additional drill-down items available for this data point.</p>'
-
     elements.detail.innerHTML = `
       <h2>${chartData.title}</h2>
       <p class="detail-kicker">${item.label}</p>
       <p class="detail-value">${item.value}</p>
       <p>${chartData.subtitle}</p>
-      ${details}
     `
   }
 

@@ -27,6 +27,7 @@ Key variables used by the API app, web app, and worker:
 - `EMAIL_VERIFICATION_TTL_HOURS`, `PASSWORD_RESET_TTL_HOURS`: Auth token expiry windows.
 - `EMAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `EMAIL_FROM`: Outbound email configuration.
 - `APP_BASE_URL`: Used to build links in emails and for the proxied browser-facing stack.
+- `PUBLIC_API_BASE_URL`: Optional browser-visible API base URL for the web app. Leave blank for same-origin production behind nginx; set it in split-origin development.
 - `ANALYTICS_DASHBOARD_API_TOKEN`: Server-side bearer token used when the logged-in dashboard proxies to `/api/v1/analytics/alumni-dashboard`.
 - `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN`: Server-side bearer token used when the logged-in alumni directory page proxies to `/api/v1/analytics/alumni-directory`.
 - `INTERNAL_API_BASE_URL`: Base URL the web app uses for internal calls to the protected analytics API. Defaults to `APP_BASE_URL`, then `http://127.0.0.1:$PORT`.
@@ -46,10 +47,9 @@ docker compose up --build
 
 This starts:
 - `db` (PostgreSQL on `localhost:5432`)
-- `api` (Express API service)
-- `web` (Express UI service)
+- `api` (Express API service on `localhost:3000`)
+- `web` (Express UI service on `localhost:3001`)
 - `worker` (scheduler/background jobs)
-- `nginx` (entrypoint on `localhost:8080`)
 - `mailhog` (SMTP on `localhost:1025`, inbox UI on `localhost:8025`)
 - `minio` (object storage on `localhost:9000`, console on `localhost:9001`)
 
@@ -66,6 +66,10 @@ To stop and remove DB volume:
 cd CW2
 docker compose down -v
 ```
+
+Primary local URLs:
+- Web UI: `http://localhost:3001`
+- API: `http://localhost:3000`
 
 For local email testing, open:
 
@@ -87,22 +91,22 @@ Default MinIO credentials in Docker Compose:
 
 ## Run production docker compose 
 
-1. Copy the root env file template and adjust secrets and URLs:
+1. Copy the env file template in `CW2/` and adjust secrets and URLs:
 
 ```bash
-cp ../.env.example ../.env
+cp .env.example .env
 ```
 
 2. From the `CW2/` directory, build the production image:
 
 ```bash
-docker compose --env-file ../.env -f docker-compose.prod.yml build
+docker compose --env-file .env -f docker-compose.prod.yml build
 ```
 
 3. Start the full stack:
 
 ```bash
-docker compose --env-file ../.env -f docker-compose.prod.yml up -d
+docker compose --env-file .env -f docker-compose.prod.yml up -d
 ```
 
 4. Check the deployment:
@@ -115,6 +119,11 @@ Profile image storage in production:
 - set `NODE_ENV=production`
 - set `STORAGE_PROVIDER=minio`
 - do not use `STORAGE_PROVIDER=local` in production; the app will reject it at startup
+
+Production notes:
+- `PUBLIC_API_BASE_URL` can usually be left blank when nginx serves both `web` and `/api/v1/*` on the same origin.
+- Set `ANALYTICS_DASHBOARD_API_TOKEN` and `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN` if you want the protected analytics pages to function.
+- `INTERNAL_API_BASE_URL` should remain `http://api:3000` in the production compose stack.
 
 ## First Admin Bootstrap
 
