@@ -1,0 +1,27 @@
+<header class="page-header mb-4">
+  <div>
+    <h1 class="page-header-title"><%= title %></h1>
+    <% if (description) { %>
+      <p class="page-header-copy mb-0"><%= description %></p>
+    <% } %>
+  </div>
+  <button
+    type="button"
+    class="page-header-toggle"
+    data-header-toggle
+    data-target="<%= menuId %>"
+    aria-expanded="false"
+    aria-controls="<%= menuId %>"
+    aria-label="Toggle page menu"
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <div class="page-header-actions" id="<%= menuId %>" data-header-actions hidden>
+    <span class="badge text-bg-light border px-3 py-2"><%= currentUserEmail %></span>
+    <% actions.forEach((action) => { %>
+      <a href="<%= action.href %>" class="<%= action.className || 'btn btn-outline-secondary' %>"><%= action.label %></a>
+    <% }) %>
+  </div>
+</header>

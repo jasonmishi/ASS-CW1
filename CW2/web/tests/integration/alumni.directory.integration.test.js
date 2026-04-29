@@ -2,6 +2,7 @@ const request = require('supertest')
 
 let mockIsViewAuthenticated = false
 let mockIsJwtAuthenticated = false
+const mockGetAlumniDirectoryAnalytics = jest.fn()
 
 jest.mock('../../../api/middleware/web-auth.middleware', () => ({
   authenticateViewSession: (req, res, next) => {
@@ -38,6 +39,11 @@ jest.mock('../../../api/middleware/auth.middleware', () => ({
   }
 }))
 
+jest.mock('../../../api/models/analytics.model', () => ({
+  getAlumniDashboardAnalytics: jest.fn(),
+  getAlumniDirectoryAnalytics: (...args) => mockGetAlumniDirectoryAnalytics(...args)
+}))
+
 const app = require('../../app')
 
 const originalDirectoryToken = process.env.ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN
@@ -47,6 +53,27 @@ beforeEach(() => {
   mockIsJwtAuthenticated = false
   process.env.ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN = 'test-directory-token'
   global.fetch = jest.fn()
+  mockGetAlumniDirectoryAnalytics.mockResolvedValue({
+    filterOptions: {
+      programmes: ['BSc Computer Science'],
+      industrySectors: ['Technology']
+    },
+    totalCount: 1,
+    alumni: [
+      {
+        userId: 'alumni-1',
+        name: 'Alice Ng',
+        email: 'alice.ng@eastminster.ac.uk',
+        programme: 'BSc Computer Science',
+        graduationDate: '2024-07-10',
+        latestEmployment: {
+          jobTitle: 'Software Engineer',
+          company: 'Northwind Labs',
+          industrySector: 'Technology'
+        }
+      }
+    ]
+  })
 })
 
 afterEach(() => {
@@ -78,7 +105,24 @@ describe('alumni directory web routes', () => {
 
     expect(response.status).toBe(200)
     expect(response.text).toContain('Alumni By Programme')
-    expect(response.text).toContain('/dashboard/alumni-directory/data')
+    expect(response.text).toContain('Apply filters')
+    expect(response.text).toContain('Alice Ng')
+  })
+
+  it('accepts blank query params from the filter form', async () => {
+    mockIsViewAuthenticated = true
+
+    const response = await request(app)
+      .get('/dashboard/alumni-directory')
+      .query({
+        programme: '',
+        graduationFrom: '',
+        graduationTo: '',
+        industrySector: ''
+      })
+
+    expect(response.status).toBe(200)
+    expect(response.text).toContain('Alumni By Programme')
   })
 })
 

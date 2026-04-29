@@ -2,6 +2,7 @@ const request = require('supertest')
 
 let mockIsViewAuthenticated = false
 let mockIsJwtAuthenticated = false
+const mockGetAlumniDashboardAnalytics = jest.fn()
 
 jest.mock('../../../api/middleware/web-auth.middleware', () => ({
   authenticateViewSession: (req, res, next) => {
@@ -38,6 +39,11 @@ jest.mock('../../../api/middleware/auth.middleware', () => ({
   }
 }))
 
+jest.mock('../../../api/models/analytics.model', () => ({
+  getAlumniDashboardAnalytics: (...args) => mockGetAlumniDashboardAnalytics(...args),
+  getAlumniDirectoryAnalytics: jest.fn()
+}))
+
 const app = require('../../app')
 
 const originalDashboardToken = process.env.ANALYTICS_DASHBOARD_API_TOKEN
@@ -47,6 +53,36 @@ beforeEach(() => {
   mockIsJwtAuthenticated = false
   process.env.ANALYTICS_DASHBOARD_API_TOKEN = 'test-dashboard-token'
   global.fetch = jest.fn()
+  mockGetAlumniDashboardAnalytics.mockResolvedValue({
+    appliedFilters: {
+      from: '',
+      to: '',
+      degreeTitle: '',
+      credentialDomain: '',
+      careerCategory: '',
+      search: ''
+    },
+    filterOptions: {
+      degreeTitles: ['BSc Computer Science'],
+      credentialDomains: [{ key: 'cloud', label: 'Cloud' }],
+      careerCategories: [{ key: 'software-engineering', label: 'Software Engineering' }],
+      dateBounds: { min: '2020-01-01', max: '2024-12-31' }
+    },
+    summary: [{ label: 'Filtered alumni', value: 3, tone: 'neutral' }],
+    insights: [],
+    charts: {
+      degreeTitles: {
+        id: 'degreeTitles',
+        type: 'bar',
+        title: 'Top Degree Titles',
+        subtitle: 'Most common academic backgrounds.',
+        labels: ['BSc Computer Science'],
+        items: [{ label: 'BSc Computer Science', value: 3 }],
+        datasets: [{ label: 'Degree count', data: [3] }],
+        axisLabels: { x: 'Degree title', y: 'Count' }
+      }
+    }
+  })
 })
 
 afterEach(() => {
@@ -92,7 +128,26 @@ describe('analytics dashboard web routes', () => {
 
     expect(response.status).toBe(200)
     expect(response.text).toContain('Alumni Analytics')
-    expect(response.text).toContain('/dashboard/alumni-analytics/data')
+    expect(response.text).toContain('Apply filters')
+    expect(response.text).toContain('Top Degree Titles')
+  })
+
+  it('accepts blank query params from the filter form', async () => {
+    mockIsViewAuthenticated = true
+
+    const response = await request(app)
+      .get('/dashboard/alumni-analytics')
+      .query({
+        from: '',
+        to: '',
+        degreeTitle: '',
+        credentialDomain: '',
+        careerCategory: '',
+        search: ''
+      })
+
+    expect(response.status).toBe(200)
+    expect(response.text).toContain('Alumni Analytics')
   })
 })
 

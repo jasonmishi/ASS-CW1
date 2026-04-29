@@ -1,27 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
-    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/dashboard.css">
-  </head>
-  <body class="<%= bodyClass %>" data-current-user-email="<%= currentUser.email %>">
+<%- include('partials/document-start', {
+  pageTitle,
+  bodyClass,
+  analyticsEndpoint: null,
+  currentUserEmail: currentUser.email,
+  csrfCookieName: null
+}) %>
     <div class="container py-4">
-      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
-        <div>
-          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Bidding</p>
-          <h1 class="h2 mb-2">Blind Bidding</h1>
-          <p class="text-secondary mb-0">Place a blind bid for tomorrow's alumni feature. Highest amount is never shown.</p>
-        </div>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
-          <a href="/dashboard/alumni-analytics" class="btn btn-outline-secondary">Analytics</a>
-          <a href="/dashboard/alumni-directory" class="btn btn-outline-secondary">Directory</a>
-          <a href="/login" class="btn btn-outline-secondary">Switch account</a>
-        </div>
-      </header>
+      <%- include('partials/dashboard-header', {
+        title: 'Blind Bidding',
+        description: "Place a blind bid for tomorrow's alumni feature.",
+        currentUserEmail: currentUser.email,
+        menuId: 'bidding-header-actions',
+        actions: [
+          { href: '/dashboard/alumni-analytics', label: 'Analytics' },
+          { href: '/dashboard/alumni-directory', label: 'Directory' },
+          { href: '/login', label: 'Switch account' }
+        ]
+      }) %>
 
       <section class="card shadow-sm border-0 mb-4">
         <div class="card-body">
@@ -91,7 +86,6 @@
       </section>
     </div>
 
-    <script src="/assets/runtime-config.js"></script>
-    <script src="/assets/bidding.js"></script>
-  </body>
-</html>
+<%- include('partials/document-end', {
+  scriptPaths: ['/assets/header-menu.js', '/assets/runtime-config.js', '/assets/bidding.js']
+}) %>

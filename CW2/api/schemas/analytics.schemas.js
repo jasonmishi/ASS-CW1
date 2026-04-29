@@ -1,21 +1,37 @@
 const { z } = require('zod')
 
-const optionalDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+const emptyStringToUndefined = (value) => {
+  if (typeof value === 'string' && value.trim() === '') {
+    return undefined
+  }
+
+  return value
+}
+
+const optionalDate = z.preprocess(
+  emptyStringToUndefined,
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+)
+
+const optionalTrimmedString = z.preprocess(
+  emptyStringToUndefined,
+  z.string().trim().min(1).optional()
+)
 
 const analyticsDashboardQuerySchema = z.object({
   from: optionalDate,
   to: optionalDate,
-  degreeTitle: z.string().trim().min(1).optional(),
-  credentialDomain: z.string().trim().min(1).optional(),
-  careerCategory: z.string().trim().min(1).optional(),
-  search: z.string().trim().min(1).optional()
+  degreeTitle: optionalTrimmedString,
+  credentialDomain: optionalTrimmedString,
+  careerCategory: optionalTrimmedString,
+  search: optionalTrimmedString
 })
 
 const alumniDirectoryQuerySchema = z.object({
-  programme: z.string().trim().min(1).optional(),
+  programme: optionalTrimmedString,
   graduationFrom: optionalDate,
   graduationTo: optionalDate,
-  industrySector: z.string().trim().min(1).optional()
+  industrySector: optionalTrimmedString
 })
 
 module.exports = {

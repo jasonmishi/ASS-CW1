@@ -25,6 +25,7 @@ const DOMAIN_RULES = [
 const CAREER_RULES = [
   { key: 'software-engineering', label: 'Software Engineering', patterns: [/software/i, /developer/i, /engineer/i, /full stack/i, /backend/i, /frontend/i, /devops/i] },
   { key: 'data-analytics', label: 'Data Analytics', patterns: [/data analyst/i, /analytics/i, /bi /i, /business intelligence/i, /data science/i, /reporting/i] },
+  { key: 'digital-marketing', label: 'Digital Marketing', patterns: [/digital marketing/i, /\bseo\b/i, /\bsem\b/i, /campaign/i, /content/i, /social media/i, /paid media/i, /performance marketing/i, /marketing/i] },
   { key: 'product', label: 'Product', patterns: [/product/i, /ux/i, /ui/i, /designer/i] },
   { key: 'management', label: 'Management', patterns: [/manager/i, /management/i, /director/i, /lead/i, /head of/i] },
   { key: 'consulting', label: 'Consulting', patterns: [/consultant/i, /consulting/i, /advisor/i] },

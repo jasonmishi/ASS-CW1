@@ -37,9 +37,21 @@
     return searchParams.toString()
   }
 
+  const clearChildren = (element) => {
+    element.replaceChildren()
+  }
+
+  const appendPlaceholderOption = (element, placeholder) => {
+    const optionElement = document.createElement('option')
+    optionElement.value = ''
+    optionElement.textContent = placeholder
+    element.appendChild(optionElement)
+  }
+
   const fillSelect = (element, options, placeholder) => {
     const currentValue = element.value
-    element.innerHTML = `<option value="">${placeholder}</option>`
+    clearChildren(element)
+    appendPlaceholderOption(element, placeholder)
 
     options.forEach((option) => {
       const optionElement = document.createElement('option')
@@ -58,12 +70,19 @@
     elements.industrySector.value = state.filters.industrySector
   }
 
+  const createMessageRow = (message) => {
+    const row = document.createElement('tr')
+    const cell = document.createElement('td')
+    cell.colSpan = 7
+    cell.className = 'text-secondary text-center py-4'
+    cell.textContent = message
+    row.appendChild(cell)
+    return row
+  }
+
   const setLoadingState = () => {
-    elements.resultsBody.innerHTML = `
-      <tr>
-        <td colspan="7" class="text-secondary text-center py-4">Loading alumni data...</td>
-      </tr>
-    `
+    clearChildren(elements.resultsBody)
+    elements.resultsBody.appendChild(createMessageRow('Loading alumni data...'))
   }
 
   const toggleErrorState = (visible) => {
@@ -86,27 +105,46 @@
     }
   }
 
+  const createDataCell = (value) => {
+    const cell = document.createElement('td')
+    cell.textContent = value || '—'
+    return cell
+  }
+
+  const createAlumniRow = (person) => {
+    const row = document.createElement('tr')
+
+    const nameCell = document.createElement('td')
+    const profileLink = document.createElement('a')
+    profileLink.href = `/alumni/${encodeURIComponent(person.userId)}`
+    profileLink.textContent = person.name
+    nameCell.appendChild(profileLink)
+    row.appendChild(nameCell)
+
+    row.appendChild(createDataCell(person.email))
+    row.appendChild(createDataCell(person.programme))
+    row.appendChild(createDataCell(person.graduationDate))
+    row.appendChild(createDataCell(person.latestEmployment?.jobTitle))
+    row.appendChild(createDataCell(person.latestEmployment?.company))
+    row.appendChild(createDataCell(person.latestEmployment?.industrySector))
+
+    return row
+  }
+
   const renderRows = (alumni) => {
+    clearChildren(elements.resultsBody)
+
     if (!alumni.length) {
-      elements.resultsBody.innerHTML = `
-        <tr>
-          <td colspan="7" class="text-secondary text-center py-4">No alumni matched the current filters.</td>
-        </tr>
-      `
+      elements.resultsBody.appendChild(createMessageRow('No alumni matched the current filters.'))
       return
     }
 
-    elements.resultsBody.innerHTML = alumni.map((person) => `
-      <tr>
-        <td><a href="/alumni/${encodeURIComponent(person.userId)}">${person.name}</a></td>
-        <td>${person.email}</td>
-        <td>${person.programme}</td>
-        <td>${person.graduationDate}</td>
-        <td>${person.latestEmployment?.jobTitle || '—'}</td>
-        <td>${person.latestEmployment?.company || '—'}</td>
-        <td>${person.latestEmployment?.industrySector || '—'}</td>
-      </tr>
-    `).join('')
+    const fragment = document.createDocumentFragment()
+    alumni.forEach((person) => {
+      fragment.appendChild(createAlumniRow(person))
+    })
+
+    elements.resultsBody.appendChild(fragment)
   }
 
   const renderDirectory = (payload) => {

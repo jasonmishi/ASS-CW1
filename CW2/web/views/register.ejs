@@ -1,71 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
-    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/dashboard.css">
-  </head>
-  <body class="bg-light" data-csrf-cookie-name="<%= csrfCookieName %>">
-    <main class="container min-vh-100 d-flex align-items-center py-5">
-      <section class="row justify-content-center w-100">
-        <div class="col-12 col-md-10 col-lg-7">
-          <div class="card shadow-sm border-0">
-            <div class="card-body p-4 p-lg-5">
-              <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Alumni Access</p>
-              <h1 class="h3 mb-3">Create your Eastminster alumni account</h1>
-              <p class="text-secondary mb-4">Register with your <code>@eastminster.ac.uk</code> email address. After signup, verify your email before signing in.</p>
-
-              <form id="register-form" class="d-grid gap-3">
-                <div class="row g-3">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label mb-0">
-                      <span class="d-block mb-2">First name</span>
-                      <input class="form-control" type="text" name="firstName" autocomplete="given-name" required>
-                    </label>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="form-label mb-0">
-                      <span class="d-block mb-2">Last name</span>
-                      <input class="form-control" type="text" name="lastName" autocomplete="family-name">
-                    </label>
-                  </div>
-                </div>
-
-                <label class="form-label mb-0">
-                  <span class="d-block mb-2">Eastminster email</span>
-                  <input class="form-control" type="email" name="email" autocomplete="email" placeholder="name@eastminster.ac.uk" required>
-                </label>
-
-                <label class="form-label mb-0">
-                  <span class="d-block mb-2">Password</span>
-                  <input class="form-control" type="password" name="password" autocomplete="new-password" required>
-                </label>
-
-                <label class="form-label mb-0">
-                  <span class="d-block mb-2">Confirm password</span>
-                  <input class="form-control" type="password" name="confirmPassword" autocomplete="new-password" required>
-                </label>
-
-                <p class="text-secondary small mb-0">Password must be at least 8 characters and include upper-case, lower-case, numeric, and special characters.</p>
-                <button class="btn btn-dark" type="submit">Create account</button>
-                <p id="register-error" class="text-danger small mb-0" hidden></p>
-                <div id="register-success" class="alert alert-success mb-0" hidden>
-                  Registration submitted. Check your inbox for the verification email before signing in.
-                </div>
-              </form>
-
-              <div class="mt-4 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
-                <span class="text-secondary small">Already registered?</span>
-                <a href="/login" class="btn btn-outline-secondary">Back to login</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-    <script src="/assets/runtime-config.js"></script>
-    <script src="/assets/register.js"></script>
-  </body>
-</html>
+<%- include('partials/document-start', {
+  pageTitle,
+  bodyClass: 'bg-light',
+  analyticsEndpoint: null,
+  currentUserEmail: null,
+  csrfCookieName
+}) %>
+<%- include('partials/auth-shell', {
+  eyebrow: 'CW2 Alumni Access',
+  title: 'Create your Eastminster alumni account',
+  description: 'Register with your @eastminster.ac.uk email address. After signup, verify your email before signing in.',
+  widthClass: 'col-12 col-md-10 col-lg-7',
+  contentPartial: 'register-form'
+}) %>
+<%- include('partials/document-end', {
+  scriptPaths: ['/assets/runtime-config.js', '/assets/register.js']
+}) %>

@@ -1,26 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= pageTitle %> | Phantasmagoria Alumni</title>
-    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/dashboard.css">
-  </head>
-  <body class="<%= bodyClass %>">
+<%- include('partials/document-start', {
+  pageTitle,
+  bodyClass,
+  analyticsEndpoint: null,
+  currentUserEmail: null,
+  csrfCookieName: null
+}) %>
     <div class="container py-4">
-      <header class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
-        <div>
-          <p class="text-uppercase small fw-semibold text-primary mb-2">CW2 Alumni</p>
-          <h1 class="h2 mb-2">Alumni Profile</h1>
-          <p class="text-secondary mb-0">Simple full profile view.</p>
-        </div>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <span class="badge text-bg-light border px-3 py-2"><%= currentUser.email %></span>
-          <a href="/dashboard/alumni-analytics" class="btn btn-outline-secondary">Analytics</a>
-          <a href="/dashboard/alumni-directory" class="btn btn-outline-secondary">Directory</a>
-        </div>
-      </header>
+      <%- include('partials/dashboard-header', {
+        title: 'Alumni Profile',
+        description: '',
+        currentUserEmail: currentUser.email,
+        menuId: 'profile-header-actions',
+        actions: [
+          { href: '/dashboard/alumni-analytics', label: 'Analytics' },
+          { href: '/dashboard/alumni-directory', label: 'Directory' }
+        ]
+      }) %>
 
       <% if (!profile) { %>
         <section class="card shadow-sm border-0">
@@ -138,5 +133,6 @@
         </section>
       <% } %>
     </div>
-  </body>
-</html>
+<%- include('partials/document-end', {
+  scriptPaths: ['/assets/header-menu.js']
+}) %>
