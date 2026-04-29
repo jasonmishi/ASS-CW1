@@ -10,8 +10,8 @@ const buildQueryString = (query = {}) => {
   return searchParams.toString()
 }
 
-const getAnalyticsProxyBaseUrl = () => {
-  return process.env.INTERNAL_API_BASE_URL || process.env.APP_BASE_URL || `http://127.0.0.1:${process.env.PORT || 3000}`
+const getInternalApiBaseUrl = () => {
+  return process.env.INTERNAL_API_BASE_URL || 'http://127.0.0.1:3000'
 }
 
 const ANALYTICS_CHART_ORDER = [
@@ -31,6 +31,13 @@ const buildDashboardProxyError = (code, message) => ({
   message
 })
 
+const createHttpError = (status, code, message) => {
+  const error = new Error(message)
+  error.status = status
+  error.code = code
+  return error
+}
+
 const serializeForInlineScript = (value) => {
   return JSON.stringify(value)
     .replace(/</g, '\\u003c')
@@ -41,6 +48,53 @@ const serializeForInlineScript = (value) => {
 }
 
 const getValidatedQuery = (req) => req.validated?.query || req.query || {}
+
+const fetchInternalApi = async (req, {
+  path,
+  query = {},
+  tokenEnvVar,
+  userMessage,
+  notFoundMessage = null
+}) => {
+  const apiClientToken = tokenEnvVar ? process.env[tokenEnvVar] : null
+
+  if (tokenEnvVar && !apiClientToken) {
+    throw createHttpError(503, 'INTERNAL_API_TOKEN_MISSING', userMessage)
+  }
+
+  const queryString = buildQueryString(query)
+  const upstreamUrl = `${getInternalApiBaseUrl()}${path}${queryString ? `?${queryString}` : ''}`
+  const headers = {
+    Cookie: req.headers.cookie || ''
+  }
+
+  if (apiClientToken) {
+    headers.Authorization = `Bearer ${apiClientToken}`
+  }
+
+  let upstreamResponse
+
+  try {
+    upstreamResponse = await fetch(upstreamUrl, { headers })
+  } catch (_error) {
+    throw createHttpError(502, 'INTERNAL_API_UNREACHABLE', userMessage)
+  }
+
+  if (upstreamResponse.status === 404 && notFoundMessage) {
+    return null
+  }
+
+  if (upstreamResponse.status === 401 || upstreamResponse.status === 403) {
+    throw createHttpError(503, 'INTERNAL_API_AUTH_FAILED', userMessage)
+  }
+
+  if (!upstreamResponse.ok) {
+    throw createHttpError(502, 'INTERNAL_API_ERROR', userMessage)
+  }
+
+  const body = await upstreamResponse.json()
+  return body.data
+}
 
 const buildChartClickState = (analyticsData, filters) => ({
   charts: analyticsData?.charts || {},
@@ -135,7 +189,7 @@ const proxyAnalyticsRequest = async (req, res, {
 
   const query = req.validated?.query || req.query
   const queryString = buildQueryString(query)
-  const upstreamUrl = `${getAnalyticsProxyBaseUrl()}${upstreamPath}${queryString ? `?${queryString}` : ''}`
+  const upstreamUrl = `${getInternalApiBaseUrl()}${upstreamPath}${queryString ? `?${queryString}` : ''}`
 
   try {
     const upstreamResponse = await fetch(upstreamUrl, {
@@ -190,7 +244,12 @@ const renderAnalyticsDashboard = async (req, res) => {
   const filters = getValidatedQuery(req)
 
   try {
-    const analyticsData = await analyticsModel.getAlumniDashboardAnalytics(filters)
+    const analyticsData = await fetchInternalApi(req, {
+      path: '/api/v1/analytics/alumni-dashboard',
+      query: filters,
+      tokenEnvVar: 'ANALYTICS_DASHBOARD_API_TOKEN',
+      userMessage: 'We could not load analytics data right now. Please try again later or contact an administrator.'
+    })
 
     return res.status(200).render('alumni-analytics', {
       pageTitle: 'Alumni Analytics Dashboard',
@@ -224,7 +283,12 @@ const renderAlumniDirectory = async (req, res) => {
   const filters = getValidatedQuery(req)
 
   try {
-    const directoryData = await analyticsModel.getAlumniDirectoryAnalytics(filters)
+    const directoryData = await fetchInternalApi(req, {
+      path: '/api/v1/analytics/alumni-directory',
+      query: filters,
+      tokenEnvVar: 'ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN',
+      userMessage: 'We could not load alumni directory data right now. Please try again later or contact an administrator.'
+    })
 
     return res.status(200).render('alumni-directory', {
       pageTitle: 'Alumni Directory Analytics',
@@ -257,7 +321,11 @@ const renderBiddingPage = (req, res) => {
 }
 
 const renderAlumniProfilePage = async (req, res) => {
-  const profile = await profileModel.getUserProfileById(req.params.alumniId)
+  const profile = await fetchInternalApi(req, {
+    path: `/api/v1/alumni/${encodeURIComponent(req.params.alumniId)}/profile`,
+    userMessage: 'We could not load this alumni profile right now. Please try again later or contact an administrator.',
+    notFoundMessage: 'Alumni profile not found.'
+  })
 
   if (!profile) {
     return res.status(404).render('alumni-profile', {
@@ -304,5 +372,3 @@ module.exports = {
   renderLoginPage,
   renderRegisterPage
 }
-const analyticsModel = require('../../api/models/analytics.model')
-const profileModel = require('../../api/models/profile.model')

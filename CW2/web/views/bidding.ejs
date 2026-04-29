@@ -84,6 +84,21 @@
           <p id="bidding-message" class="small mt-3 mb-0 text-secondary"></p>
         </div>
       </section>
+
+      <section class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <h2 class="h5 mb-1">Incoming sponsorship offers</h2>
+              <p class="text-secondary mb-0">Accept pending offers to add them to your bidding balance, or decline them if they are not a fit.</p>
+            </div>
+            <button id="refresh-offers-btn" class="btn btn-outline-secondary btn-sm" type="button">Refresh offers</button>
+          </div>
+
+          <div id="sponsorship-offers-empty" class="text-secondary">Loading sponsorship offers...</div>
+          <div id="sponsorship-offers-list" class="d-grid gap-3"></div>
+        </div>
+      </section>
     </div>
 
 <%- include('partials/document-end', {
