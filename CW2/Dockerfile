@@ -29,15 +29,16 @@ CMD ["node", "app.js"]
 
 FROM base AS web
 
+COPY api/package*.json ./api/
 COPY web/package*.json ./web/
+WORKDIR /app/api
+RUN npm ci
 WORKDIR /app/web
 RUN npm ci
 
 WORKDIR /app
 COPY api ./api
 COPY web ./web
-RUN mkdir -p /app/api
-RUN ln -s /app/web/node_modules /app/api/node_modules
 RUN cd /app/web && npx prisma generate --schema ../api/prisma/schema.prisma
 RUN chown -R node:node /app
 

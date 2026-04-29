@@ -22,7 +22,7 @@ x-shared-env: &shared-env
   SMTP_PORT: "1025"
   SMTP_SECURE: "false"
   EMAIL_FROM: noreply@eastminster.local
-  APP_BASE_URL: http://localhost:3001
+  APP_BASE_URL: http://localhost:3000
   STORAGE_PROVIDER: minio
   MINIO_ENDPOINT: minio
   MINIO_PORT: "9000"
