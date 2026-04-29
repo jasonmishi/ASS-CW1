@@ -165,4 +165,38 @@ describe('Profile basic endpoints', () => {
     expect(response.status).toBe(403)
     expect(response.body.message).toMatch(/@eastminster\.ac\.uk/i)
   })
+
+  it('returns another alumni profile for authenticated users', async () => {
+    const { token } = await createAuthenticatedUser({
+      email: 'profile.viewer@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const { user, token: targetToken } = await createAuthenticatedUser({
+      email: 'profile.target@eastminster.ac.uk',
+      password: 'Strong!Pass1',
+      roleName: 'alumni'
+    })
+
+    const updateTargetResponse = await api()
+      .put('/api/v1/profile')
+      .set(authHeader(targetToken))
+      .send({
+        firstName: 'Alice',
+        lastName: 'Ng',
+        biography: 'Short bio'
+      })
+
+    expect(updateTargetResponse.status).toBe(200)
+
+    const response = await api()
+      .get(`/api/v1/alumni/${user.user_id}/profile`)
+      .set(authHeader(token))
+
+    expect(response.status).toBe(200)
+    expect(response.body.data.userId).toBe(user.user_id)
+    expect(response.body.data.firstName).toBe('Alice')
+    expect(response.body.data.lastName).toBe('Ng')
+  })
 })

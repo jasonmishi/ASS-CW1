@@ -1,8 +1,25 @@
 const profileModel = require('../models/profile.model')
 const profileService = require('../services/profile.service')
+const publicModel = require('../models/public.model')
 
 const getMyProfile = async (req, res) => {
   const profile = await profileModel.getUserProfileById(req.user.user_id)
+
+  return res.status(200).json({
+    success: true,
+    data: profile
+  })
+}
+
+const getProfileById = async (req, res) => {
+  const profile = await publicModel.getAlumniPublicProfile(req.params.alumniId)
+
+  if (!profile) {
+    return res.status(404).json({
+      success: false,
+      message: 'Alumni profile not found.'
+    })
+  }
 
   return res.status(200).json({
     success: true,
@@ -240,6 +257,7 @@ module.exports = {
   listEmployment,
   listLicences: listVariant(profileModel.CREDENTIAL_TYPES.licence),
   clearProfile,
+  getProfileById,
   getMyProfile,
   replaceProfileImage,
   updateProfile,

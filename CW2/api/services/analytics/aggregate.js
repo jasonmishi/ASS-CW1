@@ -1,19 +1,30 @@
 const { getMonthKey } = require('./normalize')
 
-const rankCounts = (items, limit = 8) => [...items.entries()]
-  .sort((left, right) => {
-    if (right[1].count !== left[1].count) {
-      return right[1].count - left[1].count
+// Convert a Map like:
+//   "BSc Computer Science" -> { count: 12, details: [...] }
+// into the chart item shape consumed by the view layer.
+//
+// results are ranked by descending count so the top N charts show the most
+// common items first. When counts tie, we sort alphabetically by label so the
+// output stays stable across requests instead of depending on Map insertion
+// order.
+const rankCounts = (items, limit = 8) => {
+  const rankedEntries = [...items.entries()].sort((left, right) => {
+    const countDifference = right[1].count - left[1].count
+
+    if (countDifference !== 0) {
+      return countDifference
     }
 
     return left[0].localeCompare(right[0])
   })
-  .slice(0, limit)
-  .map(([label, value]) => ({
+
+  return rankedEntries.slice(0, limit).map(([label, value]) => ({
     label,
     value: value.count,
     details: value.details
   }))
+}
 
 const mapCountsToItems = (items) => [...items.entries()]
   .sort((left, right) => left[0].localeCompare(right[0]))
@@ -61,6 +72,9 @@ const matchesSearch = (alumni, query) => {
 }
 
 const matchesFilters = (alumni, filters) => {
+  // These filters decide whether an alumni belongs in the cohort at all. Date
+  // filters are applied later per record because one alumni can have both
+  // in-range and out-of-range degrees or credentials.
   if (filters.degreeTitle && !alumni.degrees.some((degree) => degree.title === filters.degreeTitle)) {
     return false
   }
@@ -121,6 +135,9 @@ const collectDegrees = (alumni, filters, state) => {
 
 const collectCredentialGroup = (records, alumniName, filters, stateKey, countKey, detailKey, timelineCounts) => {
   for (const record of records) {
+    // Timeline counts should reflect the same filtered credential set shown in
+    // the top-N charts, so the month bucket is only incremented after the
+    // record survives the date-range check.
     timelineCounts.allDates.push(record.completionDate)
 
     if (!isWithinDateRange(record.completionDate, filters)) {
@@ -138,6 +155,9 @@ const collectCredentialGroup = (records, alumniName, filters, stateKey, countKey
 }
 
 const collectEmployments = (alumni, state) => {
+  // Career charts intentionally use only current roles. Historical employments
+  // still exist on alumni profiles but would distort the "where are they now"
+  // pathway view in the dashboard.
   for (const employment of alumni.currentEmployments) {
     state.allDates.push(employment.startDate)
     state.filteredCurrentEmployments.push({ ...employment, alumniName: alumni.name })
@@ -146,6 +166,9 @@ const collectEmployments = (alumni, state) => {
 }
 
 const buildAnalyticsAggregates = (normalized, filters = {}) => {
+  // The aggregate pass is: 1) keep alumni matching cohort filters, 2) collect
+  // in-range records into shared state, 3) derive chart-ready counts and
+  // averages from that single traversal.
   const filteredAlumni = normalized.filter((alumni) => matchesFilters(alumni, filters))
   const state = createCollectorState()
 
@@ -157,6 +180,8 @@ const buildAnalyticsAggregates = (normalized, filters = {}) => {
     collectEmployments(alumni, state)
   }
 
+  // Coverage is measured per alumni, not per certification record. One alumni
+  // with five certifications still counts as one "covered" alumni.
   const alumniWithCertifications = filteredAlumni.filter((alumni) => alumni.certifications.length > 0).length
   const filteredAlumniCount = filteredAlumni.length
 

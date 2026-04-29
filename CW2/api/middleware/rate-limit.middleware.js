@@ -10,11 +10,14 @@ const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false'
 const RATE_LIMIT_TRUST_PROXY = process.env.RATE_LIMIT_TRUST_PROXY === 'true'
 
 const getWindowStart = (now, windowMs) => {
+  // Fixed-window rate limiting 
+  // one 15-minute counter for 12:00:00-12:14:59.
   const bucket = Math.floor(now.getTime() / windowMs) * windowMs
   return new Date(bucket)
 }
 
-// Store rate-limit counts in the database, grouped into fixed time windows.
+// Store counters in Prisma so multiple API instances share one view of request
+// counts instead of each process enforcing its own local limit.
 class PrismaRateLimitStore {
   constructor({ windowMs }) {
     this.windowMs = windowMs
@@ -115,7 +118,9 @@ const getSessionKey = (cookieHeader) => {
   return `session:${hashToken(token)}`
 }
 
-// For public routes, try bearer token first, then session cookie, then IP.
+// For public routes, prefer bearer-token identity so different API clients
+// behind the same NAT/proxy IP do not throttle each other. Browser sessions
+// fall back to the hashed access-token cookie, then finally to client IP.
 const keyGenerator = (req) => {
   if (req.path.startsWith('/public/')) {
     const apiClientKey = getApiClientKey(req.headers.authorization)
@@ -158,6 +163,8 @@ const buildApiRateLimiter = () => {
 }
 
 const applyRateLimitTrustProxy = (app) => {
+  // Trusting proxy headers is necessary behind a real reverse proxy, but unsafe
+  // if clients can send spoofed X-Forwarded-For headers directly.
   if (RATE_LIMIT_TRUST_PROXY) {
     app.set('trust proxy', 1)
   }

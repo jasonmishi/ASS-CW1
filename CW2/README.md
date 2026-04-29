@@ -26,7 +26,7 @@ Key variables used by the API app, web app, and worker:
 - `BCRYPT_SALT_ROUNDS`: Password hashing cost.
 - `EMAIL_VERIFICATION_TTL_HOURS`, `PASSWORD_RESET_TTL_HOURS`: Auth token expiry windows.
 - `EMAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `EMAIL_FROM`: Outbound email configuration.
-- `APP_BASE_URL`: Used to build links in emails and for the proxied browser-facing stack.
+- `APP_BASE_URL`: Used to build API-owned links in emails. In local split-origin Docker, this should point to the API origin (`http://localhost:3000`). In proxied production, it should point to the nginx-facing app origin.
 - `PUBLIC_API_BASE_URL`: Optional browser-visible API base URL for the web app. Leave blank for same-origin production behind nginx; set it in split-origin development.
 - `ANALYTICS_DASHBOARD_API_TOKEN`: Server-side bearer token used when the logged-in dashboard proxies to `/api/v1/analytics/alumni-dashboard`.
 - `ANALYTICS_ALUMNI_DIRECTORY_API_TOKEN`: Server-side bearer token used when the logged-in alumni directory page proxies to `/api/v1/analytics/alumni-directory`.
@@ -70,6 +70,9 @@ docker compose down -v
 Primary local URLs:
 - Web UI: `http://localhost:3001`
 - API: `http://localhost:3000`
+
+Local Docker note:
+- auth verification emails point to `http://localhost:3000` because the verification route lives on the API service, while the browser UI remains on `http://localhost:3001`
 
 For local email testing, open:
 

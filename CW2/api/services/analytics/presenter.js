@@ -1,6 +1,8 @@
 const { CAREER_RULES, CHART_COLORS, DOMAIN_RULES } = require('./config')
 const { buildInsights } = require('./insights')
 
+// presenter.js is the final translation layer from aggregate output into the
+// stable response shape consumed by both the JSON endpoint and server-rendered UI.
 const buildChart = ({ id, type, title, subtitle, labels, datasets, items, xLabel = null, yLabel = null }) => ({
   id,
   type,
@@ -16,6 +18,8 @@ const buildChart = ({ id, type, title, subtitle, labels, datasets, items, xLabel
 })
 
 const buildFilterOptions = (normalized, dateBounds) => ({
+  // Filter options come from the full normalized dataset so a drill-in does not
+  // hide other valid choices from the form controls.
   degreeTitles: [...new Set(normalized.flatMap((alumni) => alumni.degrees.map((degree) => degree.title)))].sort(),
   credentialDomains: DOMAIN_RULES.map((rule) => ({ key: rule.key, label: rule.label })),
   careerCategories: [...CAREER_RULES.map((rule) => ({ key: rule.key, label: rule.label })), { key: 'other', label: 'Other' }],
@@ -195,6 +199,8 @@ const buildCharts = (aggregates) => {
 }
 
 const buildAppliedFilters = (filters) => ({
+  // Empty strings keep the wire shape stable for forms, query rebuilding, and
+  // server-rendered state consumed by dashboard.js.
   from: filters.from || '',
   to: filters.to || '',
   degreeTitle: filters.degreeTitle || '',

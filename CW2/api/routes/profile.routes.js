@@ -3,6 +3,7 @@ const multer = require('multer')
 const profileController = require('../controllers/profile.controller')
 const { authenticateJwt, requireAlumni } = require('../middleware/auth.middleware')
 const { validate } = require('../middleware/validate.middleware')
+const { alumniParamsSchema } = require('../schemas/public.schemas')
 const {
   certificationBodySchema,
   certificationParamsSchema,
@@ -66,6 +67,7 @@ const uploadProfileImage = (req, res, next) => {
   })
 }
 
+router.get('/alumni/:alumniId/profile', authenticateJwt, validate(alumniParamsSchema, 'params'), profileController.getProfileById)
 router.get('/profile', authenticateJwt, requireAlumni, profileController.getMyProfile)
 router.put('/profile', authenticateJwt, requireAlumni, validate(profileUpdateBodySchema), profileController.updateProfile)
 router.delete('/profile', authenticateJwt, requireAlumni, profileController.clearProfile)

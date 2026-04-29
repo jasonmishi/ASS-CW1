@@ -10,6 +10,8 @@ const toIsoDate = (value) => {
 
 const getMonthKey = (value) => (value ? value.slice(0, 7) : null)
 
+// Analytics stages operate on this normalized shape rather than raw Prisma
+// records so the rest of the pipeline can focus on classification and counting.
 const classifyByRules = (text, rules, fallbackKey, fallbackLabel) => {
   const haystack = (text || '').trim()
 
@@ -61,6 +63,8 @@ const normalizeDegree = (degree) => ({
 })
 
 const normalizeAlumni = (user) => {
+  // Split credentials once up front so later aggregation does not need to keep
+  // re-partitioning every alumni record by credential type.
   const credentials = user.credentials.map(normalizeCredential)
   const employments = user.employments.map(normalizeEmployment)
 

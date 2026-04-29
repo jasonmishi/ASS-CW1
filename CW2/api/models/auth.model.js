@@ -9,6 +9,9 @@ const {
   hashToken
 } = require('../utils/security')
 
+// auth.model owns the security-sensitive lifecycle rules: stored tokens are
+// hashed, verification/reset links are single-use, and JWT sessions also have
+// server-side database state so they can be revoked early.
 const createUser = async (data) => {
   return prisma.user.create({
     data,
@@ -28,6 +31,8 @@ const findUserByEmail = async (email) => {
 }
 
 const createEmailVerificationToken = async ({ user_id, token_hash, expires_at }) => {
+  // Keep only one redeemable verification link at a time so resends invalidate
+  // earlier emails instead of creating multiple valid tokens in circulation.
   await prisma.emailVerificationToken.updateMany({
     where: {
       user_id,
@@ -64,6 +69,8 @@ const consumeEmailVerificationToken = async (token_hash) => {
 
   const now = new Date()
 
+  // Token consumption and email verification need to happen atomically so the
+  // same link cannot be replayed between separate writes.
   await prisma.$transaction([
     prisma.emailVerificationToken.update({
       where: {
@@ -87,6 +94,7 @@ const consumeEmailVerificationToken = async (token_hash) => {
 }
 
 const createPasswordResetToken = async ({ user_id, token_hash, expires_at }) => {
+  // Password reset follows the same single-active-token rule as verification.
   await prisma.passwordResetToken.updateMany({
     where: {
       user_id,
@@ -121,6 +129,8 @@ const findValidPasswordResetToken = async (token_hash) => {
 const completePasswordReset = async ({ reset_id, user_id, password_hash }) => {
   const now = new Date()
 
+  // A password reset changes the root credential, so active sessions are
+  // revoked in the same transaction that marks the reset token as used.
   await prisma.$transaction([
     prisma.passwordResetToken.update({
       where: {
@@ -227,6 +237,8 @@ const registerUserWithVerification = async ({
   lastName,
   emailVerificationTtlHours
 }) => {
+  // Normalize before lookup and insert so email uniqueness and login are
+  // effectively case-insensitive.
   const normalizedEmail = email.toLowerCase()
   const existingUser = await findUserByEmail(normalizedEmail)
 
@@ -260,6 +272,8 @@ const registerUserWithVerification = async ({
   const verificationTokenHash = hashToken(verificationToken)
   const expiresAt = new Date(Date.now() + (emailVerificationTtlHours * 60 * 60 * 1000))
 
+  // Only the hashed token is stored. The plaintext token lives only long enough
+  // to be sent to the user's inbox.
   await createEmailVerificationToken({
     user_id: user.user_id,
     token_hash: verificationTokenHash,
@@ -345,6 +359,8 @@ const createSessionForCredentials = async ({ email, password }) => {
     }
   }
 
+  // JWTs carry identity and expiry, while auth_session provides revocation for
+  // logout, admin actions, and password-reset invalidation.
   const signedToken = signUserToken(user)
   const tokenHash = hashToken(signedToken.token)
 
@@ -365,6 +381,8 @@ const createPasswordResetRequest = async ({ email, passwordResetTtlHours }) => {
   const user = await findUserByEmail(email.toLowerCase())
 
   if (!user) {
+    // Intentionally behave like success for unknown emails to avoid account
+    // enumeration through the reset form.
     return
   }
 
