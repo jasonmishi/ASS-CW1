@@ -1,0 +1,120 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="cw2-web-routing">
+    <mxGraphModel dx="1838" dy="1047" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="req" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Incoming HTTP Request" vertex="1">
+          <mxGeometry height="60" width="260" x="500" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="app" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Web Express app&#xa;CW2/web/app.js" vertex="1">
+          <mxGeometry height="70" width="210" x="525" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="global" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Global app setup&#xa;helmet CSP&#xa;express.json&#xa;express.urlencoded&#xa;static /assets and /vendor" vertex="1">
+          <mxGeometry height="150" width="296" x="482" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="routes" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Web Routes&#xa;CW2/web/routes/web.routes.js" vertex="1">
+          <mxGeometry height="80" width="260" x="500" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="public-routes" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Public page routes&#xa;GET /login&#xa;GET /register" vertex="1">
+          <mxGeometry height="120" width="210" x="70" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="view-routes" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Protected view routes&#xa;GET /bidding&#xa;GET /alumni/:alumniId&#xa;GET /dashboard/alumni-analytics&#xa;GET /dashboard/alumni-directory" vertex="1">
+          <mxGeometry height="185" width="310" x="330" y="567.5" as="geometry" />
+        </mxCell>
+        <mxCell id="proxy-routes" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="Protected proxy routes&#xa;GET /dashboard/alumni-analytics/data&#xa;GET /dashboard/alumni-directory/data" vertex="1">
+          <mxGeometry height="150" width="330" x="690" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="view-auth" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="authenticateViewSession&#xa;redirects to /login if no valid session" vertex="1">
+          <mxGeometry height="110" width="240" x="360" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="api-auth" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="authenticateSessionApi&#xa;returns JSON 401 if no valid session" vertex="1">
+          <mxGeometry height="110" width="270" x="740" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="validate" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=22;" value="validate(schema, source)&#xa;query: analyticsDashboardQuerySchema&#xa;query: alumniDirectoryQuerySchema&#xa;params: alumniParamsSchema" vertex="1">
+          <mxGeometry height="170" width="370" x="455" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=#60a917;strokeColor=#2D7600;fontColor=#ffffff;fontSize=22;" value="WebController&#xa;CW2/web/controllers/web.controller.js" vertex="1">
+          <mxGeometry height="80" width="260" x="510" y="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="page-render" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=#1ba1e2;strokeColor=#006EAF;fontColor=#ffffff;fontSize=22;" value="Rendered EJS Views&#xa;login.ejs&#xa;register.ejs&#xa;alumni-analytics.ejs&#xa;alumni-directory.ejs&#xa;bidding.ejs&#xa;alumni-profile.ejs" vertex="1">
+          <mxGeometry height="180" width="300" x="100" y="1310" as="geometry" />
+        </mxCell>
+        <mxCell id="json-proxy" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=#1ba1e2;strokeColor=#006EAF;fontColor=#ffffff;fontSize=22;" value="JSON proxy response&#xa;passes through upstream analytics payload" vertex="1">
+          <mxGeometry height="110" width="280" x="500" y="1350" as="geometry" />
+        </mxCell>
+        <mxCell id="internal-api" parent="1" style="whiteSpace=wrap;strokeWidth=2;fillColor=#f0a30a;strokeColor=#C57D00;fontColor=#ffffff;fontSize=22;" value="Internal API fetches&#xa;fetchInternalApi() / proxyAnalyticsRequest()&#xa;INTERNAL_API_BASE_URL -&gt; /api/v1/*" vertex="1">
+          <mxGeometry height="130" width="310" x="850" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-1" edge="1" parent="1" source="req" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="app">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-2" edge="1" parent="1" source="app" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="global">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-3" edge="1" parent="1" source="global" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-4" edge="1" parent="1" source="routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;" target="public-routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-5" edge="1" parent="1" source="routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;" target="view-routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-6" edge="1" parent="1" source="routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;" target="proxy-routes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="565" />
+              <mxPoint x="855" y="565" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-7" edge="1" parent="1" source="view-routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="view-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-8" edge="1" parent="1" source="proxy-routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="api-auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-9" edge="1" parent="1" source="view-auth" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="validate">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="485" y="920" />
+              <mxPoint x="590" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-10" edge="1" parent="1" source="api-auth" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="validate">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="855" y="920" />
+              <mxPoint x="680" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-11" edge="1" parent="1" source="public-routes" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="controller">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="1180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-12" edge="1" parent="1" source="validate" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="controller">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-13" edge="1" parent="1" source="controller" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="page-render" value="render*Page()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="1220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-14" edge="1" parent="1" source="controller" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="json-proxy" value="proxy*()">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow-15" edge="1" parent="1" source="controller" style="startArrow=none;endArrow=block;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=22;" target="internal-api" value="server-side fetch / proxy">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

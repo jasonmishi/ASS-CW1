@@ -1,0 +1,318 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="cw2-mvc-detailed">
+    <mxGraphModel dx="4157" dy="1570" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="client" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=52;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Client&gt;&gt;&#xa;Browser" vertex="1">
+          <mxGeometry height="148" width="400" x="-470" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="client-1" parent="client" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+requests pages from web routes" vertex="1">
+          <mxGeometry height="32" width="400" y="52" as="geometry" />
+        </mxCell>
+        <mxCell id="client-2" parent="client" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+runs browser assets in CW2/web/public" vertex="1">
+          <mxGeometry height="32" width="400" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="client-3" parent="client" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+sends cookies on authenticated requests" vertex="1">
+          <mxGeometry height="32" width="400" y="116" as="geometry" />
+        </mxCell>
+        <mxCell id="app" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Application&gt;&gt;&#xa;Web Application&#xa;CW2/web/app.js" vertex="1">
+          <mxGeometry height="228" width="360" x="130" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="app-1" parent="app" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-publicApiBaseUrl : string" vertex="1">
+          <mxGeometry height="30" width="360" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="app-2" parent="app" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-csrfCookieName : string" vertex="1">
+          <mxGeometry height="30" width="360" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="app-3" parent="app" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-helmet / static assets / EJS setup" vertex="1">
+          <mxGeometry height="30" width="360" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="app-line" parent="app" style="line;strokeWidth=1;fillColor=none;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="8" width="360" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="app-4" parent="app" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+mount web.routes.js" vertex="1">
+          <mxGeometry height="30" width="360" y="168" as="geometry" />
+        </mxCell>
+        <mxCell id="app-5" parent="app" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+inject runtime config into views" vertex="1">
+          <mxGeometry height="30" width="360" y="198" as="geometry" />
+        </mxCell>
+        <mxCell id="routes" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Routes&gt;&gt;&#xa;WebRoutes&#xa;CW2/web/routes/web.routes.js" vertex="1">
+          <mxGeometry height="294" width="840" x="-20" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-1" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /login -&gt; renderLoginPage()" vertex="1">
+          <mxGeometry height="28" width="840" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-2" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /register -&gt; renderRegisterPage()" vertex="1">
+          <mxGeometry height="28" width="840" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-3" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /bidding -&gt; authenticateViewSession + renderBiddingPage()" vertex="1">
+          <mxGeometry height="28" width="840" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-4" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /alumni/:alumniId -&gt; validate(params) + renderAlumniProfilePage()" vertex="1">
+          <mxGeometry height="28" width="840" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-5" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /dashboard/alumni-analytics -&gt; validate(query) + renderAnalyticsDashboard()" vertex="1">
+          <mxGeometry height="28" width="840" y="182" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-6" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /dashboard/alumni-analytics/data -&gt; authenticateSessionApi + proxyAnalyticsDashboard()" vertex="1">
+          <mxGeometry height="28" width="840" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-7" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /dashboard/alumni-directory -&gt; validate(query) + renderAlumniDirectory()" vertex="1">
+          <mxGeometry height="28" width="840" y="238" as="geometry" />
+        </mxCell>
+        <mxCell id="routes-8" parent="routes" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+GET /dashboard/alumni-directory/data -&gt; authenticateSessionApi + proxyAlumniDirectory()" vertex="1">
+          <mxGeometry height="28" width="840" y="266" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Middleware&gt;&gt;&#xa;SessionAuthMiddleware&#xa;CW2/web/middleware/session-auth.middleware.js" vertex="1">
+          <mxGeometry height="210" width="490" x="-470" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid-1" parent="session-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-ACCESS_TOKEN_COOKIE_NAME : string" vertex="1">
+          <mxGeometry height="28" width="490" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid-2" parent="session-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-parseCookies(cookieHeader) : object" vertex="1">
+          <mxGeometry height="28" width="490" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid-3" parent="session-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="-resolveSessionUser(req) : User|null" vertex="1">
+          <mxGeometry height="28" width="490" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid-4" parent="session-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+authenticateViewSession(req,res,next)" vertex="1">
+          <mxGeometry height="28" width="490" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="session-mid-5" parent="session-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+authenticateSessionApi(req,res,next)" vertex="1">
+          <mxGeometry height="28" width="490" y="182" as="geometry" />
+        </mxCell>
+        <mxCell id="validate-mid" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Middleware&gt;&gt;&#xa;ValidateMiddleware&#xa;CW2/web/middleware/validate.middleware.js" vertex="1">
+          <mxGeometry height="130" width="440" x="-470" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="validate-mid-1" parent="validate-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+validate(schema, source=&#39;body&#39;) : middleware" vertex="1">
+          <mxGeometry height="30" width="440" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="validate-mid-2" parent="validate-mid" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+stores validated values on req.validated" vertex="1">
+          <mxGeometry height="30" width="440" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="schemas" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Schemas&gt;&gt;&#xa;Web Query / Params Schemas&#xa;CW2/web/schemas/*.js" vertex="1">
+          <mxGeometry height="154" width="350" x="-425" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="schemas-1" parent="schemas" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+analyticsDashboardQuerySchema" vertex="1">
+          <mxGeometry height="28" width="350" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="schemas-2" parent="schemas" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+alumniDirectoryQuerySchema" vertex="1">
+          <mxGeometry height="28" width="350" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="schemas-3" parent="schemas" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;" value="+alumniParamsSchema" vertex="1">
+          <mxGeometry height="28" width="350" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=80;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#60a917;strokeColor=#2D7600;fontColor=#ffffff;fontSize=20;" value="&lt;&lt;Controller&gt;&gt;&#xa;WebController&#xa;CW2/web/controllers/web.controller.js" vertex="1">
+          <mxGeometry height="530" width="520" x="550" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-1" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-buildQueryString(query) : string" vertex="1">
+          <mxGeometry height="26" width="520" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-2" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-getInternalApiBaseUrl() : string" vertex="1">
+          <mxGeometry height="26" width="520" y="106" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-3" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-createHttpError(status, code, message) : Error" vertex="1">
+          <mxGeometry height="26" width="520" y="132" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-4" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-serializeForInlineScript(value) : string" vertex="1">
+          <mxGeometry height="26" width="520" y="158" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-5" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-getValidatedQuery(req) : object" vertex="1">
+          <mxGeometry height="26" width="520" y="184" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-6" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-fetchInternalApi(req, options) : Promise&lt;data|null&gt;" vertex="1">
+          <mxGeometry height="26" width="520" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-7" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-buildChartClickState(analyticsData, filters) : object" vertex="1">
+          <mxGeometry height="26" width="520" y="236" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-8" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=18;fontColor=#000000;" value="-buildAnalyticsDetailPanel(analyticsData, filters) : object|null" vertex="1">
+          <mxGeometry height="26" width="520" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-9" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="-proxyAnalyticsRequest(req, res, options) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="288" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-line" parent="controller" style="line;strokeWidth=1;fillColor=none;strokeColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="8" width="520" y="314" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-10" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderLoginPage(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="322" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-11" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderRegisterPage(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="348" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-12" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderAnalyticsDashboard(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="374" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-13" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderAlumniDirectory(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-14" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderBiddingPage(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="426" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-15" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+renderAlumniProfilePage(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="452" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-16" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+proxyAnalyticsDashboard(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="478" as="geometry" />
+        </mxCell>
+        <mxCell id="controller-17" parent="controller" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+proxyAlumniDirectory(req, res) : Response" vertex="1">
+          <mxGeometry height="26" width="520" y="504" as="geometry" />
+        </mxCell>
+        <mxCell id="views" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#1ba1e2;strokeColor=#006EAF;fontColor=#ffffff;fontSize=20;" value="&lt;&lt;Views&gt;&gt;&#xa;EJS Templates&#xa;CW2/web/views" vertex="1">
+          <mxGeometry height="294" width="520" x="630" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="views-1" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+login.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="views-2" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+register.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="views-3" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+alumni-analytics.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="views-4" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+alumni-directory.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="views-5" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+bidding.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="182" as="geometry" />
+        </mxCell>
+        <mxCell id="views-6" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=20;fontColor=#000000;" value="+alumni-profile.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="views-7" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+partials/document-start.ejs / document-end.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="238" as="geometry" />
+        </mxCell>
+        <mxCell id="views-8" parent="views" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+partials/dashboard-header.ejs / auth-shell.ejs" vertex="1">
+          <mxGeometry height="28" width="520" y="266" as="geometry" />
+        </mxCell>
+        <mxCell id="assets" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=light-dark(#eeeeee,#1f2020);strokeColor=light-dark(#999999,#cccccc);fontColor=light-dark(#333333,#cccccc);fontSize=20;" value="&lt;&lt;Browser Assets&gt;&gt;&#xa;CW2/web/public/*.js" vertex="1">
+          <mxGeometry height="210" width="460" x="-40" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="assets-1" parent="assets" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+login.js - POST /api/v1/auth/sessions" vertex="1">
+          <mxGeometry height="28" width="460" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="assets-2" parent="assets" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+register.js - CSRF bootstrap + register" vertex="1">
+          <mxGeometry height="28" width="460" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="assets-3" parent="assets" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+dashboard.js - charts / CSV / PDF / click navigation" vertex="1">
+          <mxGeometry height="28" width="460" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="assets-4" parent="assets" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+bidding.js - bids + sponsorship offer responses" vertex="1">
+          <mxGeometry height="28" width="460" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="assets-5" parent="assets" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;" value="+header-menu.js - responsive header toggle" vertex="1">
+          <mxGeometry height="28" width="460" y="182" as="geometry" />
+        </mxCell>
+        <mxCell id="api-boundary" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=70;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#f0a30a;strokeColor=#C57D00;fontColor=#ffffff;fontSize=20;" value="Internal HTTP API boundary&#xa;(collapsed, controllers not shown)" vertex="1">
+          <mxGeometry height="182" width="370" x="-435" y="1244" as="geometry" />
+        </mxCell>
+        <mxCell id="api-boundary-1" parent="api-boundary" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+/api/v1/auth/sessions/summary" vertex="1">
+          <mxGeometry height="28" width="370" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="api-boundary-2" parent="api-boundary" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+/api/v1/analytics/alumni-dashboard" vertex="1">
+          <mxGeometry height="28" width="370" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="api-boundary-3" parent="api-boundary" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+/api/v1/analytics/alumni-directory" vertex="1">
+          <mxGeometry height="28" width="370" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="api-boundary-4" parent="api-boundary" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;fontSize=19;fontColor=#000000;" value="+/api/v1/alumni/:id/profile" vertex="1">
+          <mxGeometry height="28" width="370" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" edge="1" parent="1" source="client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="app">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-330" y="370" />
+              <mxPoint x="320" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge2" edge="1" parent="1" source="app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="routes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="310" y="880" />
+              <mxPoint x="310" y="880" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge3" edge="1" parent="1" source="session-mid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="routes" value="uses">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="70" y="455" />
+              <mxPoint x="70" y="1050" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge4" edge="1" parent="1" source="validate-mid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="routes" value="uses">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint y="745" />
+              <mxPoint y="1140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge5" edge="1" parent="1" source="schemas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="validate-mid" value="validates with">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" edge="1" parent="1" source="routes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="controller">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="910" />
+              <mxPoint x="640" y="910" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge7" edge="1" parent="1" source="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="views" value="renders">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1110" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge8" edge="1" parent="1" source="views" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="client" value="HTML response">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="100" />
+              <mxPoint x="210" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge9" edge="1" parent="1" source="views" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="assets" value="includes script tags">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="220" />
+              <mxPoint x="520" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge10" edge="1" parent="1" source="assets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="client" value="runs in browser">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-270" y="270" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge11" edge="1" parent="1" source="session-mid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="api-boundary" value="fetch session summary">
+          <mxGeometry relative="1" x="-0.4137" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="-520" y="525" />
+              <mxPoint x="-520" y="1291" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge12" edge="1" parent="1" source="controller" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=20;" target="api-boundary" value="fetch JSON / proxy">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="870" y="1291" />
+              <mxPoint x="870" y="1291" />
+            </Array>
+            <mxPoint x="1550.1428571428569" y="579.9999999999998" as="sourcePoint" />
+            <mxPoint x="250" y="1291.1428571428573" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
